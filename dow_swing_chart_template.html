@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dow Swing Chart __TITLE__</title>
+<style>
+  :root { --bg:#111418; --panel:#1a1f26; --fg:#d7dce2; --mut:#8b95a1; --grid:#262d36;
+          --up:#2bb673; --dn:#e5534b; --sh:#f2b84b; --sl:#4aa8f2; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; background:var(--bg); color:var(--fg); font:13px/1.4 system-ui,"Hiragino Sans","Noto Sans JP",sans-serif; }
+  body { display:flex; flex-direction:column; }
+  #ctl { display:flex; flex-wrap:wrap; gap:6px 18px; align-items:center; padding:8px 12px; background:var(--panel); border-bottom:1px solid var(--grid); }
+  #ctl label { display:flex; align-items:center; gap:6px; white-space:nowrap; }
+  #ctl input[type=range] { width:130px; }
+  #ctl b { display:inline-block; min-width:2.4em; text-align:right; color:#fff; font-variant-numeric:tabular-nums; }
+  select,button { background:#242b34; color:var(--fg); border:1px solid #38414d; border-radius:4px; padding:3px 8px; font:inherit; }
+  button:hover { background:#2e3744; cursor:pointer; }
+  #wrap { position:relative; flex:1; min-height:0; }
+  canvas { position:absolute; inset:0; width:100%; height:100%; display:block; cursor:crosshair; }
+  #info { position:absolute; left:10px; top:8px; pointer-events:none; background:rgba(17,20,24,.85); padding:6px 9px; border-radius:4px; font-variant-numeric:tabular-nums; white-space:pre; }
+  #stat { color:var(--mut); margin-left:auto; }
+  .sw { display:inline-block; width:10px; height:10px; border-radius:2px; vertical-align:-1px; margin-right:3px; }
+</style>
+</head>
+<body>
+<div id="ctl">
+  <label>時間足 <select id="tf"><option>1H</option><option selected>4H</option><option>D1</option></select></label>
+  <label>ピボット幅 n <input id="n" type="range" min="1" max="15" step="1" value="3"><b id="nv"></b></label>
+  <label>ATR期間 <input id="ap" type="range" min="5" max="60" step="1" value="14"><b id="apv"></b></label>
+  <label>最小スイング幅(ATR×) <input id="ma" type="range" min="0" max="5" step="0.1" value="1"><b id="mav"></b></label>
+  <label><input id="wick" type="checkbox" checked> ヒゲでブレイク判定</label>
+  <label><input id="shade" type="checkbox" checked> トレンド背景</label>
+  <label><input id="zig" type="checkbox" checked> スイング線</label>
+  <label><input id="conf" type="checkbox"> 確定位置(n本後)を表示</label>
+  <label>ジャンプ <input id="jump" type="date" min="2021-01-01" max="2025-12-31"></label>
+  <button id="reset">全期間</button>
+  <span id="stat"></span>
+</div>
+<div id="wrap"><canvas id="cv"></canvas><div id="info"></div></div>
+<script>
+const DATA = __DATA__;
+const UP = 1, RANGE = 0, DOWN = -1;
+
+/* ---------- dow_trend.py の移植（同じアルゴリズム） ---------- */
+function atrWilder(h, l, c, period) {
+  const n = c.length, tr = new Float64Array(n), atr = new Float64Array(n).fill(NaN);
+  tr[0] = h[0] - l[0];
+  for (let i = 1; i < n; i++) tr[i] = Math.max(h[i] - l[i], Math.abs(h[i] - c[i-1]), Math.abs(l[i] - c[i-1]));
+  if (n >= period) {
+    let s = 0; for (let i = 0; i < period; i++) s += tr[i];
+    atr[period-1] = s / period;
+    for (let i = period; i < n; i++) atr[i] = (atr[i-1] * (period - 1) + tr[i]) / period;
+  }
+  return atr;
+}
+function computeDow(d, cfg) {
+  const { o, h, l, c } = d, nb = c.length, n = cfg.n;
+  const atr = atrWilder(h, l, c, cfg.atrPeriod);
+  const piv = [], trend = new Int8Array(nb);
+  let state = RANGE;
+  for (let i = 0; i < nb; i++) {
+    const j = i - n;
+    if (j >= n) {
+      let mh = -Infinity, ml = Infinity, ch = 0, cl = 0;
+      for (let k = j - n; k <= j + n; k++) {
+        if (h[k] > mh) { mh = h[k]; ch = 1 } else if (h[k] === mh) ch++;
+        if (l[k] < ml) { ml = l[k]; cl = 1 } else if (l[k] === ml) cl++;
+      }
+      const cands = [];
+      if (h[j] === mh && ch === 1) cands.push(["H", j, h[j]]);
+      if (l[j] === ml && cl === 1) cands.push(["L", j, l[j]]);
+      for (const [kind, idx, price] of cands) {
+        const cd = { kind, bar: idx, price, conf: i };
+        if (!piv.length) { piv.push(cd); continue; }
+        const last = piv[piv.length - 1];
+        if (last.kind === kind) {
+          if ((kind === "H" && price > last.price) || (kind === "L" && price < last.price)) piv[piv.length - 1] = cd;
+        } else {
+          const a = isNaN(atr[i]) ? 0 : atr[i];
+          if (Math.abs(price - last.price) >= cfg.minSwingAtr * a) piv.push(cd);
+        }
+      }
+    }
+    let qh = -1, ql = -1;
+    for (let q = piv.length - 1; q >= 0 && (qh < 0 || ql < 0); q--) {
+      if (qh < 0 && piv[q].kind === "H") qh = q;
+      if (ql < 0 && piv[q].kind === "L") ql = q;
+    }
+    if (qh >= 0 && ql >= 0) {
+      const sh = piv[qh], sl = piv[ql];
+      const pxLo = cfg.useWick ? l[i] : c[i], pxHi = cfg.useWick ? h[i] : c[i];
+      const dn = pxLo < sl.price, up = pxHi > sh.price;
+      let dir = 0;
+      if (dn && up) dir = c[i] >= o[i] ? UP : DOWN; else dir = dn ? DOWN : up ? UP : 0;
+      if (dir === DOWN) {
+        const prev = ql >= 1 ? piv[ql - 1] : null;
+        let rally = -Infinity; for (let k = sl.bar; k < i; k++) if (h[k] > rally) rally = h[k];
+        if (prev && prev.kind === "H" && rally < prev.price) state = DOWN;
+        else if (state === UP) state = RANGE;
+      } else if (dir === UP) {
+        const prev = qh >= 1 ? piv[qh - 1] : null;
+        let pull = Infinity; for (let k = sh.bar; k < i; k++) if (l[k] < pull) pull = l[k];
+        if (prev && prev.kind === "L" && pull > prev.price) state = UP;
+        else if (state === DOWN) state = RANGE;
+      }
+    }
+    trend[i] = state;
+  }
+  return { trend, piv };
+}
+
+/* ---------- 状態 ---------- */
+const $ = id => document.getElementById(id);
+const cv = $("cv"), ctx = cv.getContext("2d"), info = $("info");
+let d, res, view = { from: 0, to: 1 }, mouse = null, dpr = 1, W = 0, H = 0, drag = null;
+const M = { l: 8, r: 64, t: 10, b: 24 };
+const fmtT = (s, intraday) => { const x = new Date(s * 1000).toISOString(); return x.slice(0, 10) + (intraday ? " " + x.slice(11, 16) : ""); };
+const dec = 5;
+
+function recompute() {
+  const tf = $("tf").value, first = d !== DATA[tf];
+  const prevTime = d ? d.t[Math.min(d.t.length - 1, Math.max(0, Math.round((view.from + view.to) / 2)))] : null;
+  d = DATA[tf];
+  $("nv").textContent = $("n").value; $("apv").textContent = $("ap").value; $("mav").textContent = (+$("ma").value).toFixed(1);
+  const t0 = performance.now();
+  res = computeDow(d, { n: +$("n").value, atrPeriod: +$("ap").value, minSwingAtr: +$("ma").value, useWick: $("wick").checked });
+  const ms = (performance.now() - t0).toFixed(0);
+  let seg = 0; for (let i = 1; i < d.t.length; i++) if (res.trend[i] !== res.trend[i-1]) seg++;
+  $("stat").textContent = `足 ${d.t.length.toLocaleString()} 本 / スイング ${res.piv.length} 個 / 判定切替 ${seg} 回 / ${ms}ms`;
+  if (first && prevTime !== null) { // 時間足を変えたら同じ時刻付近を表示
+    const span = view.to - view.from, ratio = d.t.length;
+    let lo = 0, hi = d.t.length - 1; while (lo < hi) { const m = (lo + hi) >> 1; if (d.t[m] < prevTime) lo = m + 1; else hi = m; }
+    view = { from: lo - span / 2, to: lo + span / 2 };
+  }
+  draw();
+}
+
+function resetView() { view = { from: 0, to: d.t.length }; draw(); }
+
+/* ---------- 描画 ---------- */
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  const r = cv.getBoundingClientRect(); W = r.width; H = r.height;
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); draw();
+}
+function clampView() {
+  const n = d.t.length, span = Math.max(20, Math.min(n + 20, view.to - view.from));
+  let f = view.from; f = Math.max(-span * 0.3, Math.min(n - span * 0.7, f));
+  view = { from: f, to: f + span };
+}
+function draw() {
+  if (!d || !res || !W) return;
+  clampView();
+  ctx.clearRect(0, 0, W, H);
+  const pw = W - M.l - M.r, ph = H - M.t - M.b, span = view.to - view.from, bw = pw / span;
+  const i0 = Math.max(0, Math.floor(view.from)), i1 = Math.min(d.t.length - 1, Math.ceil(view.to));
+  let lo = Infinity, hi = -Infinity;
+  for (let i = i0; i <= i1; i++) { if (d.l[i] < lo) lo = d.l[i]; if (d.h[i] > hi) hi = d.h[i]; }
+  const pad = (hi - lo) * 0.06 || 0.001; lo -= pad; hi += pad;
+  const X = i => M.l + (i - view.from + 0.5) * bw, Y = p => M.t + (hi - p) / (hi - lo) * ph;
+  const intraday = $("tf").value !== "D1";
+
+  // トレンド背景
+  if ($("shade").checked) {
+    let s = i0;
+    for (let i = i0 + 1; i <= i1 + 1; i++) {
+      if (i > i1 || res.trend[i] !== res.trend[s]) {
+        const st = res.trend[s];
+        if (st !== 0) { ctx.fillStyle = st === UP ? "rgba(43,182,115,.13)" : "rgba(229,83,75,.13)";
+          ctx.fillRect(M.l + (s - view.from) * bw, M.t, (i - s) * bw, ph); }
+        s = i;
+      }
+    }
+  }
+  // グリッド・軸
+  ctx.font = "11px system-ui"; ctx.textBaseline = "middle"; ctx.fillStyle = "#8b95a1"; ctx.strokeStyle = "#262d36"; ctx.lineWidth = 1;
+  const rough = (hi - lo) / (ph / 60), mag = Math.pow(10, Math.floor(Math.log10(rough)));
+  const step = [1, 2, 5, 10].map(m => m * mag).find(s => s >= rough);
+  ctx.textAlign = "left";
+  for (let p = Math.ceil(lo / step) * step; p < hi; p += step) {
+    const y = Math.round(Y(p)) + .5; ctx.beginPath(); ctx.moveTo(M.l, y); ctx.lineTo(M.l + pw, y); ctx.stroke();
+    ctx.fillText(p.toFixed(dec), M.l + pw + 6, y);
+  }
+  ctx.textAlign = "center"; ctx.textBaseline = "top";
+  const tickN = Math.max(2, Math.floor(pw / 130)), ts = Math.max(1, Math.round(span / tickN));
+  for (let i = Math.ceil(view.from / ts) * ts; i < view.to; i += ts) {
+    if (i < 0 || i >= d.t.length) continue;
+    const x = Math.round(X(i)) + .5; ctx.beginPath(); ctx.moveTo(x, M.t); ctx.lineTo(x, M.t + ph); ctx.stroke();
+    ctx.fillText(fmtT(d.t[i], intraday && span < 2500), x, M.t + ph + 6);
+  }
+  // ローソク足
+  ctx.save(); ctx.beginPath(); ctx.rect(M.l, M.t, pw, ph); ctx.clip();
+  const body = Math.max(1, bw * 0.7);
+  for (let i = i0; i <= i1; i++) {
+    const x = X(i), up = d.c[i] >= d.o[i], col = up ? "#2bb673" : "#e5534b";
+    ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(Math.round(x) + .5, Y(d.h[i])); ctx.lineTo(Math.round(x) + .5, Y(d.l[i])); ctx.stroke();
+    const yo = Y(d.o[i]), yc = Y(d.c[i]);
+    ctx.fillRect(x - body / 2, Math.min(yo, yc), body, Math.max(1, Math.abs(yo - yc)));
+  }
+  // スイング線とマーカー
+  const P = res.piv;
+  if ($("zig").checked) {
+    ctx.strokeStyle = "rgba(215,220,226,.55)"; ctx.lineWidth = 1.2; ctx.beginPath();
+    let started = false;
+    for (const p of P) { const x = X(p.bar), y = Y(p.price); if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y); }
+    ctx.stroke();
+  }
+  const r = Math.max(3, Math.min(7, bw * 0.6 + 2));
+  for (const p of P) {
+    if (p.bar < view.from - 2 || p.bar > view.to + 2) continue;
+    const x = X(p.bar), y = Y(p.price), isH = p.kind === "H";
+    if ($("conf").checked) {
+      ctx.strokeStyle = isH ? "rgba(242,184,75,.6)" : "rgba(74,168,242,.6)"; ctx.setLineDash([3, 3]); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(X(p.conf), y); ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath(); ctx.arc(X(p.conf), y, 2.5, 0, 6.3); ctx.fillStyle = isH ? "#f2b84b" : "#4aa8f2"; ctx.fill();
+    }
+    ctx.fillStyle = isH ? "#f2b84b" : "#4aa8f2"; ctx.beginPath();
+    const off = isH ? -r - 3 : r + 3;
+    if (isH) { ctx.moveTo(x, y - 3); ctx.lineTo(x - r, y + off); ctx.lineTo(x + r, y + off); }
+    else { ctx.moveTo(x, y + 3); ctx.lineTo(x - r, y + off); ctx.lineTo(x + r, y + off); }
+    ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+  // クロスヘア
+  if (mouse && mouse.x > M.l && mouse.x < M.l + pw && mouse.y > M.t && mouse.y < M.t + ph) {
+    ctx.strokeStyle = "rgba(255,255,255,.3)"; ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(mouse.x, M.t); ctx.lineTo(mouse.x, M.t + ph); ctx.moveTo(M.l, mouse.y); ctx.lineTo(M.l + pw, mouse.y); ctx.stroke(); ctx.setLineDash([]);
+    const price = hi - (mouse.y - M.t) / ph * (hi - lo);
+    ctx.fillStyle = "#38414d"; ctx.fillRect(M.l + pw, mouse.y - 8, M.r, 16);
+    ctx.fillStyle = "#fff"; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText(price.toFixed(dec), M.l + pw + 6, mouse.y);
+    const i = Math.floor((mouse.x - M.l) / bw + view.from);
+    if (i >= 0 && i < d.t.length) {
+      const tr = res.trend[i], name = tr === 1 ? "上昇" : tr === -1 ? "下降" : "レンジ";
+      info.textContent = `${fmtT(d.t[i], intraday)}  (NY時間, #${i})\nO ${d.o[i].toFixed(dec)}  H ${d.h[i].toFixed(dec)}\nL ${d.l[i].toFixed(dec)}  C ${d.c[i].toFixed(dec)}\nトレンド判定: ${name}`;
+    }
+  } else info.innerHTML =
+    `<span class="sw" style="background:var(--sh)"></span>スイングハイ　<span class="sw" style="background:var(--sl)"></span>スイングロー　` +
+    `<span class="sw" style="background:rgba(43,182,115,.5)"></span>上昇　<span class="sw" style="background:rgba(229,83,75,.5)"></span>下降　背景なし=レンジ`;
+}
+
+/* ---------- 操作 ---------- */
+cv.addEventListener("wheel", e => {
+  e.preventDefault();
+  const pw = W - M.l - M.r, span = view.to - view.from, r = cv.getBoundingClientRect();
+  const anchor = view.from + (e.clientX - r.left - M.l) / pw * span;
+  if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) { const dx = (e.deltaX || e.deltaY) / pw * span; view = { from: view.from + dx, to: view.to + dx }; }
+  else { const k = Math.exp(e.deltaY * 0.0015), ns = span * k; const f = (anchor - view.from) / span; view = { from: anchor - f * ns, to: anchor + (1 - f) * ns }; }
+  draw();
+}, { passive: false });
+cv.addEventListener("mousedown", e => { drag = { x: e.clientX, from: view.from, to: view.to }; });
+window.addEventListener("mouseup", () => drag = null);
+window.addEventListener("mousemove", e => {
+  const r = cv.getBoundingClientRect(); mouse = { x: e.clientX - r.left, y: e.clientY - r.top };
+  if (drag) { const pw = W - M.l - M.r, dx = (e.clientX - drag.x) / pw * (drag.to - drag.from); view = { from: drag.from - dx, to: drag.to - dx }; }
+  draw();
+});
+cv.addEventListener("mouseleave", () => { mouse = null; draw(); });
+// タッチ（1本指で移動、2本指でピンチ）
+let tch = null;
+cv.addEventListener("touchstart", e => { tch = { n: e.touches.length, x: e.touches[0].clientX, dist: e.touches.length > 1 ? Math.abs(e.touches[0].clientX - e.touches[1].clientX) : 0, v: { ...view } }; }, { passive: true });
+cv.addEventListener("touchmove", e => {
+  if (!tch) return; e.preventDefault();
+  const pw = W - M.l - M.r, span = tch.v.to - tch.v.from;
+  if (e.touches.length > 1 && tch.dist) {
+    const k = tch.dist / Math.abs(e.touches[0].clientX - e.touches[1].clientX), c = (tch.v.from + tch.v.to) / 2;
+    view = { from: c - span * k / 2, to: c + span * k / 2 };
+  } else { const dx = (e.touches[0].clientX - tch.x) / pw * span; view = { from: tch.v.from - dx, to: tch.v.to - dx }; }
+  draw();
+}, { passive: false });
+let timer = null;
+for (const id of ["n", "ap", "ma", "tf"]) $(id).addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(recompute, 30); });
+for (const id of ["wick"]) $(id).addEventListener("change", recompute);
+for (const id of ["shade", "zig", "conf"]) $(id).addEventListener("change", draw);
+$("reset").onclick = resetView;
+$("jump").addEventListener("change", e => {
+  const s = Date.parse(e.target.value + "T00:00:00Z") / 1000; if (isNaN(s)) return;
+  let lo = 0, hi = d.t.length - 1; while (lo < hi) { const m = (lo + hi) >> 1; if (d.t[m] < s) lo = m + 1; else hi = m; }
+  const span = Math.min(view.to - view.from, 300); view = { from: lo - span * 0.1, to: lo + span * 0.9 }; draw();
+});
+window.addEventListener("resize", resize);
+
+d = DATA["4H"]; res = null;
+resize(); recompute();
+view = { from: d.t.length - 300, to: d.t.length + 10 }; recompute();
+window.__dow = { computeDow, DATA }; // 検証用
+</script>
+</body>
+</html>
