@@ -25,7 +25,7 @@
 </head>
 <body>
 <div id="ctl">
-  <label>時間足 <select id="tf"><option>1H</option><option selected>4H</option><option>D1</option></select></label>
+  <label>時間足 <select id="tf"><option>1H</option><option selected>4H</option><option>D1</option><option>W1</option></select></label>
   <label>ピボット幅 n <input id="n" type="range" min="1" max="15" step="1" value="3"><b id="nv"></b></label>
   <label>ATR期間 <input id="ap" type="range" min="5" max="60" step="1" value="14"><b id="apv"></b></label>
   <label>最小スイング幅(ATR×) <input id="ma" type="range" min="0" max="5" step="0.1" value="1"><b id="mav"></b></label>
@@ -160,7 +160,7 @@ function draw() {
   for (let i = i0; i <= i1; i++) { if (d.l[i] < lo) lo = d.l[i]; if (d.h[i] > hi) hi = d.h[i]; }
   const pad = (hi - lo) * 0.06 || 0.001; lo -= pad; hi += pad;
   const X = i => M.l + (i - view.from + 0.5) * bw, Y = p => M.t + (hi - p) / (hi - lo) * ph;
-  const intraday = $("tf").value !== "D1";
+  const intraday = !["D1", "W1"].includes($("tf").value);
 
   // トレンド背景
   if ($("shade").checked) {

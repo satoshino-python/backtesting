@@ -1,7 +1,7 @@
 """
 ダウ理論トレンド判定（dow_trend.py / docs/DOW_TREND_SPEC.md）の確認用インタラクティブチャートを作る。
 
-EURUSD の 1時間足・4時間足・日足（NY 17:00 区切り）を HTML に埋め込み、ブラウザ側（JavaScript）で
+EURUSD の 1時間足・4時間足・日足・週足（NY 17:00 区切り）を HTML に埋め込み、ブラウザ側（JavaScript）で
 dow_trend.py と同じアルゴリズムを実行する。ピボット幅・ATR期間・最小スイング幅(ATR倍率)などを
 スライダーで変えると、スイングハイ/ローとトレンド判定がその場で再計算される。
 外部ライブラリ・ネット接続は不要（HTML 1ファイルで完結）。
@@ -24,6 +24,8 @@ def to_bars(df_1min, tf, session_start_hour=17):
     """NY 17:00 区切りで 1H/4H/D1 にまとめ、JSON 化しやすい dict にする（時刻は NY 現地時刻を UTC とみなした秒）。"""
     if tf == "D1":
         label = get_trading_day_label(df_1min.index, session_start_hour)
+    elif tf == "W1":  # 金曜日で終わる週（日曜 17:00 ～ 金曜 17:00）。ラベルはその週の金曜日
+        label = get_trading_day_label(df_1min.index, session_start_hour).to_period("W-FRI").end_time.normalize()
     else:
         label = get_signal_bar_label(df_1min.index, session_start_hour, int(tf[:-1]))
     b = df_1min.groupby(label).agg(Open=("Open", "first"), High=("High", "max"),
@@ -48,7 +50,7 @@ def main():
     day = get_trading_day_label(df.index, 17)
     df = df[(day >= pd.Timestamp(a.start)) & (day <= pd.Timestamp(a.end))]
 
-    data = {tf: to_bars(df, tf) for tf in ("1H", "4H", "D1")}
+    data = {tf: to_bars(df, tf) for tf in ("1H", "4H", "D1", "W1")}
     for tf, d in data.items():
         print(f"{tf}: {len(d['t']):,} 本")
     html = (TEMPLATE.read_text(encoding="utf-8")
