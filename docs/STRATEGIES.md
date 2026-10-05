@@ -13,6 +13,7 @@
 | `main_4H_fixedSL_multi.py` | 全通貨ペアを一括検証し、R倍数で合算。1時間足スイングのトレーリングストップも選べる | 4時間足 | 固定SL/TP または トレーリング | 損失額固定 |
 | `main_4H_fixedSL_dow.py` | 週足ダウ理論のトレンド方向にだけエントリーするフィルター版 | 4時間足＋週足 | 固定SL/TP＋建値ストップ | 損失額固定 |
 | `dow_trend.py` | ダウ理論のトレンド判定ライブラリ（単体では売買しない） | 任意 | – | – |
+| `dow_swing_chart.py` | ダウ理論のスイングとトレンド、トレードを確認するインタラクティブチャート | 1H/4H/D1/W1 | – | – |
 | `compare_runs.py` | `multi_results/` の複数の実行結果を並べて比較 | – | – | – |
 | `diagnose_trades.py` | 取引履歴CSVを、時間帯・曜日・ATR水準などの切り口で診断 | – | – | – |
 | `tests/test_dow_trend.py` | `dow_trend.py` のテスト | – | – | – |
@@ -189,6 +190,19 @@ python diagnose_trades.py sl1.5_tp2.5 --mae-mfe --data-path histData/EURUSD
 - 診断の切り口: 全体成績（期待値・t値）、買い/売り、年、エントリー時間帯、曜日、ATR水準、スイング幅、決済理由（SL/TP/その他）、保有時間、コスト感度、MAE/MFE。
 - 出力: `diagnosis/diagnosis_report.txt`、`diagnosis/trades_enriched.csv`。
 - 4時間足版（`main_4H.py` / `main_4H_fixedSL.py`、`execution_timeframe="1min"`）の取引履歴の列名（`Entry_ATR (Signal, EMA)` など）を前提にしている。D1版の CSV には対応していない。
+
+### 4.9 `dow_swing_chart.py`（ダウ理論・トレードの確認用チャート）
+```
+python dow_swing_chart.py                                                   # スイング・トレンド判定だけ
+python dow_swing_chart.py --trades dow_results/trades_20210101-20251231_strict.csv   # トレードも表示
+```
+- 1H / 4H / D1 / W1 を切り替えられるインタラクティブチャート（HTML 1ファイル、外部ライブラリ不要）。ピボット幅・ATR・最小スイング幅をスライダーで変えると、ダウ理論の判定がその場で再計算される。
+- `--trades` に `main_4H_fixedSL_dow.py` の取引履歴CSVを渡すと、次の表示が加わる。出力は `dow_results/dow_trade_chart_<通貨>_<期間>_<モード>.html`。
+  - エントリー（▲買い / ▼売り）と決済（●、緑=勝ち / 赤=負け）、その間を結ぶ線、SL/TP の点線
+  - 背景: 検証で実際に使った週足トレンド（同じフォルダの `weekly_trend_<期間>.csv`）。「表示中の時間足で計算」に切り替えることもできる。
+  - エントリーライン: 4時間足の Swing High / Low（`--entry-window`、既定18）。薄い線は「一度抜かれて無効」の区間。1H と 4H だけ表示する。
+  - 「前 / 次のトレード」ボタン（キーボードの ← → でも可）。トレードにカーソルを合わせると、エントリー・決済・損益(R)・決済理由を表示する。
+- その他のオプション: `--symbol` / `--start` / `--end` / `--weekly-trend` / `--entry-atr` / `--risk`（1R の金額。既定 200）
 
 ## 5. `Config` の設定項目（4時間足系の共通項目）
 

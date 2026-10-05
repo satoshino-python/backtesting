@@ -35,11 +35,18 @@
   <label><input id="conf" type="checkbox"> 確定位置(n本後)を表示</label>
   <label>ジャンプ <input id="jump" type="date" min="2021-01-01" max="2025-12-31"></label>
   <button id="reset">全期間</button>
+  <span id="trctl" style="display:none; gap:6px 18px; flex-wrap:wrap; align-items:center">
+    <label>背景 <select id="bg"><option value="used" selected>検証で使った週足トレンド</option><option value="tf">表示中の時間足で計算</option></select></label>
+    <label><input id="trd" type="checkbox" checked> トレード</label>
+    <label><input id="eln" type="checkbox" checked> <span id="elnlab">エントリーライン</span></label>
+    <button id="prev">◀ 前のトレード</button><button id="next">次のトレード ▶</button>
+  </span>
   <span id="stat"></span>
 </div>
 <div id="wrap"><canvas id="cv"></canvas><div id="info"></div></div>
 <script>
 const DATA = __DATA__;
+const TR = __TRADES__;  // null: トレード表示なし（dow_swing_chart.py --trades で埋め込む）
 const UP = 1, RANGE = 0, DOWN = -1;
 
 /* ---------- dow_trend.py の移植（同じアルゴリズム） ---------- */
@@ -127,7 +134,13 @@ function recompute() {
   res = computeDow(d, { n: +$("n").value, atrPeriod: +$("ap").value, minSwingAtr: +$("ma").value, useWick: $("wick").checked });
   const ms = (performance.now() - t0).toFixed(0);
   let seg = 0; for (let i = 1; i < d.t.length; i++) if (res.trend[i] !== res.trend[i-1]) seg++;
-  $("stat").textContent = `足 ${d.t.length.toLocaleString()} 本 / スイング ${res.piv.length} 個 / 判定切替 ${seg} 回 / ${ms}ms`;
+  let trs = "";
+  if (TR) {
+    const rs = TR.trades.map(t => t.pnl / TR.risk), wins = rs.filter(r => r > 0).length;
+    trs = ` / トレード ${rs.length} 件（${TR.mode}）勝率 ${(wins / rs.length * 100).toFixed(1)}% 合計 ${rs.reduce((a, b) => a + b, 0).toFixed(2)}R`;
+    $("eln").disabled = !d.esh; $("elnlab").style.opacity = d.esh ? 1 : .4;
+  }
+  $("stat").textContent = `足 ${d.t.length.toLocaleString()} 本 / スイング ${res.piv.length} 個 / 判定切替 ${seg} 回 / ${ms}ms${trs}`;
   if (first && prevTime !== null) { // 時間足を変えたら同じ時刻付近を表示
     const span = view.to - view.from, ratio = d.t.length;
     let lo = 0, hi = d.t.length - 1; while (lo < hi) { const m = (lo + hi) >> 1; if (d.t[m] < prevTime) lo = m + 1; else hi = m; }
@@ -158,16 +171,22 @@ function draw() {
   const i0 = Math.max(0, Math.floor(view.from)), i1 = Math.min(d.t.length - 1, Math.ceil(view.to));
   let lo = Infinity, hi = -Infinity;
   for (let i = i0; i <= i1; i++) { if (d.l[i] < lo) lo = d.l[i]; if (d.h[i] > hi) hi = d.h[i]; }
+  if (TR && $("trd").checked)  // 表示中のトレードの SL/TP も縦軸の範囲に入れる
+    for (const t of TR.trades) {
+      const [ei, xi] = tradeIdx(t); if (ei < 0 || xi < i0 || ei > i1) continue;
+      for (const p of [t.sl, t.tp]) if (p != null) { lo = Math.min(lo, p); hi = Math.max(hi, p); }
+    }
   const pad = (hi - lo) * 0.06 || 0.001; lo -= pad; hi += pad;
   const X = i => M.l + (i - view.from + 0.5) * bw, Y = p => M.t + (hi - p) / (hi - lo) * ph;
   const intraday = !["D1", "W1"].includes($("tf").value);
 
-  // トレンド背景
+  // トレンド背景（トレード表示ありで「検証で使った週足トレンド」を選んでいるときは d.ut を使う）
+  const bgt = bgTrend();
   if ($("shade").checked) {
     let s = i0;
     for (let i = i0 + 1; i <= i1 + 1; i++) {
-      if (i > i1 || res.trend[i] !== res.trend[s]) {
-        const st = res.trend[s];
+      if (i > i1 || bgt[i] !== bgt[s]) {
+        const st = bgt[s];
         if (st !== 0) { ctx.fillStyle = st === UP ? "rgba(43,182,115,.13)" : "rgba(229,83,75,.13)";
           ctx.fillRect(M.l + (s - view.from) * bw, M.t, (i - s) * bw, ph); }
         s = i;
@@ -223,6 +242,7 @@ function draw() {
     else { ctx.moveTo(x, y + 3); ctx.lineTo(x - r, y + off); ctx.lineTo(x + r, y + off); }
     ctx.closePath(); ctx.fill();
   }
+  if (TR) drawTrades(i0, i1, X, Y, bw);
   ctx.restore();
   // クロスヘア
   if (mouse && mouse.x > M.l && mouse.x < M.l + pw && mouse.y > M.t && mouse.y < M.t + ph) {
@@ -233,12 +253,95 @@ function draw() {
     ctx.fillStyle = "#fff"; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText(price.toFixed(dec), M.l + pw + 6, mouse.y);
     const i = Math.floor((mouse.x - M.l) / bw + view.from);
     if (i >= 0 && i < d.t.length) {
-      const tr = res.trend[i], name = tr === 1 ? "上昇" : tr === -1 ? "下降" : "レンジ";
-      info.textContent = `${fmtT(d.t[i], intraday)}  (NY時間, #${i})\nO ${d.o[i].toFixed(dec)}  H ${d.h[i].toFixed(dec)}\nL ${d.l[i].toFixed(dec)}  C ${d.c[i].toFixed(dec)}\nトレンド判定: ${name}`;
+      const nm = tr => tr === 1 ? "上昇" : tr === -1 ? "下降" : "レンジ";
+      let txt = `${fmtT(d.t[i], intraday)}  (NY時間, #${i})\nO ${d.o[i].toFixed(dec)}  H ${d.h[i].toFixed(dec)}\nL ${d.l[i].toFixed(dec)}  C ${d.c[i].toFixed(dec)}\nトレンド判定（この時間足）: ${nm(res.trend[i])}`;
+      if (TR && d.ut) txt += `\n週足トレンド（検証で使用）: ${nm(d.ut[i] ?? 0)}`;
+      if (TR && d.esh && $("eln").checked)
+        txt += `\nエントリーライン 買い ${fmtP(d.esh[i])}${d.eshv[i] ? "" : "（無効）"} / 売り ${fmtP(d.esl[i])}${d.eslv[i] ? "" : "（無効）"}`;
+      const t = TR && $("trd").checked ? tradeAt(i, mouse.y, Y) : null;
+      if (t) txt += "\n" + tradeText(t);
+      info.textContent = txt;
     }
-  } else info.innerHTML =
+  } else if (TR && cur >= 0) info.textContent = `トレード ${cur + 1} / ${TR.trades.length}\n` + tradeText(TR.trades[cur]);
+  else info.innerHTML =
     `<span class="sw" style="background:var(--sh)"></span>スイングハイ　<span class="sw" style="background:var(--sl)"></span>スイングロー　` +
-    `<span class="sw" style="background:rgba(43,182,115,.5)"></span>上昇　<span class="sw" style="background:rgba(229,83,75,.5)"></span>下降　背景なし=レンジ`;
+    `<span class="sw" style="background:rgba(43,182,115,.5)"></span>上昇　<span class="sw" style="background:rgba(229,83,75,.5)"></span>下降　背景なし=レンジ` +
+    (TR ? `<br><span class="sw" style="background:#b18cff"></span>▲買い / <span class="sw" style="background:#ff6fd1"></span>▼売り エントリー　● 決済（緑=勝ち / 赤=負け）　点線=SL・TP　<span class="sw" style="background:#c9a227"></span>買いライン　<span class="sw" style="background:#5b8fd9"></span>売りライン（薄い=無効）` : "");
+}
+
+/* ---------- トレード表示（TR があるときだけ） ---------- */
+const fmtP = p => p == null ? "-" : (+p).toFixed(dec);
+function bgTrend() {
+  if (TR && d.ut && $("bg").value === "used") return d.ut.map(v => v ?? 0);
+  return res.trend;
+}
+function tradeIdx(t) { return t.idx[$("tf").value]; }
+function tradeText(t) {
+  const r = t.pnl / TR.risk, nm = v => v === 1 ? "上昇" : v === -1 ? "下降" : "レンジ";
+  return `── トレード（${t.d > 0 ? "買い" : "売り"} / 週足 ${nm(t.wk)}）──\n` +
+    `エントリー ${t.et}  @ ${fmtP(t.ep)}\n決済       ${t.xt}  @ ${fmtP(t.xp)}\n` +
+    `SL ${fmtP(t.sl)}  TP ${fmtP(t.tp)}  枚数 ${Math.abs(t.size).toLocaleString()}\n` +
+    `損益 ${t.pnl.toFixed(2)}（${r >= 0 ? "+" : ""}${r.toFixed(2)}R） ${t.reason}`;
+}
+function tradeAt(i, my, Y) {
+  // カーソルの足を含むトレードのうち、エントリー価格〜決済価格が縦方向に一番近いもの
+  let best = null, bd = Infinity;
+  for (const t of TR.trades) {
+    const [ei, xi] = tradeIdx(t);
+    if (ei < 0 || i < ei - 1 || i > Math.max(ei, xi) + 1) continue;
+    const ya = Y(t.ep), yb = Y(t.xp), dist = my < Math.min(ya, yb) ? Math.min(ya, yb) - my : my > Math.max(ya, yb) ? my - Math.max(ya, yb) : 0;
+    if (dist < bd) { bd = dist; best = t; }
+  }
+  return bd < 40 ? best : null;
+}
+function drawTrades(i0, i1, X, Y, bw) {
+  // エントリーライン（4時間足 Swing High/Low。1本前の判定足までの確定情報＝バックテストと同じ値）
+  if (d.esh && $("eln").checked) {
+    for (const [arr, val, col] of [[d.esh, d.eshv, "201,162,39"], [d.esl, d.eslv, "91,143,217"]]) {
+      ctx.lineWidth = 1.5;
+      for (let i = i0; i <= i1; i++) {
+        if (arr[i] == null) continue;
+        ctx.strokeStyle = `rgba(${col},${val[i] ? .85 : .25})`;
+        const y = Y(arr[i]); ctx.beginPath(); ctx.moveTo(X(i) - bw / 2, y); ctx.lineTo(X(i) + bw / 2, y); ctx.stroke();
+      }
+    }
+  }
+  if (!$("trd").checked) return;
+  const s = Math.max(5, Math.min(9, bw * 0.7 + 3));
+  for (const t of TR.trades) {
+    const [ei, xi] = tradeIdx(t);
+    if (ei < 0 || xi < i0 - 1 || ei > i1 + 1) continue;
+    const win = t.pnl > 0, col = win ? "#2bd17e" : "#ff5a52";
+    const xe = X(ei), xx = X(xi), ye = Y(t.ep), yx = Y(t.xp);
+    // SL / TP（エントリーから決済まで）
+    ctx.setLineDash([2, 3]); ctx.lineWidth = 1;
+    if (t.tp != null) { ctx.strokeStyle = "rgba(43,209,126,.7)"; ctx.beginPath(); ctx.moveTo(xe, Y(t.tp)); ctx.lineTo(xx, Y(t.tp)); ctx.stroke(); }
+    if (t.sl != null) { ctx.strokeStyle = "rgba(255,90,82,.7)"; ctx.beginPath(); ctx.moveTo(xe, Y(t.sl)); ctx.lineTo(xx, Y(t.sl)); ctx.stroke(); }
+    // エントリー → 決済
+    ctx.setLineDash([5, 3]); ctx.lineWidth = 2; ctx.strokeStyle = col;
+    ctx.beginPath(); ctx.moveTo(xe, ye); ctx.lineTo(xx, yx); ctx.stroke(); ctx.setLineDash([]);
+    // エントリー（▲買い / ▼売り）
+    ctx.fillStyle = t.d > 0 ? "#b18cff" : "#ff6fd1"; ctx.strokeStyle = "#fff"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    if (t.d > 0) { ctx.moveTo(xe, ye); ctx.lineTo(xe - s, ye + s * 1.5); ctx.lineTo(xe + s, ye + s * 1.5); }
+    else { ctx.moveTo(xe, ye); ctx.lineTo(xe - s, ye - s * 1.5); ctx.lineTo(xe + s, ye - s * 1.5); }
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    // 決済
+    ctx.fillStyle = col; ctx.beginPath(); ctx.arc(xx, yx, s * 0.6, 0, 6.3); ctx.fill(); ctx.stroke();
+  }
+}
+let cur = -1;
+function gotoTrade(step) {
+  if (!TR || !TR.trades.length) return;
+  const mid = (view.from + view.to) / 2;
+  if (cur < 0) {  // 表示中の中央より後ろ（前）で一番近いトレードから
+    const list = TR.trades.map((t, k) => [tradeIdx(t)[0], k]).filter(([e]) => e >= 0);
+    const c = step > 0 ? list.find(([e]) => e > mid) : [...list].reverse().find(([e]) => e < mid);
+    cur = c ? c[1] : (step > 0 ? 0 : TR.trades.length - 1);
+  } else cur = Math.max(0, Math.min(TR.trades.length - 1, cur + step));
+  const [ei, xi] = tradeIdx(TR.trades[cur]);
+  const span = Math.max(60, Math.min(400, (xi - ei) * 4 + 40));
+  const c = (ei + xi) / 2; view = { from: c - span / 2, to: c + span / 2 }; mouse = null; draw();
 }
 
 /* ---------- 操作 ---------- */
@@ -275,6 +378,12 @@ for (const id of ["n", "ap", "ma", "tf"]) $(id).addEventListener("input", () => 
 for (const id of ["wick"]) $(id).addEventListener("change", recompute);
 for (const id of ["shade", "zig", "conf"]) $(id).addEventListener("change", draw);
 $("reset").onclick = resetView;
+if (TR) {
+  $("trctl").style.display = "inline-flex";
+  for (const id of ["trd", "eln", "bg"]) $(id).addEventListener("change", draw);
+  $("prev").onclick = () => gotoTrade(-1); $("next").onclick = () => gotoTrade(1);
+  window.addEventListener("keydown", e => { if (e.key === "ArrowRight") gotoTrade(1); else if (e.key === "ArrowLeft") gotoTrade(-1); });
+}
 $("jump").addEventListener("change", e => {
   const s = Date.parse(e.target.value + "T00:00:00Z") / 1000; if (isNaN(s)) return;
   let lo = 0, hi = d.t.length - 1; while (lo < hi) { const m = (lo + hi) >> 1; if (d.t[m] < s) lo = m + 1; else hi = m; }
