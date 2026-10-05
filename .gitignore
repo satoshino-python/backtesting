@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# Raw price data (HistData.com; large and redistribution-restricted)
+histData/
