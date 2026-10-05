@@ -20,13 +20,21 @@
   canvas { position:absolute; inset:0; width:100%; height:100%; display:block; cursor:crosshair; }
   #info { position:absolute; left:10px; top:8px; pointer-events:none; background:rgba(17,20,24,.85); padding:6px 9px; border-radius:4px; font-variant-numeric:tabular-nums; white-space:pre; }
   #stat { color:var(--mut); margin-left:auto; }
+  @media (max-width:700px) {
+    #ctl { gap:4px 12px; padding:6px 8px; font-size:12px; }
+    #ctl label:has(#n) { order:-1; flex:1 1 100%; font-size:15px; font-weight:600; }
+    #ctl label:has(#n) input { flex:1; height:32px; }
+    #ctl label:has(#ap), #ctl label:has(#ma) { flex:1 1 45%; }
+    #ctl label:has(#ap) input, #ctl label:has(#ma) input { width:100%; flex:1; min-width:0; }
+    #stat { margin-left:0; }
+  }
   .sw { display:inline-block; width:10px; height:10px; border-radius:2px; vertical-align:-1px; margin-right:3px; }
 </style>
 </head>
 <body>
 <div id="ctl">
   <label>時間足 <select id="tf"><option>1H</option><option selected>4H</option><option>D1</option><option>W1</option></select></label>
-  <label>ピボット幅 n <input id="n" type="range" min="1" max="15" step="1" value="3"><b id="nv"></b></label>
+  <label>ピボット幅 n <input id="n" type="range" min="1" max="20" step="1" value="3"><b id="nv"></b></label>
   <label>ATR期間 <input id="ap" type="range" min="5" max="60" step="1" value="14"><b id="apv"></b></label>
   <label>最小スイング幅(ATR×) <input id="ma" type="range" min="0" max="5" step="0.1" value="1"><b id="mav"></b></label>
   <label><input id="wick" type="checkbox" checked> ヒゲでブレイク判定</label>
