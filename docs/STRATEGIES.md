@@ -155,8 +155,9 @@
 | `compare_modes` | `(None, "strict", "no_counter")` | 比較表に並べるモード（`None` ＝ フィルターなし） |
 | `result_dir` | `"dow_results"` | 保存先 |
 
-- 現在の設定: EURUSD、2025-01-01〜2025-12-31、SL 1.5、TP 2.5。`OPEN_CHART=True`。
-- 出力（`dow_results/`）: `comparison_<期間>.csv`、`trades_<期間>_<モード>.csv`、`weekly_trend_<期間>.csv`（各週に使った判定）、`chart_<期間>_<dow_mode>.html`。
+- 現在の設定: EURUSD、2025-01-01〜2025-12-31、SL 1.5、TP 2.5。`OPEN_CHART=True`、`TRADE_CHART=True`。
+- 出力（`dow_results/`）: `comparison_<期間>.csv`、`trades_<期間>_<モード>.csv`、`weekly_trend_<期間>.csv`（各週に使った判定）、`chart_<期間>_<dow_mode>.html`（backtesting.py のチャート）、
+  `dow_trade_chart_<通貨>_<期間>_<dow_mode>.html`（トレード付きのダウ理論チャート。4.9 参照。`TRADE_CHART=False` で出力しない）。
 - `execution_timeframe="1min"` のみ対応。
 
 ### 4.6 `dow_trend.py`（トレンド判定ライブラリ）
@@ -203,6 +204,8 @@ python dow_swing_chart.py --trades dow_results/trades_20210101-20251231_strict.c
   - エントリーライン: 4時間足の Swing High / Low（`--entry-window`、既定18）。薄い線は「一度抜かれて無効」の区間。1H と 4H だけ表示する。
   - 「前 / 次のトレード」ボタン（キーボードの ← → でも可）。トレードにカーソルを合わせると、エントリー・決済・損益(R)・決済理由を表示する。
 - その他のオプション: `--symbol` / `--start` / `--end` / `--weekly-trend` / `--entry-atr` / `--risk`（1R の金額。既定 200）
+- スクリプトからは `make_chart(df_1min, path, title, start, end, trades=stats["_trades"], weekly_trend=..., risk=...)` で作れる。
+  `main_4H_fixedSL_dow.py` はこれを使って毎回出力している。他の戦略の検証でも使える（週足トレンドを使わない場合は `weekly_trend=None`）。使い方の例は [CLAUDE.md](../CLAUDE.md)。
 
 ## 5. `Config` の設定項目（4時間足系の共通項目）
 

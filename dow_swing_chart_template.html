@@ -380,6 +380,7 @@ for (const id of ["shade", "zig", "conf"]) $(id).addEventListener("change", draw
 $("reset").onclick = resetView;
 if (TR) {
   $("trctl").style.display = "inline-flex";
+  if (!DATA["4H"].ut) { $("bg").value = "tf"; $("bg").options[0].disabled = true; }  // 週足トレンドを使わない戦略
   for (const id of ["trd", "eln", "bg"]) $(id).addEventListener("change", draw);
   $("prev").onclick = () => gotoTrade(-1); $("next").onclick = () => gotoTrade(1);
   window.addEventListener("keydown", e => { if (e.key === "ArrowRight") gotoTrade(1); else if (e.key === "ArrowLeft") gotoTrade(-1); });

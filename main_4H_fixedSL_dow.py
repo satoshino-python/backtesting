@@ -25,6 +25,7 @@ import numpy as np
 import pandas as pd
 from backtesting import Backtest
 
+from dow_swing_chart import make_chart
 from dow_trend import DowConfig, compute_dow_trend
 from main_4H_fixedSL import (
     Config,
@@ -64,6 +65,9 @@ CFG = DowFilterConfig(
     tp_atr_multiplier=2.5,
 )
 OPEN_CHART = True  # True: dow_mode のチャートをブラウザで開く
+# True: dow_mode のトレードを載せたダウ理論チャート（dow_swing_chart.py）も出力する
+# （dow_trade_chart_<通貨>_<期間>_<モード>.html。エントリー/決済・SL/TP・使った週足トレンド・エントリーライン）
+TRADE_CHART = True
 
 
 def resample_to_weekly_bars(df_1min, session_start_hour=17):
@@ -229,6 +233,22 @@ def main():
 
     if chart_bt is None:
         return
+    if TRADE_CHART:
+        symbol = Path(CFG.data_path).name
+        trade_html = make_chart(
+            df_1min, out_dir / f"dow_trade_chart_{symbol}_{period}_{CFG.dow_mode}.html",
+            f"{symbol} {start_ts:%Y-%m-%d} ~ {end_ts:%Y-%m-%d} / トレード: {CFG.dow_mode}",
+            start_ts, end_ts, trades=chart_stats["_trades"],
+            weekly_trend=weekly_trend.shift(1).fillna(0).astype(int),  # 各週に使った判定（前週末の判定）
+            mode=CFG.dow_mode, risk=CFG.cash * CFG.risk_pct,
+            entry_window=CFG.window, entry_atr=CFG.atr_period, price_decimals=CFG.price_decimals,
+            session_start_hour=CFG.session_start_hour, signal_hours=CFG.signal_hours,
+        )
+        if OPEN_CHART:
+            try:
+                webbrowser.open("file://" + os.path.abspath(trade_html), new=2)
+            except Exception:
+                pass
     # チャート（dow_mode の結果）。表示は main_4H_fixedSL.py と同じく判定足にまとめる
     html_path = out_dir / f"chart_{period}_{CFG.dow_mode}.html"
     chart_df = df.copy()

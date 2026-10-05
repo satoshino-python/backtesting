@@ -66,14 +66,16 @@ def to_bars(df_1min, tf, extra_cols=(), session_start_hour=17):
     return out, b.index
 
 
-def load_trades(path, labels, price_decimals=5):
-    """取引履歴CSVを読み、各時間足でのエントリー/決済の足番号を付けた dict のリストにする"""
-    t = pd.read_csv(path)
+def load_trades(trades, labels, price_decimals=5):
+    """
+    取引履歴（backtesting.py の stats["_trades"]、またはそれを保存したCSVのパス）を、
+    各時間足でのエントリー/決済の足番号を付けた dict のリストにする
+    """
+    t = pd.read_csv(trades) if isinstance(trades, (str, Path)) else trades.reset_index(drop=True)
     entry = pd.DatetimeIndex(pd.to_datetime(t["EntryTime"], utc=True)).tz_convert("America/New_York")
     exit_ = pd.DatetimeIndex(pd.to_datetime(t["ExitTime"], utc=True)).tz_convert("America/New_York")
-    risk = (t["EntryPrice"] - t["SL"]).abs()
     tol = 10 ** -price_decimals / 2
-    trades = []
+    out = []
     for k, row in t.iterrows():
         long = row["Size"] > 0
         xp, ep, sl, tp = row["ExitPrice"], row["EntryPrice"], row["SL"], row["TP"]
@@ -87,14 +89,75 @@ def load_trades(path, labels, price_decimals=5):
         for tf, lab in labels.items():
             pos = lab.get_indexer(bar_label(entry[k:k + 1], tf).append(bar_label(exit_[k:k + 1], tf)))
             idx[tf] = [int(pos[0]), int(pos[1])]
-        trades.append(dict(
+        wk = row.get("Entry_Dow Trend (Weekly)", 0)
+        out.append(dict(
             d=1 if long else -1, ep=float(ep), xp=float(xp),
             sl=None if pd.isna(sl) else float(sl), tp=None if pd.isna(tp) else float(tp),
             pnl=round(float(row["PnL"]), 2), size=int(row["Size"]),
             et=entry[k].strftime("%Y-%m-%d %H:%M"), xt=exit_[k].strftime("%Y-%m-%d %H:%M"),
-            reason=reason, wk=int(row.get("Entry_Dow Trend (Weekly)", 0) or 0), idx=idx,
+            reason=reason, wk=0 if pd.isna(wk) else int(wk), idx=idx,
         ))
-    return trades
+    return out
+
+
+def make_chart(df_1min, path, title, start=None, end=None, trades=None, weekly_trend=None,
+               mode="", risk=200.0, entry_window=18, entry_atr=18, price_decimals=5,
+               session_start_hour=17, signal_hours=4):
+    """
+    チャートの HTML を path に書き出す（スクリプトから呼び出す用）。
+
+    df_1min      : load_gmo_click_1min_data() の1分足（NY時間）。エントリーラインの助走期間を含む全期間を渡す
+    start / end  : 表示する取引日の範囲（Timestamp または "YYYY-MM-DD"。None は制限なし）
+    trades       : 取引履歴（stats["_trades"] か、そのCSVのパス）。None ならダウ理論の確認用チャートだけ
+    weekly_trend : 各週に使った週足トレンド（index=週の金曜日、値=1/0/-1、または "上昇"/"レンジ"/"下降"）。
+                   pd.Series かCSVのパス。None なら背景は「表示中の時間足で計算」だけになる
+    risk         : 1R の金額（初期資金 × risk_pct）。トレードの損益を R で表示するのに使う
+    entry_window / entry_atr / signal_hours : エントリー側 Swing High/Low ラインの設定（1H/4H に表示）
+    """
+    extra = {}
+    if trades is not None:
+        signals = compute_signals(resample_to_signal_bars(df_1min, session_start_hour, signal_hours),
+                                  window=entry_window, atr_period=entry_atr, price_decimals=price_decimals)
+        df_1min = map_signals_to_1min(df_1min, signals, session_start_hour, signal_hours)
+        extra = {"SignalSH": "esh", "SignalSL": "esl", "SignalSHValid": "eshv", "SignalSLValid": "eslv"}
+        if weekly_trend is not None:
+            if isinstance(weekly_trend, (str, Path)):
+                weekly_trend = pd.read_csv(weekly_trend, index_col=0, parse_dates=True,
+                                           encoding="utf-8-sig")["trend"]
+            wt = weekly_trend if pd.api.types.is_numeric_dtype(weekly_trend) else weekly_trend.map(TREND_CODE)
+            df_1min["UsedTrend"] = wt.reindex(bar_label(df_1min.index, "W1", session_start_hour)).to_numpy()
+            extra["UsedTrend"] = "ut"
+
+    day = get_trading_day_label(df_1min.index, session_start_hour)
+    mask = np.ones(len(df_1min), dtype=bool)
+    if start is not None:
+        mask &= day >= pd.Timestamp(start)
+    if end is not None:
+        mask &= day <= pd.Timestamp(end)
+    df = df_1min[mask]
+
+    data, labels = {}, {}
+    for tf in TIMEFRAMES:
+        cols = {k: v for k, v in extra.items() if tf in ("1H", "4H") or k == "UsedTrend"}
+        data[tf], labels[tf] = to_bars(df, tf, cols, session_start_hour)
+        print(f"{tf}: {len(data[tf]['t']):,} 本")
+
+    tr = None
+    if trades is not None:
+        tr = dict(trades=load_trades(trades, labels, price_decimals), risk=risk, mode=mode,
+                  entryWindow=entry_window)
+        rs = np.array([t["pnl"] for t in tr["trades"]]) / risk
+        print(f"ℹ️ トレード {len(rs)} 件 / 合計 {rs.sum():+.2f}R")
+
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    html = (TEMPLATE.read_text(encoding="utf-8")
+            .replace("__TITLE__", title)
+            .replace("__TRADES__", json.dumps(tr, ensure_ascii=False, separators=(",", ":")))
+            .replace("__DATA__", json.dumps(data, separators=(",", ":"))))
+    path.write_text(html, encoding="utf-8")
+    print(f"✅ {path} ({path.stat().st_size / 1e6:.1f} MB)")
+    return path
 
 
 def main():
@@ -112,56 +175,24 @@ def main():
     a = ap.parse_args()
 
     ym = lambda s: int(s[:4]) * 100 + int(s[5:7])
-    start, end = pd.Timestamp(a.start), pd.Timestamp(a.end)
     # トレード表示ありのときは、バックテストと同じくデータ全体からエントリーラインを計算する（助走期間を含める）
     month_range = (None, None) if a.trades else (ym(a.start), ym(a.end))
     df, _ = load_gmo_click_1min_data(f"histData/{a.symbol}", price_side="mid", month_range=month_range)
 
-    extra = {}
-    trades = None
-    if a.trades:
-        signals = compute_signals(resample_to_signal_bars(df, 17, 4), window=a.entry_window,
-                                  atr_period=a.entry_atr)
-        df = map_signals_to_1min(df, signals, 17, 4)
-        trades_path = Path(a.trades)
-        wt_path = Path(a.weekly_trend) if a.weekly_trend else trades_path.with_name(
-            "weekly_trend_" + "_".join(trades_path.stem.split("_")[1:2]) + ".csv")
-        wt = pd.read_csv(wt_path, index_col=0, parse_dates=True, encoding="utf-8-sig")["trend"].map(TREND_CODE)
-        week = bar_label(df.index, "W1")
-        df["UsedTrend"] = wt.reindex(week).to_numpy()
-        extra = {"SignalSH": "esh", "SignalSL": "esl", "SignalSHValid": "eshv", "SignalSLValid": "eslv",
-                 "UsedTrend": "ut"}
-        print(f"ℹ️ 週足トレンド: {wt_path}")
-
-    day = get_trading_day_label(df.index, 17)
-    df = df[(day >= start) & (day <= end)]
-
-    data, labels = {}, {}
-    for tf in TIMEFRAMES:
-        cols = {k: v for k, v in extra.items() if tf in ("1H", "4H") or k == "UsedTrend"}
-        data[tf], labels[tf] = to_bars(df, tf, cols)
-        print(f"{tf}: {len(data[tf]['t']):,} 本")
-
-    out = Path(a.out_dir)
-    out.mkdir(exist_ok=True)
     period = f"{a.start.replace('-', '')}-{a.end.replace('-', '')}"
     title = f"{a.symbol} {a.start} ~ {a.end}"
-    path = out / f"dow_swing_chart_{a.symbol}_{period}.html"
-    if a.trades:
-        mode = trades_path.stem.split("_", 2)[-1]
-        trades = dict(trades=load_trades(trades_path, labels), risk=a.risk, mode=mode,
-                      entryWindow=a.entry_window, source=trades_path.name)
-        rs = np.array([t["pnl"] for t in trades["trades"]]) / a.risk
-        print(f"ℹ️ トレード {len(rs)} 件 / 合計 {rs.sum():+.2f}R（{trades_path.name}）")
-        title += f" / トレード: {mode}"
-        path = out / f"dow_trade_chart_{a.symbol}_{period}_{mode}.html"
-
-    html = (TEMPLATE.read_text(encoding="utf-8")
-            .replace("__TITLE__", title)
-            .replace("__TRADES__", json.dumps(trades, ensure_ascii=False, separators=(",", ":")))
-            .replace("__DATA__", json.dumps(data, separators=(",", ":"))))
-    path.write_text(html, encoding="utf-8")
-    print(f"✅ {path} ({path.stat().st_size / 1e6:.1f} MB)")
+    out = Path(a.out_dir)
+    if not a.trades:
+        make_chart(df, out / f"dow_swing_chart_{a.symbol}_{period}.html", title, a.start, a.end)
+        return
+    trades_path = Path(a.trades)
+    mode = trades_path.stem.split("_", 2)[-1]
+    wt_path = Path(a.weekly_trend) if a.weekly_trend else trades_path.with_name(
+        "weekly_trend_" + "_".join(trades_path.stem.split("_")[1:2]) + ".csv")
+    print(f"ℹ️ 週足トレンド: {wt_path if wt_path.exists() else 'なし'}")
+    make_chart(df, out / f"dow_trade_chart_{a.symbol}_{period}_{mode}.html", f"{title} / トレード: {mode}",
+               a.start, a.end, trades=trades_path, weekly_trend=wt_path if wt_path.exists() else None,
+               mode=mode, risk=a.risk, entry_window=a.entry_window, entry_atr=a.entry_atr)
 
 
 if __name__ == "__main__":
