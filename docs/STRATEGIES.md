@@ -1,0 +1,237 @@
+# 検証用コードの一覧と設定ガイド
+
+このフォルダの各スクリプトの「売買ルール」「設定できる項目」「出力」をまとめたもの（2026-10-05 時点のコードに基づく）。
+ダウ理論トレンド判定の詳細仕様は [DOW_TREND_SPEC.md](DOW_TREND_SPEC.md) を参照。
+
+## 1. ファイル一覧
+
+| ファイル | 役割 | 判定足 | 決済 | 枚数 |
+|---|---|---|---|---|
+| `main_D1.py` | 最初の版。日足のスイングブレイク | 日足 | ATR倍率の固定SL/TP | 固定（`size`） |
+| `main_4H.py` | 判定足を4時間足（任意の時間足）に変更。SL×TPグリッド検証を追加 | 4時間足 | ATR倍率の固定SL/TP | 固定（`size`） |
+| `main_4H_fixedSL.py` | **基準となる版**。1回の損失額を固定する枚数計算と建値ストップを追加 | 4時間足 | 固定SL/TP＋建値ストップ | 損失額固定（`risk_pct`） |
+| `main_4H_fixedSL_multi.py` | 全通貨ペアを一括検証し、R倍数で合算。1時間足スイングのトレーリングストップも選べる | 4時間足 | 固定SL/TP または トレーリング | 損失額固定 |
+| `main_4H_fixedSL_dow.py` | 週足ダウ理論のトレンド方向にだけエントリーするフィルター版 | 4時間足＋週足 | 固定SL/TP＋建値ストップ | 損失額固定 |
+| `dow_trend.py` | ダウ理論のトレンド判定ライブラリ（単体では売買しない） | 任意 | – | – |
+| `compare_runs.py` | `multi_results/` の複数の実行結果を並べて比較 | – | – | – |
+| `diagnose_trades.py` | 取引履歴CSVを、時間帯・曜日・ATR水準などの切り口で診断 | – | – | – |
+| `tests/test_dow_trend.py` | `dow_trend.py` のテスト | – | – | – |
+
+`main_4H_fixedSL_multi.py` と `main_4H_fixedSL_dow.py` は、`main_4H_fixedSL.py` の関数と Strategy を import して使っている。
+**`main_4H_fixedSL.py` を変更すると、この2つの結果も変わる。**
+
+## 2. 全スクリプト共通の仕組み
+
+### データ
+- GMOクリック証券の1分足ヒストリカルデータ（BID/ASK）。月ごとの ZIP を解凍せずに `histData/<通貨ペア>/` に置く。
+  - 現在あるフォルダ: `AUDUSD` / `EURUSD` / `GBPUSD` / `USDCHF` / `USDJPY`（2020-01〜2025-12 ほか）、`SP500`（US500、2024-01〜2025-12）
+  - 2023年6月以前の ZIP に同梱されている `_EX` 付きの別系列 CSV は読み込まない（`main_4H_fixedSL.py` 以降）。
+- タイムスタンプは日本時間で記録されているため、NY時間に変換する（サマータイムは自動で考慮）。
+- 価格は既定で仲値（`(BID+ASK)/2`）を使う。スプレッドは、データ全体の平均相対スプレッドの半分を
+  エントリーとイグジットのそれぞれにコミッションとして課金して近似する（往復でスプレッド1回分）。
+- 出来高データは無いため、Volume は 0 で埋める。
+
+### 足の区切り
+- 1日の区切りは **NY 17:00**（NYクローズ）。4時間足なら 17-21 / 21-1 / 1-5 / 5-9 / 9-13 / 13-17 時の6本/日。
+- 取引日のラベルは、NY 17:00〜翌17:00 の大半が含まれる側の日付（月〜金）。`start_date` / `end_date` はこの取引日で絞り込む。
+
+### 執行の精度
+- `execution_timeframe="1min"`（既定・推奨）: スイングと ATR の判定は判定足で行い、エントリー・利確・損切りの約定は1分足で判定する。
+  同じ4時間足の中でTPとSLの両方に触れた場合も、どちらが先かを正しく判定できる。
+- `"signal"`（D1版では `"daily"`）: 判定も約定も判定足で行う。速いが、足の中の値動きの順番は分からない。
+
+### ルックアヘッド（未来データの参照）防止
+- 判定足のシグナルは1本ずらして使う。判定足の途中の1分足では、1本前の判定足の終値時点で確定していた情報だけを使う。
+- スイングは前後 `window` 本で判定するため、ピボットの足から `window` 本後に初めて確定する。
+
+## 3. 共通のエントリールール（スイングブレイクアウト）
+
+1. **スイングハイ / スイングロー**: 前後 `window` 本の中で最高値（最安値）の足。同値も含む。
+2. **有効なライン**: 直近で確定したスイングハイ（ロー）のうち、確定してから一度もそれを超える高値（下回る安値）が
+   出ていないもの。一度抜かれたら、次のスイングが確定するまでそのラインではエントリーしない。
+3. **注文**: ポジションが無いとき、毎バーで未約定注文をすべて取り消し、置き直す。
+   - 終値 < スイングハイ かつ 有効 → スイングハイに **買い逆指値**
+   - 終値 > スイングロー かつ 有効 → スイングローに **売り逆指値**
+   - 買いと売りの両方を同時に置くことがある。
+4. **利確・損切り**（固定SL/TPの版）:
+   - 損切り = エントリー価格 ∓ ATR × `sl_atr_multiplier`
+   - 利確 = エントリー価格 ± ATR × `tp_atr_multiplier`
+   - ATR は判定足の True Range を EMA（span = `atr_period`）で平滑化したもの。
+     `dow_trend.py` で使う ATR はワイルダー平滑化なので、計算方法が違う。
+
+> **注意（コード上の挙動）**: 固定SL/TPの版（D1 / 4H / fixedSL / dow）は、ポジション保有中は注文を置き直さない。
+> そのため、エントリーしなかった反対側の逆指値が残り、価格がそこまで動くと既存ポジションの決済として約定する。
+> `main_4H_fixedSL_multi.py` の `swing_trail` モードだけは、片方が約定した時点で反対側の注文を取り消す。
+
+## 4. 各スクリプトの詳細
+
+### 4.1 `main_D1.py`（日足版）
+- 判定足は日足（NY 17:00 区切り）。`window=5`（前後5日）、`atr_period=14`。
+- 枚数は固定で、`size`（既定 10000）を使う。
+- 現在の設定: 2021-01-01〜2025-12-31、SL 1.0 × ATR、TP 1.0 × ATR。
+- 出力: `trade_history.csv`、`swing_breakout_chart.html`（チャートの最下部に成績表）。
+- `chart_timeframe`: `"daily"`（日足にまとめて表示）/ `"native"`。
+
+### 4.2 `main_4H.py`（4時間足版）
+- `signal_hours` で判定足の長さを変えられる（24の約数: 1, 2, 3, 4, 6, 8, 12, 24）。`window=18`（4時間足18本 ≒ 3日）、`atr_period=18`。
+- 枚数は D1版と同じく固定の `size`。
+- **SL×TP グリッド検証**（`grid_enabled=True`）: `grid_sl_values` × `grid_tp_values` のうち、TP倍率 > SL倍率 の組み合わせをすべて検証し、
+  `sl_tp_grid.csv` に一覧を出す。組み合わせごとの取引履歴は `grid_trades/trades_SL◯_TP◯.csv`。
+- 現在の設定: 2021-01-01〜2025-12-31、SL 1.5、TP 2.5、グリッドなし。
+
+### 4.3 `main_4H_fixedSL.py`（基準版）
+`main_4H.py` に次の変更を加えたもの。
+
+- **損失額固定の枚数計算**: 枚数 = 初期資金 × `risk_pct` ÷ 損切り幅。
+  - 損切りになると、損失はおおよそ「初期資金 × `risk_pct`」（＝ **1R**）になる。既定は 10,000 × 2% = 200。
+  - 初期資金を基準にした固定額なので、複利にはならない。
+  - 窓開けでSLを飛び越えた場合は 1R を超えることがある。証拠金が足りない注文は backtesting.py がキャンセルする。
+- **建値ストップ**: 含み益が `breakeven_trigger_r` × R に達したら、SLをエントリー価格に移す。`None` で無効。
+  - 判定は現在のバーの高値・安値で行い、移動したSLは次のバーから有効になる。到達したのと同じバーで建値まで戻った場合は、当初のSLのまま扱う（保守的）。
+- `_EX` 付きの CSV を除外する処理を追加した。
+- 成績に「平均勝ち / 平均負け / ペイオフレシオ / 最大連敗」を追加し、HTMLチャートの最下部に表示する。
+- 現在の設定: 2021-01-01〜2025-12-31、SL 1.5、TP 2.5、建値ストップ 1.0R（Config の既定値）、グリッドなし。
+
+### 4.4 `main_4H_fixedSL_multi.py`（複数通貨ペア一括検証）
+- `histData/` の下にある通貨ペアのフォルダを順番に検証する。各ペアは、同じ初期資金を持つ別々の口座として扱う。
+  複数ペアの同時保有による証拠金の取り合いは再現しない。
+- 損益は通貨ペアごとに決済通貨が違うため、**R倍数**（損益 ÷ 1R）に換算して合算する。
+  合計R × `risk_pct` が、初期資金に対する損益率の目安になる（例: +50R × 2% = +100%）。
+- `price_decimals` はペア名で自動設定する（〜JPY は3桁、それ以外は5桁）。
+- 読み込む ZIP は、検証期間の `WARMUP_MONTHS` ヶ月前（助走期間）から終了月の翌月まで。平均スプレッドは検証期間だけで計算する。
+
+**ファイル冒頭の設定**
+
+| 名前 | 現在の値 | 意味 |
+|---|---|---|
+| `BASE_CFG` | 2021-01-01〜2025-12-31、SL 1.5、TP 2.5、建値ストップなし | 全ペア共通の `Config` |
+| `DATA_ROOT` | `histData` | 通貨ペアのフォルダがある場所 |
+| `PAIRS` | `None` | `None` ならフォルダ内の全ペアを検証。例: `("EURUSD", "USDJPY")` |
+| `RESULTS_ROOT` / `RUN_LABEL` | `multi_results` / `"trailH1w5_atrSL"` | 結果は `multi_results/<日時>_<RUN_LABEL>/` に保存し、上書きしない |
+| `OPEN_CHARTS` | `True` | ペアごとのチャートをブラウザで開く |
+| `WARMUP_MONTHS` | `1` | 助走期間（月） |
+| `EXIT_MODE` | `"swing_trail"` | `"fixed"`: 固定SL/TP（建値ストップは `BASE_CFG` に従う） / `"swing_trail"`: 下記 |
+| `H1_SWING_WINDOW` | `5` | トレーリングに使う1時間足スイングの前後本数 |
+| `INITIAL_SL_RULE` | `"atr"` | `swing_trail` の当初SL。`"atr"`: ATR × 倍率 / `"near"`・`"far"`: ATR と直近の1時間足スイングのうち近い方・遠い方 |
+
+**`swing_trail` モード**（`execution_timeframe="1min"` のときだけ使える）
+- エントリーは共通ルールと同じ。TP と建値ストップは無い。
+- エントリーの後に新しく確定した1時間足スイングがあれば、そこへSLを移す（買いなら Swing Low、有利な方向にだけ動かす）。
+- 枚数は、当初SLまでの距離で 1R になるように決める。
+
+**出力**（`multi_results/<日時>_<RUN_LABEL>/`）
+- `summary.csv`: ペア別と合計の成績（トレード数、勝率、合計R、平均R、PF、ペイオフ、最大連敗、最大DD[R]、収益率）
+- `yearly.csv`: 年別 × ペア別の合計R、トレード数、勝率
+- `trades_all.csv`: 全取引（`Pair` 列と `R` 列付き）
+- `equity_R_combined.csv`: 全ペア合算の累積R（1時間ごと、含み損益込み）
+- `chart_<ペア>.html`: ペアごとのチャート
+- `config.json` と `code/`: 実行時の設定とコードのコピー。どの設定とコードで出した結果かを後から辿れる。
+
+**これまでの実行**（`multi_results/` 内）
+
+| フォルダ | 内容 |
+|---|---|
+| `20261004_2142_BE1.0` | 固定SL/TP＋建値ストップ1R（SP500 なし） |
+| `20261004_2215_noBE` | 固定SL/TP、建値ストップなし |
+| `20261004_2242_trailH1` | 1時間足トレーリング、当初SL = far |
+| `20261004_2252_trailH1_nearSL` | 1時間足トレーリング、当初SL = near |
+| `20261004_2307_trailH1w5_atrSL` | 1時間足トレーリング（前後5本）、当初SL = atr |
+
+### 4.5 `main_4H_fixedSL_dow.py`（週足ダウ理論フィルター）
+- エントリー・決済・枚数は `main_4H_fixedSL.py` と同じ。週足のトレンドに合わない方向の逆指値だけを取り消す。
+- 週足は、NY 17:00 区切りの取引日を金曜日で終わる1週間にまとめたもの。各週には前週末に確定した判定を使う（ルックアヘッド防止）。
+- 1回の実行で `compare_modes`（フィルターなし / strict / no_counter）を順番に検証し、比較表を作る。
+
+**`DowFilterConfig` の追加項目**（`Config` の全項目も使える）
+
+| 名前 | 既定 | 意味 |
+|---|---|---|
+| `dow_n` | 3 | ピボット幅（左右 n 週） |
+| `dow_atr_period` | 14 | 週足ATRの期間 |
+| `dow_min_swing_atr` | 1.0 | 最小スイング幅（週足ATRの倍数）。0 でフィルターなし |
+| `dow_use_wick` | True | True: ヒゲでブレイク判定 / False: 終値で判定 |
+| `dow_mode` | `"strict"` | `"strict"`: 上昇なら買いだけ、下降なら売りだけ、レンジは取引なし / `"no_counter"`: トレンドに逆らう方向だけ止める（レンジは両方向） |
+| `compare_modes` | `(None, "strict", "no_counter")` | 比較表に並べるモード（`None` ＝ フィルターなし） |
+| `result_dir` | `"dow_results"` | 保存先 |
+
+- 現在の設定: EURUSD、2025-01-01〜2025-12-31、SL 1.5、TP 2.5。`OPEN_CHART=True`。
+- 出力（`dow_results/`）: `comparison_<期間>.csv`、`trades_<期間>_<モード>.csv`、`weekly_trend_<期間>.csv`（各週に使った判定）、`chart_<期間>_<dow_mode>.html`。
+- `execution_timeframe="1min"` のみ対応。
+
+### 4.6 `dow_trend.py`（トレンド判定ライブラリ）
+- `compute_dow_trend(df, DowConfig(...))` は、各バーのトレンド（1=上昇 / 0=レンジ / -1=下降）と、採用したスイングの一覧を返す。
+- スイングは左右 n 本より**厳密に**高い（低い）足（同値は不採用）。ATRによる最小幅フィルターがあり、H と L は必ず交互に並ぶ。
+- 安値を割ったとき、戻り高値がその前のスイングハイより低ければ下降。上昇も同じ考え方。
+- 詳細とテスト結果は [DOW_TREND_SPEC.md](DOW_TREND_SPEC.md)。テストは `python tests/test_dow_trend.py`。
+
+### 4.7 `compare_runs.py`（実行結果の比較）
+```
+python compare_runs.py                 # multi_results/ 内の全ての実行を比較
+python compare_runs.py noBE BE1.0      # フォルダ名にこの文字列を含む実行だけ
+```
+- 実行ごとに違う設定だけを抜き出して、総合成績とペア別の合計Rを並べる。結果は `multi_results/comparison.csv` に保存する。
+
+### 4.8 `diagnose_trades.py`（取引履歴の診断）
+```
+python diagnose_trades.py                         # 最新の trade_history_*.csv
+python diagnose_trades.py sl1.5_tp2.5             # ファイル名の一部で指定
+python diagnose_trades.py SL1.5_TP2.5             # grid_trades/ の中も探す
+python diagnose_trades.py sl1.5_tp2.5 --mae-mfe --data-path histData/EURUSD
+```
+| オプション | 既定 | 意味 |
+|---|---|---|
+| `--pip-size` | 0.0001 | 1pipの価格幅（USDJPY は 0.01） |
+| `--price-tol` | pip-size の1/10 | 決済価格とSL/TPの一致を判定するときの許容幅 |
+| `--out-dir` | `diagnosis` | 出力先 |
+| `--mae-mfe` | なし | MAE/MFE（保有中の最大逆行・最大順行）も計算する。元の1分足データが必要 |
+| `--data-path` | `main_4H.py` の `data_path` | 1分足データの場所 |
+
+- 診断の切り口: 全体成績（期待値・t値）、買い/売り、年、エントリー時間帯、曜日、ATR水準、スイング幅、決済理由（SL/TP/その他）、保有時間、コスト感度、MAE/MFE。
+- 出力: `diagnosis/diagnosis_report.txt`、`diagnosis/trades_enriched.csv`。
+- 4時間足版（`main_4H.py` / `main_4H_fixedSL.py`、`execution_timeframe="1min"`）の取引履歴の列名（`Entry_ATR (Signal, EMA)` など）を前提にしている。D1版の CSV には対応していない。
+
+## 5. `Config` の設定項目（4時間足系の共通項目）
+
+設定は各ファイルの `CFG = Config(...)`（multi は `BASE_CFG`）で上書きする。書かなかった項目は下の既定値になる。
+
+| 項目 | 既定 | 意味 |
+|---|---|---|
+| `data_path` | `histData/EURUSD` | データのフォルダ（または ZIP） |
+| `price_side` | `"mid"` | `"mid"` / `"bid"` / `"ask"` |
+| `session_start_hour` | 17 | 足の区切りの起点（NY時間） |
+| `signal_hours` | 4 | 判定足の長さ（24の約数） |
+| `cash` | 10,000 | 初期資金 |
+| `size` | 10000 | 1回の枚数（`main_D1.py` / `main_4H.py` のみ） |
+| `risk_pct` | 0.02 | 1回の損失額 ＝ 初期資金 × この値（fixedSL 系のみ） |
+| `window` | 18 | スイング判定の前後本数（D1版は5） |
+| `atr_period` | 18 | ATR期間（D1版は14） |
+| `sl_atr_multiplier` | 1.0 | 損切り幅 ＝ ATR × この値 |
+| `tp_atr_multiplier` | 1.5 | 利確幅 ＝ ATR × この値 |
+| `breakeven_trigger_r` | 1.0 | 建値ストップの発動点（R）。`None` で無効（fixedSL 系のみ） |
+| `price_decimals` | 5 | 価格の丸め桁数（クロス円は3） |
+| `start_date` / `end_date` | None | 検証期間（`"YYYY-MM-DD"`）。None なら全期間 |
+| `execution_timeframe` | `"1min"` | `"1min"` / `"signal"`（D1版は `"daily"`） |
+| `chart_timeframe` | `"signal"` | チャートの表示単位（表示だけで、結果には影響しない）。`"signal"` / `"native"` |
+| `swing_point_style` | `"dash"` | 判定足実行時のスイングの表示。`"dash"` / `"circle"` |
+| `margin` | 1/25 | 証拠金率（レバレッジ25倍） |
+| `csv_filename` / `html_filename` | `trade_history.csv` / `swing_breakout_chart.html` | 単発検証の出力ファイル名 |
+| `grid_enabled` | False | SL×TP グリッド検証（4H / fixedSL のみ） |
+| `grid_sl_values` / `grid_tp_values` | (0.8, 1.0, 1.2, 1.5) / (1.0, 1.5, 2.0, 2.5) | グリッドの候補 |
+| `grid_csv_filename` | `sl_tp_grid.csv` | グリッドの一覧表 |
+| `grid_save_trades` / `grid_trades_dir` | True / `grid_trades` | 組み合わせごとの取引履歴の保存 |
+
+## 6. ルートにある過去の出力ファイル
+
+| ファイル | 内容 |
+|---|---|
+| `trade_history.csv` / `swing_breakout_chart.html` | 単発検証の最新の出力（実行のたびに上書き） |
+| `trade_history_EURUSD_20210101-20251231_4H_sl1.5_tp2.5.csv` / 同名 `.html` | EURUSD 4時間足 SL1.5/TP2.5 の結果 |
+| `trade_history_..._slFixed.csv` | 同じ条件の損失額固定版（fixedSL）の結果 |
+| `sl_tp_grid.csv` / `grid_trades/` | SL×TP グリッド検証の結果 |
+| `diagnosis/` | `diagnose_trades.py` の出力 |
+
+## 7. 実行時の注意
+- 実行はリポジトリのルートで行う（`histData/` などを相対パスで探すため）。
+- 必要なライブラリ: `backtesting`、`pandas`、`numpy`、`bokeh`。Bokeh 3.x では取引の矢印マークが表示されないという警告が出る（スクリプトは Bokeh 2.4.3 への変更を案内している）。
+- 1分足で5年分を実行すると時間がかかる。グリッド検証や新しいルールは、短い期間で所要時間を確かめてから広げる。
+- 各スクリプトは最後にチャートをブラウザで開く。ブラウザの無い環境（クラウドなど）では何もせずに終わる。
