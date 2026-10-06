@@ -40,6 +40,7 @@
   <label><input id="wick" type="checkbox" checked> ヒゲでブレイク判定</label>
   <label><input id="shade" type="checkbox" checked> トレンド背景</label>
   <label><input id="zig" type="checkbox" checked> スイング線</label>
+  <label><input id="oldp" type="checkbox" checked> 置き換えられたスイングも表示</label>
   <label><input id="conf" type="checkbox"> 確定位置(n本後)を表示</label>
   <label>ジャンプ <input id="jump" type="date" min="2021-01-01" max="2025-12-31"></label>
   <button id="reset">全期間</button>
@@ -73,6 +74,7 @@ function computeDow(d, cfg) {
   const { o, h, l, c } = d, nb = c.length, n = cfg.n;
   const atr = atrWilder(h, l, c, cfg.atrPeriod);
   const piv = [], trend = new Int8Array(nb);
+  const old = [], ush = new Array(nb).fill(null), usl = new Array(nb).fill(null); // 表示用: 置き換えられたピボットと、各足の判定に使った SH/SL
   let state = RANGE;
   for (let i = 0; i < nb; i++) {
     const j = i - n;
@@ -90,7 +92,7 @@ function computeDow(d, cfg) {
         if (!piv.length) { piv.push(cd); continue; }
         const last = piv[piv.length - 1];
         if (last.kind === kind) {
-          if ((kind === "H" && price > last.price) || (kind === "L" && price < last.price)) piv[piv.length - 1] = cd;
+          if ((kind === "H" && price > last.price) || (kind === "L" && price < last.price)) { old.push({ ...last, repl: i }); piv[piv.length - 1] = cd; }
         } else {
           const a = isNaN(atr[i]) ? 0 : atr[i];
           if (Math.abs(price - last.price) >= cfg.minSwingAtr * a) piv.push(cd);
@@ -104,6 +106,7 @@ function computeDow(d, cfg) {
     }
     if (qh >= 0 && ql >= 0) {
       const sh = piv[qh], sl = piv[ql];
+      ush[i] = sh; usl[i] = sl;
       const pxLo = cfg.useWick ? l[i] : c[i], pxHi = cfg.useWick ? h[i] : c[i];
       const dn = pxLo < sl.price, up = pxHi > sh.price;
       let dir = 0;
@@ -122,7 +125,7 @@ function computeDow(d, cfg) {
     }
     trend[i] = state;
   }
-  return { trend, piv };
+  return { trend, piv, old, ush, usl };
 }
 
 /* ---------- 状態 ---------- */
@@ -236,6 +239,15 @@ function draw() {
     ctx.stroke();
   }
   const r = Math.max(3, Math.min(7, bw * 0.6 + 2));
+  if ($("oldp").checked) // 後から同じ種類のより極端なピボットに置き換えられたもの（判定の時点では使われていた）。白抜きで表示
+    for (const p of res.old) {
+      if (p.bar < view.from - 2 || p.bar > view.to + 2) continue;
+      const x = X(p.bar), y = Y(p.price), isH = p.kind === "H", off = isH ? -r - 3 : r + 3;
+      ctx.strokeStyle = isH ? "rgba(242,184,75,.8)" : "rgba(74,168,242,.8)"; ctx.lineWidth = 1.2; ctx.beginPath();
+      if (isH) { ctx.moveTo(x, y - 3); ctx.lineTo(x - r, y + off); ctx.lineTo(x + r, y + off); }
+      else { ctx.moveTo(x, y + 3); ctx.lineTo(x - r, y + off); ctx.lineTo(x + r, y + off); }
+      ctx.closePath(); ctx.stroke();
+    }
   for (const p of P) {
     if (p.bar < view.from - 2 || p.bar > view.to + 2) continue;
     const x = X(p.bar), y = Y(p.price), isH = p.kind === "H";
@@ -261,8 +273,17 @@ function draw() {
     ctx.fillStyle = "#fff"; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText(price.toFixed(dec), M.l + pw + 6, mouse.y);
     const i = Math.floor((mouse.x - M.l) / bw + view.from);
     if (i >= 0 && i < d.t.length) {
+      ctx.save(); ctx.beginPath(); ctx.rect(M.l, M.t, pw, ph); ctx.clip(); ctx.lineWidth = 1.5;
+      for (const [q, col] of [[res.ush[i], "#f2b84b"], [res.usl[i], "#4aa8f2"]]) { // この足の判定に使ったスイングハイ/ロー
+        if (!q) continue;
+        ctx.strokeStyle = col; ctx.setLineDash([6, 3]); ctx.beginPath(); ctx.moveTo(X(q.bar), Y(q.price)); ctx.lineTo(X(i), Y(q.price)); ctx.stroke();
+        ctx.setLineDash([]); ctx.beginPath(); ctx.arc(X(q.bar), Y(q.price), 4, 0, 6.3); ctx.stroke();
+      }
+      ctx.restore();
       const nm = tr => tr === 1 ? "上昇" : tr === -1 ? "下降" : "レンジ";
       let txt = `${fmtT(d.t[i], intraday)}  (NY時間, #${i})\nO ${d.o[i].toFixed(dec)}  H ${d.h[i].toFixed(dec)}\nL ${d.l[i].toFixed(dec)}  C ${d.c[i].toFixed(dec)}\nトレンド判定（この時間足）: ${nm(res.trend[i])}`;
+      const pv = (q, nmk) => q ? `${nmk} ${fmtP(q.price)}（${fmtT(d.t[q.bar], intraday)} の足、${fmtT(d.t[q.conf], intraday)} に確定）` : `${nmk} なし`;
+      txt += `\n判定に使ったスイング（破線）\n  ${pv(res.ush[i], "ハイ")}\n  ${pv(res.usl[i], "ロー")}`;
       if (TR && d.ut) txt += `\n週足トレンド（検証で使用）: ${nm(d.ut[i] ?? 0)}`;
       if (TR && d.esh && $("eln").checked)
         txt += `\nエントリーライン 買い ${fmtP(d.esh[i])}${d.eshv[i] ? "" : "（無効）"} / 売り ${fmtP(d.esl[i])}${d.eslv[i] ? "" : "（無効）"}`;
