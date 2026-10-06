@@ -6,14 +6,20 @@
   - どちらも「確定してから一度も抜かれていない（有効）」ときだけ使う。抜かれたら次のスイングが確定するまで使わない
   - レンジ幅（上限 − 下限）が min_range_atr × ATR 未満なら取引しない（狭すぎるレンジは利幅が取れない）
 
-【エントリー】ラインに指値（ポジションが無いとき、毎バー置き直す）
-  - 終値 < 上限 → 上限に売り指値 / 終値 > 下限 → 下限に買い指値（両方同時に置く）
-  - 片方が約定したら、反対側の指値は取り消す（ブレイクアウト版のように反対側の注文で決済されることはない）
+【エントリー】entry_mode で選ぶ
+  "limit"  : ラインに指値（ポジションが無いとき、毎バー置き直す）
+    - 終値 < 上限 → 上限に売り指値 / 終値 > 下限 → 下限に買い指値（両方同時に置く）
+    - 片方が約定したら、反対側の指値は取り消す（ブレイクアウト版のように反対側の注文で決済されることはない）
+  "confirm": 反転を確認してから成行
+    - 4時間足の高値が上限に届いた（抜けた）うえで、終値が上限より下で確定 → 次の4時間足の最初の1分足で売り
+      （下限も同様に買い）。その4時間足が始まる時点で両方のラインが有効で、レンジ幅の条件を満たしていること
+    - 発注は次の4時間足の最初の1分足の終値時点なので、約定はその次の1分足の始値（4時間足の始値から1分遅れ）
+    - その時点でポジションを持っていれば見送る
 
 【決済】
   - 利確 = エントリー価格から、レンジ幅 × tp_range_frac だけ内側（0.5 = レンジ中央、1.0 = 反対側のライン）
     tp_atr を指定すると、代わりに ATR × tp_atr だけ内側
-  - 損切り = ラインの外側 ATR × sl_buffer_atr
+  - 損切り = ラインの外側 ATR × sl_buffer_atr（"confirm" ではエントリー価格から ATR × sl_buffer_atr）
   - 建値ストップ（breakeven_trigger_r）は既定で無効
 
 【枚数】損切り幅で損失が 初期資金 × risk_pct（1R）になるように決める（main_4H_fixedSL.py と同じ。複利なし）
@@ -60,7 +66,8 @@ from main_4H_fixedSL_dow import resample_to_weekly_bars, map_weekly_trend_to_1mi
 # Config の sl_atr_multiplier / tp_atr_multiplier はこの戦略では使わない
 @dataclass(frozen=True)
 class RangeReversalConfig(Config):
-    sl_buffer_atr: float = 0.5       # 損切り = ラインの外側 ATR × この値
+    entry_mode: str = "limit"        # "limit": ラインに指値 / "confirm": 4時間足で反転を確認してから成行
+    sl_buffer_atr: float = 0.5       # 損切り = ラインの外側 ATR × この値（"confirm" ではエントリー価格から）
     tp_range_frac: float = 0.5       # 利確 = エントリーからレンジ幅 × この値だけ内側（0.5=中央、1.0=反対側のライン）
     tp_atr: float | None = None      # 指定すると利確 = エントリーから ATR × この値だけ内側（tp_range_frac より優先）
     min_range_atr: float = 2.0       # レンジ幅がこの値 × ATR 未満なら取引しない（0 で制限なし）
@@ -102,11 +109,40 @@ def map_h4_trend_to_1min(df_1min_ext, h4_trend, session_start_hour=17, signal_ho
     return out
 
 
+def map_confirm_signals_to_1min(df_1min_ext, signal_df, signals, min_range_atr,
+                                session_start_hour=17, signal_hours=4):
+    """
+    entry_mode="confirm" 用。4時間足 t でラインに届いて内側で確定したら、次の足 t+1 でエントリーするシグナルを作る。
+    signals は compute_signals() の出力（1本シフト済み＝足 t の行は足 t-1 の終値時点のライン）なので、
+    足 t の高値・安値・終値と比べてもルックアヘッドにならない。結果をさらに1本シフトして足 t+1 に割り当てる。
+
+    1分足に ConfirmLong / ConfirmShort（0/1）と NewSignalBar（各4時間足の最初の1分足なら1）を付けて返す。
+    """
+    width = signals["SH"] - signals["SL"]
+    intact = ((signals["SHValid"] == 1) & (signals["SLValid"] == 1) & (width > 0)
+              & (width >= min_range_atr * signals["ATR"]))
+    short = intact & (signal_df["High"] >= signals["SH"]) & (signal_df["Close"] < signals["SH"])
+    long_ = intact & (signal_df["Low"] <= signals["SL"]) & (signal_df["Close"] > signals["SL"])
+    both = short & long_  # 1本で上限・下限の両方に触れた足は見送る
+    confirm = pd.DataFrame({"ConfirmLong": long_ & ~both, "ConfirmShort": short & ~both}).astype(float)
+    confirm = confirm.shift(1).fillna(0)
+
+    label = get_signal_bar_label(df_1min_ext.index, session_start_hour, signal_hours)
+    mapped = confirm.reindex(label)
+    out = df_1min_ext.copy()
+    out["ConfirmLong"] = mapped["ConfirmLong"].fillna(0).to_numpy()
+    out["ConfirmShort"] = mapped["ConfirmShort"].fillna(0).to_numpy()
+    out["NewSignalBar"] = np.r_[True, label[1:] != label[:-1]].astype(float)
+    return out
+
+
 class RangeReversal1Min(Strategy):
     """
-    4時間足の Swing High / Low（compute_signals → map_signals_to_1min の列）に指値で逆張りする。
+    4時間足の Swing High / Low（compute_signals → map_signals_to_1min の列）で逆張りする。
+    entry_mode="limit" はラインに指値、"confirm" は map_confirm_signals_to_1min() のシグナルで成行。
     判定は1本前の4時間足までの確定情報だけを使い、約定は1分足で判定する。
     """
+    entry_mode = "limit"
     sl_buffer_atr = 0.5
     tp_range_frac = 0.5
     tp_atr = None
@@ -124,6 +160,10 @@ class RangeReversal1Min(Strategy):
         self.atr = self.I(lambda: self.data.SignalATR, overlay=False, name="ATR (Signal, EMA)")
         self.weekly_trend = self.I(lambda: self.data.DowTrend, overlay=False, name="Dow Trend (Weekly)")
         self.h4_trend = self.I(lambda: self.data.H4DowTrend, overlay=False, name="Dow Trend (4H)")
+        if self.entry_mode == "confirm":
+            self.confirm_long = self.I(lambda: self.data.ConfirmLong, plot=False, overlay=False, name="Confirm Long")
+            self.confirm_short = self.I(lambda: self.data.ConfirmShort, plot=False, overlay=False, name="Confirm Short")
+            self.new_bar = self.I(lambda: self.data.NewSignalBar, plot=False, overlay=False, name="New 4H Bar")
         self.initial_risk_amount = self.equity * self.risk_pct
 
     def in_range_regime(self):
@@ -166,6 +206,10 @@ class RangeReversal1Min(Strategy):
         for order in self.orders:
             order.cancel()
 
+        if self.entry_mode == "confirm":
+            self.next_confirm()
+            return
+
         upper, lower, atr = self.upper[-1], self.lower[-1], self.atr[-1]
         if np.isnan(upper) or np.isnan(lower) or np.isnan(atr) or atr <= 0:
             return
@@ -182,6 +226,29 @@ class RangeReversal1Min(Strategy):
             self.place_entry(False, upper, width, atr)
         if close > lower:
             self.place_entry(True, lower, width, atr)
+
+
+    def next_confirm(self):
+        if not self.new_bar[-1] or not self.in_range_regime():
+            return
+        atr = self.atr[-1]  # 反転を確認した足までの ATR
+        if np.isnan(atr) or atr <= 0:
+            return
+        is_long = bool(self.confirm_long[-1])
+        if not is_long and not self.confirm_short[-1]:
+            return
+        d = self.price_decimals
+        entry = self.data.Close[-1]  # 目安（実際の約定は次の1分足の始値）
+        width = self.upper[-1] - self.lower[-1]
+        tp_dist = width * self.tp_range_frac if self.tp_atr is None else atr * self.tp_atr
+        sl_dist = atr * self.sl_buffer_atr
+        size = int(self.initial_risk_amount / sl_dist) if sl_dist > 0 else 0
+        if size <= 0 or tp_dist <= 0:
+            return
+        if is_long:
+            self.buy(size=size, sl=round(entry - sl_dist, d), tp=round(entry + tp_dist, d))
+        else:
+            self.sell(size=size, sl=round(entry + sl_dist, d), tp=round(entry - tp_dist, d))
 
 
 def main(cfg=CFG):
@@ -215,6 +282,9 @@ def main(cfg=CFG):
     df_ext = map_signals_to_1min(df_1min, signals, cfg.session_start_hour, cfg.signal_hours)
     df_ext = map_weekly_trend_to_1min(df_ext, weekly_trend, cfg.session_start_hour)
     df_ext = map_h4_trend_to_1min(df_ext, h4_trend, cfg.session_start_hour, cfg.signal_hours)
+    if cfg.entry_mode == "confirm":
+        df_ext = map_confirm_signals_to_1min(df_ext, signal_df, signals, cfg.min_range_atr,
+                                             cfg.session_start_hour, cfg.signal_hours)
 
     trading_day = get_trading_day_label(df_ext.index, cfg.session_start_hour)
     start_ts = pd.Timestamp(cfg.start_date) if cfg.start_date else trading_day.min()
@@ -236,7 +306,8 @@ def main(cfg=CFG):
         print(f"  {mode:>6}: {(df[col] == 0).mean() * 100:.1f}%")
 
     params = dict(
-        sl_buffer_atr=cfg.sl_buffer_atr, tp_range_frac=cfg.tp_range_frac, tp_atr=cfg.tp_atr, min_range_atr=cfg.min_range_atr,
+        entry_mode=cfg.entry_mode, sl_buffer_atr=cfg.sl_buffer_atr, tp_range_frac=cfg.tp_range_frac,
+        tp_atr=cfg.tp_atr, min_range_atr=cfg.min_range_atr,
         breakeven_trigger_r=cfg.breakeven_trigger_r, price_decimals=cfg.price_decimals, risk_pct=cfg.risk_pct,
     )
     rows = {}
