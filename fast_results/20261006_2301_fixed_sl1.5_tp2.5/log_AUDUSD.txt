@@ -1,0 +1,114 @@
+📂 データ読み込み中: C:\Users\in-se\OneDrive\ドキュメント\python\backtesting\histData\AUDUSD
+ℹ️ 年月 202012 ～ 202601 の ZIP のみ読み込みます（61 / 73 個）。
+ℹ️ ZIP「AUDUSD_202012.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202101.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202102.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202103.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202104.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202105.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202106.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202107.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202108.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202109.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202110.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202111.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202112.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202201.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202202.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202203.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202204.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202205.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202206.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202207.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202208.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202209.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202210.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202211.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202212.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202301.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202302.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202303.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202304.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202305.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202306.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202307.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202308.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202309.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202310.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202311.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202312.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202401.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202402.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202403.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202404.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202405.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202406.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202407.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202408.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202409.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202410.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202411.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202412.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202501.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202502.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202503.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202504.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202505.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202506.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202507.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202508.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202509.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202510.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202511.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202512.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ 合計 61 個のZIP、1324 個のCSVファイルを結合しました。
+✅ データ読み込み完了（MID, America/New_York）: 2020-11-30 17:01:00-05:00 ～ 2025-12-31 16:59:00-05:00 (1,890,220 行)
+ℹ️ 平均相対スプレッド: 0.01296% (commission換算: 0.00648%)
+✅ 4時間足へのリサンプル完了（区切りの起点: NY時間 17:00）: 2020-11-30 17:00 ～ 2025-12-31 13:00 (7,929 本)
+Start                                              2021-01-03 17:01:00-05:00
+End                                                2025-12-31 16:59:00-05:00
+Duration                                                  1822 days 23:58:00
+Exposure Time [%]                                                  16.409543
+Equity Final [$]                                                   8120.8634
+Equity Peak [$]                                                  11348.91033
+Commissions [$]                                                    767.07898
+Return [%]                                                        -18.791366
+Buy & Hold Return [%]                                             -13.368123
+Return (Ann.) [%]                                                  -3.302337
+Volatility (Ann.) [%]                                              14.318808
+CAGR [%]                                                           -4.084632
+Sharpe Ratio                                                       -0.230629
+Sortino Ratio                                                      -0.330626
+Calmar Ratio                                                       -0.079586
+Alpha [%]                                                         -19.217609
+Beta                                                               -0.031885
+Max. Drawdown [%]                                                 -41.493777
+Avg. Drawdown [%]                                                  -0.742494
+Max. Drawdown Duration                                    1168 days 07:38:00
+Avg. Drawdown Duration                                      11 days 06:25:00
+# Trades                                                                 152
+Win Rate [%]                                                       36.184211
+Best Trade [%]                                                       1.76399
+Worst Trade [%]                                                    -0.923507
+Avg. Trade [%]                                                      -0.03162
+Max. Trade Duration                                         11 days 12:00:00
+Avg. Trade Duration                                          1 days 22:31:00
+Profit Factor                                                       0.918561
+Expectancy [%]                                                     -0.028959
+SQN                                                                -0.593735
+Kelly Criterion                                                    -0.037762
+Avg. Win [$]                                                      327.383613
+Avg. Loss [$]                                                    -205.002426
+Payoff Ratio                                                        1.596974
+Max. Consecutive Losses                                                    7
+_strategy                             SwingBreakoutStrategy1Min(fast_engine)
+_equity_curve                                             Equity  Drawdow...
+_trades                           Size  EntryBar  ExitBar  ...           ...
+dtype: object
+✅ 4時間足へのリサンプル完了（区切りの起点: NY時間 17:00）: 2020-11-30 17:00 ～ 2025-12-31 13:00 (7,929 本)
+1H: 30,993 本
+4H: 7,794 本
+D1: 1,301 本
+W1: 261 本
+ℹ️ トレード 152 件 / 合計 -9.40R
+✅ fast_results\20261006_2301_fixed_sl1.5_tp2.5\dow_trade_chart_AUDUSD_20210104-20251231_fixed.html (2.7 MB)
