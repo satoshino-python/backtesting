@@ -18,14 +18,21 @@
   button:hover { background:#2e3744; cursor:pointer; }
   #wrap { position:relative; flex:1; min-height:0; }
   canvas { position:absolute; inset:0; width:100%; height:100%; display:block; cursor:crosshair; }
+  #info:empty { display:none; }
   #info { position:absolute; left:10px; top:8px; pointer-events:none; background:rgba(17,20,24,.85); padding:6px 9px; border-radius:4px; font-variant-numeric:tabular-nums; white-space:pre; }
   #stat { color:var(--mut); margin-left:auto; }
+  #ctl.min > *:not(.keep) { display:none !important; }
+  #ctl.min #trctl > label { display:none; }
+  #ctl.min { padding:4px 8px; gap:6px 10px; }
+  #ctltog { font-weight:600; }
   .sw { display:inline-block; width:10px; height:10px; border-radius:2px; vertical-align:-1px; margin-right:3px; }
 </style>
 </head>
 <body>
 <div id="ctl">
-  <label>時間足 <select id="tf"><option>1H</option><option selected>4H</option><option>D1</option><option>W1</option></select></label>
+  <button id="ctltog" class="keep" title="設定の表示/非表示">設定 ▴</button>
+  <label class="keep"><input id="leg" type="checkbox" checked> 凡例</label>
+  <label class="keep">時間足 <select id="tf"><option>1H</option><option selected>4H</option><option>D1</option><option>W1</option></select></label>
   <label>ピボット幅 n <input id="n" type="range" min="1" max="15" step="1" value="3"><b id="nv"></b></label>
   <label>ATR期間 <input id="ap" type="range" min="5" max="60" step="1" value="14"><b id="apv"></b></label>
   <label>最小スイング幅(ATR×) <input id="ma" type="range" min="0" max="5" step="0.1" value="1"><b id="mav"></b></label>
@@ -35,7 +42,7 @@
   <label><input id="conf" type="checkbox"> 確定位置(n本後)を表示</label>
   <label>ジャンプ <input id="jump" type="date" min="2021-01-01" max="2025-12-31"></label>
   <button id="reset">全期間</button>
-  <span id="trctl" style="display:none; gap:6px 18px; flex-wrap:wrap; align-items:center">
+  <span id="trctl" class="keep" style="display:none; gap:6px 18px; flex-wrap:wrap; align-items:center">
     <label>背景 <select id="bg"><option value="used" selected>検証で使った週足トレンド</option><option value="tf">表示中の時間足で計算</option></select></label>
     <label><input id="trd" type="checkbox" checked> トレード</label>
     <label><input id="eln" type="checkbox" checked> <span id="elnlab">エントリーライン</span></label>
@@ -263,6 +270,7 @@ function draw() {
       info.textContent = txt;
     }
   } else if (TR && cur >= 0) info.textContent = `トレード ${cur + 1} / ${TR.trades.length}\n` + tradeText(TR.trades[cur]);
+  else if (!$("leg").checked) info.innerHTML = "";
   else info.innerHTML =
     `<span class="sw" style="background:var(--sh)"></span>スイングハイ　<span class="sw" style="background:var(--sl)"></span>スイングロー　` +
     `<span class="sw" style="background:rgba(43,182,115,.5)"></span>上昇　<span class="sw" style="background:rgba(229,83,75,.5)"></span>下降　背景なし=レンジ` +
@@ -391,6 +399,17 @@ $("jump").addEventListener("change", e => {
   const span = Math.min(view.to - view.from, 300); view = { from: lo - span * 0.1, to: lo + span * 0.9 }; draw();
 });
 window.addEventListener("resize", resize);
+function setMin(on) {
+  $("ctl").classList.toggle("min", on); $("ctltog").textContent = on ? "設定 ▾" : "設定 ▴";
+  try { localStorage.setItem("dowCtlMin", on ? "1" : "0"); } catch (e) {}
+  resize();
+}
+$("ctltog").onclick = () => setMin(!$("ctl").classList.contains("min"));
+$("leg").addEventListener("change", () => { try { localStorage.setItem("dowLegend", $("leg").checked ? "1" : "0"); } catch (e) {} draw(); });
+{ let m = null, lg = null; try { m = localStorage.getItem("dowCtlMin"); lg = localStorage.getItem("dowLegend"); } catch (e) {}
+  const small = window.innerWidth < 1000 || window.innerHeight < 640;
+  if (lg !== null ? lg === "0" : small) $("leg").checked = false;
+  if (m !== null ? m === "1" : small) $("ctl").classList.add("min"), $("ctltog").textContent = "設定 ▾"; }
 
 d = DATA["4H"]; res = null;
 resize(); recompute();
