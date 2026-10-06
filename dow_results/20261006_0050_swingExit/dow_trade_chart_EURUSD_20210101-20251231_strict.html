@@ -19,7 +19,7 @@
   #wrap { position:relative; flex:1; min-height:0; }
   canvas { position:absolute; inset:0; width:100%; height:100%; display:block; cursor:crosshair; }
   #info:empty { display:none; }
-  #info { position:absolute; left:10px; top:8px; pointer-events:none; background:rgba(17,20,24,.85); padding:6px 9px; border-radius:4px; font-variant-numeric:tabular-nums; white-space:pre; }
+  #info { position:absolute; left:10px; top:8px; pointer-events:none; background:rgba(17,20,24,.72); padding:5px 8px; border-radius:4px; font-size:12px; line-height:1.35; font-variant-numeric:tabular-nums; white-space:pre; }
   #stat { color:var(--mut); margin-left:auto; }
   #ctl.min > *:not(.keep) { display:none !important; }
   #ctl.min #trctl > label { display:none; }
@@ -32,6 +32,7 @@
 <div id="ctl">
   <button id="ctltog" class="keep" title="設定の表示/非表示">設定 ▴</button>
   <label class="keep"><input id="leg" type="checkbox" checked> 凡例</label>
+  <label class="keep" title="カーソル位置・トレードの詳細"><input id="det" type="checkbox" checked> 詳細</label>
   <label class="keep">時間足 <select id="tf"><option>1H</option><option selected>4H</option><option>D1</option><option>W1</option></select></label>
   <label>ピボット幅 n <input id="n" type="range" min="1" max="15" step="1" value="3"><b id="nv"></b></label>
   <label>ATR期間 <input id="ap" type="range" min="5" max="60" step="1" value="14"><b id="apv"></b></label>
@@ -259,7 +260,8 @@ function draw() {
     ctx.fillStyle = "#38414d"; ctx.fillRect(M.l + pw, mouse.y - 8, M.r, 16);
     ctx.fillStyle = "#fff"; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.fillText(price.toFixed(dec), M.l + pw + 6, mouse.y);
     const i = Math.floor((mouse.x - M.l) / bw + view.from);
-    if (i >= 0 && i < d.t.length) {
+    if (!$("det").checked) info.innerHTML = "";
+    else if (i >= 0 && i < d.t.length) {
       const nm = tr => tr === 1 ? "上昇" : tr === -1 ? "下降" : "レンジ";
       let txt = `${fmtT(d.t[i], intraday)}  (NY時間, #${i})\nO ${d.o[i].toFixed(dec)}  H ${d.h[i].toFixed(dec)}\nL ${d.l[i].toFixed(dec)}  C ${d.c[i].toFixed(dec)}\nトレンド判定（この時間足）: ${nm(res.trend[i])}`;
       if (TR && d.ut) txt += `\n週足トレンド（検証で使用）: ${nm(d.ut[i] ?? 0)}`;
@@ -269,12 +271,21 @@ function draw() {
       if (t) txt += "\n" + tradeText(t);
       info.textContent = txt;
     }
-  } else if (TR && cur >= 0) info.textContent = `トレード ${cur + 1} / ${TR.trades.length}\n` + tradeText(TR.trades[cur]);
+  } else if (TR && cur >= 0 && !$("det").checked) info.innerHTML = "";
+  else if (TR && cur >= 0) info.textContent = `トレード ${cur + 1} / ${TR.trades.length}\n` + tradeText(TR.trades[cur]);
   else if (!$("leg").checked) info.innerHTML = "";
   else info.innerHTML =
     `<span class="sw" style="background:var(--sh)"></span>スイングハイ　<span class="sw" style="background:var(--sl)"></span>スイングロー　` +
     `<span class="sw" style="background:rgba(43,182,115,.5)"></span>上昇　<span class="sw" style="background:rgba(229,83,75,.5)"></span>下降　背景なし=レンジ` +
     (TR ? `<br><span class="sw" style="background:#b18cff"></span>▲買い / <span class="sw" style="background:#ff6fd1"></span>▼売り エントリー　● 決済（緑=勝ち / 赤=負け）　点線=SL・TP　<span class="sw" style="background:#c9a227"></span>買いライン　<span class="sw" style="background:#5b8fd9"></span>売りライン（薄い=無効）` : "");
+  placeInfo(mouse ? [mouse.x, mouse.y] : (TR && cur >= 0 ? (() => { const t = TR.trades[cur], [ei, xi] = tradeIdx(t); return [X((ei + xi) / 2), Y(t.ep)]; })() : null));
+}
+/* 詳細ウィンドウは、カーソル（または選択中のトレード）と対角の隅に置いてチャートを隠さない */
+function placeInfo(f) {
+  const s = info.style; s.left = s.right = s.top = s.bottom = "auto";
+  if (!f) { s.left = "10px"; s.top = "8px"; return; }
+  if (f[0] < W / 2) s.right = (M.r + 8) + "px"; else s.left = "10px";
+  if (f[1] < H / 2) s.bottom = (M.b + 8) + "px"; else s.top = "8px";
 }
 
 /* ---------- トレード表示（TR があるときだけ） ---------- */
@@ -404,6 +415,7 @@ function setMin(on) {
   try { localStorage.setItem("dowCtlMin", on ? "1" : "0"); } catch (e) {}
   resize();
 }
+$("det").addEventListener("change", draw);
 $("ctltog").onclick = () => setMin(!$("ctl").classList.contains("min"));
 $("leg").addEventListener("change", () => { try { localStorage.setItem("dowLegend", $("leg").checked ? "1" : "0"); } catch (e) {} draw(); });
 { let m = null, lg = null; try { m = localStorage.getItem("dowCtlMin"); lg = localStorage.getItem("dowLegend"); } catch (e) {}
