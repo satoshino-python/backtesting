@@ -1,0 +1,37 @@
+﻿,0
+Start,2021-01-03 17:01:00-05:00
+End,2025-12-31 16:59:00-05:00
+Duration,1822 days 23:58:00
+Exposure Time [%],21.762765608779116
+Equity Final [$],9056.82066999998
+Equity Peak [$],11225.814729999987
+Commissions [$],39.765820000000005
+Return [%],-9.431793300000209
+Buy & Hold Return [%],-4.04535503055256
+Return (Ann.) [%],-1.5855588236529883
+Volatility (Ann.) [%],6.298185091899332
+CAGR [%],-1.9653039592371746
+Sharpe Ratio,-0.25174852763414646
+Sortino Ratio,-0.3673545373784734
+Calmar Ratio,-0.07998060713520114
+Alpha [%],-9.647623491925723
+Beta,-0.05335259582792013
+Max. Drawdown [%],-19.8242909180812
+Avg. Drawdown [%],-0.4049308461112253
+Max. Drawdown Duration,1190 days 12:36:00
+Avg. Drawdown Duration,9 days 02:12:00
+# Trades,47
+Win Rate [%],38.297872340425535
+Best Trade [%],3.4712677569192385
+Worst Trade [%],-1.5943789245380418
+Avg. Trade [%],-0.07718732056606337
+Max. Trade Duration,25 days 16:32:00
+Avg. Trade Duration,8 days 06:28:00
+Profit Factor,0.8632202227238134
+Expectancy [%],-0.07057366710097282
+SQN,-0.5944940673669339
+Kelly Criterion,-0.09256079090152264
+Avg. Win [$],190.28954111111057
+Avg. Loss [$],-146.65652448275875
+Payoff Ratio,1.297518414419274
+Max. Consecutive Losses,5
