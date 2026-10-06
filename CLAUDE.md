@@ -9,6 +9,9 @@ FX（GMOクリック証券の1分足）のスイングブレイクアウト戦�
 - Windows では出力の絵文字で落ちるため `PYTHONIOENCODING=utf-8` を付ける。
 - 1分足で5年分は時間がかかる（1回あたり数分）。新しいルールは短い期間で確かめてから広げる。
 - `main_4H_fixedSL.py` は他のスクリプトから import されている。変更すると multi / dow 版の結果も変わる。
+- `fast_engine.py` は `SwingBreakoutStrategy1Min`（固定SL/TP）と `SwingBreakoutTrail1Min`（1時間足トレーリング）の売買ルールを
+  backtesting.py なしで再現した高速版（約100倍速い）。複数ペアは `main_4H_fixedSL_fast_multi.py` で並列に検証できる。
+  戦略のルールを変えたら `fast_engine.py` も合わせて直し、`compare_fast_engine.py` で backtesting.py との一致を確かめる。
 
 ## 検証結果のチャート（毎回作る）
 トレードを伴う検証では、backtesting.py 標準のチャートに加えて、**トレード付きのダウ理論チャート**を必ず出力する。
