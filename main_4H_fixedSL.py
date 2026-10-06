@@ -129,6 +129,26 @@ def _read_single_gmo_csv(file_like_or_path):
     return df
 
 
+def _parse_gmo_datetime(raw):
+    """
+    GMOクリック証券のCSVの日時列を Timestamp に変換する。銘柄によって書式が違う。
+      - FX:            "2024/01/15 07:00:00"
+      - 株価指数CFD（US500 など）: 202401020800（YYYYMMDDHHMM。pandas は数値として読み込む）
+    数値のまま pd.to_datetime に渡すと「1970年からのナノ秒」と解釈されてしまうため、
+    YYYYMMDDHHMM の値だけ書式を指定して変換する。
+    """
+    if pd.api.types.is_numeric_dtype(raw):
+        return pd.to_datetime(raw.astype("int64").astype(str), format="%Y%m%d%H%M")
+    text = raw.astype(str).str.strip()
+    compact = text.str.fullmatch(r"\d{12}")
+    if not compact.any():
+        return pd.to_datetime(raw)
+    out = pd.Series(pd.NaT, index=raw.index, dtype="datetime64[ns]")
+    out[compact] = pd.to_datetime(text[compact], format="%Y%m%d%H%M")
+    out[~compact] = pd.to_datetime(text[~compact])
+    return out
+
+
 def _is_ex_csv(name):
     """
     2023年6月以前のGMOのZIPに同梱されている「_EX」付きの別系列のCSV
@@ -265,7 +285,7 @@ def load_gmo_click_1min_data(
     df = pd.concat(daily_frames, ignore_index=True)
 
     # 日時変換・重複排除・並び替え
-    df["Datetime"] = pd.to_datetime(df["Datetime"])
+    df["Datetime"] = _parse_gmo_datetime(df["Datetime"])
     df = df.drop_duplicates(subset="Datetime").sort_values("Datetime").set_index("Datetime")
 
     # 日本時間 → NY時間 へタイムゾーン変換（サマータイム自動考慮）

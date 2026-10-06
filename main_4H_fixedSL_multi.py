@@ -89,8 +89,14 @@ INITIAL_SL_RULE = "atr"           # "atr": ATR固定 / "near": 近い方 / "far"
 
 
 def price_decimals_for(pair):
-    """クロス円（JPY建て）は小数3桁、それ以外は5桁（GMOクリック証券の表示桁数）"""
-    return 3 if pair.upper().endswith("JPY") else 5
+    """
+    クロス円（JPY建て）は小数3桁、株価指数CFD（SP500 / US500）は2桁、それ以外は5桁。
+    GMOクリック証券の表示桁数（US500 は小数1桁）で、仲値（BIDとASKの平均）が1桁増えても丸めずに済む桁数。
+    """
+    name = pair.upper()
+    if name in ("SP500", "US500"):
+        return 2
+    return 3 if name.endswith("JPY") else 5
 
 
 def discover_pairs():
