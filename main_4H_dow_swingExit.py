@@ -13,6 +13,11 @@
 
 【枚数】当初SLまでの距離で、損失が 初期資金 × risk_pct（1R）になるように決める（複利なし）
 
+【トレンドの質フィルター】（任意。None で無効。すべて前週末／1本前の4時間足で確定した値を使う）
+  - min_trend_age : 週足ダウ判定が同じ向きで続いている週数がこれ以上
+  - min_weekly_adx: 週足 ADX(14) がこれ以上
+  - min_h4_er     : 4時間足の効率比（直近 er_period 本の値動き ÷ 各足の値動きの合計。取引方向を正とする）がこれ以上
+
 結果は result_root/<日時>_<run_label>/ に保存する（前の結果を上書きしない）。
 """
 import json
@@ -52,6 +57,10 @@ class SwingExitConfig(Config):
     dow_min_swing_atr: float = 1.0
     dow_use_wick: bool = True
     dow_mode: str = "strict"         # "strict" / "no_counter" / None（フィルターなし）
+    min_trend_age: int = None        # 週足トレンドの継続週数の下限
+    min_weekly_adx: float = None     # 週足 ADX(14) の下限
+    min_h4_er: float = None          # 4時間足の効率比（取引方向）の下限
+    er_period: int = 18              # 効率比の本数（4時間足）
     result_root: str = "dow_results"
     run_label: str = "swingExit"
 
@@ -83,10 +92,46 @@ def compute_exit_swings(df_1min, window=6, session_start_hour=17, signal_hours=4
     return mapped
 
 
+def weekly_adx(weekly, period=14):
+    """週足 ADX（ワイルダー平滑化）"""
+    h, l, c = weekly["High"], weekly["Low"], weekly["Close"]
+    tr = pd.concat([h - l, (h - c.shift()).abs(), (l - c.shift()).abs()], axis=1).max(axis=1)
+    up, dn = h.diff(), -l.diff()
+    pdm = pd.Series(np.where((up > dn) & (up > 0), up, 0.0), weekly.index)
+    ndm = pd.Series(np.where((dn > up) & (dn > 0), dn, 0.0), weekly.index)
+    ew = lambda x: x.ewm(alpha=1 / period, adjust=False).mean()
+    atr = ew(tr)
+    pdi, ndi = 100 * ew(pdm) / atr, 100 * ew(ndm) / atr
+    return ew(100 * (pdi - ndi).abs() / (pdi + ndi))
+
+
+def trend_age(trend):
+    """同じトレンド判定が続いている本数（その週を含む）"""
+    return trend.groupby((trend != trend.shift()).cumsum()).cumcount() + 1
+
+
+def add_quality_columns(df_ext, df_1min, weekly, weekly_trend, cfg):
+    """TrendAge / WeeklyADX（前週末の値）と H4ER（1本前の4時間足の値）を1分足に付ける"""
+    from main_4H_fixedSL_dow import week_label
+    wk = pd.DataFrame({"TrendAge": trend_age(weekly_trend), "WeeklyADX": weekly_adx(weekly)}).shift(1)
+    mapped = wk.reindex(week_label(df_ext.index, cfg.session_start_hour))
+    out = df_ext.copy()
+    out["TrendAge"] = mapped["TrendAge"].fillna(0).to_numpy()
+    out["WeeklyADX"] = mapped["WeeklyADX"].fillna(0).to_numpy()
+    bars = resample_to_signal_bars(df_1min, cfg.session_start_hour, cfg.signal_hours)
+    c = bars["Close"]
+    er = ((c - c.shift(cfg.er_period)) / c.diff().abs().rolling(cfg.er_period).sum()).shift(1)
+    out["H4ER"] = er.reindex(get_signal_bar_label(df_ext.index, cfg.session_start_hour, cfg.signal_hours)).fillna(0).to_numpy()
+    return out
+
+
 class SwingBreakoutDowSwingExit1Min(Strategy):
     price_decimals = 5
     risk_pct = 0.02
     dow_mode = "strict"
+    min_trend_age = None
+    min_weekly_adx = None
+    min_h4_er = None
 
     def init(self):
         self.latest_sh = self.I(lambda: self.data.SignalSH, overlay=True, name="Entry Swing High (4H)")
@@ -98,7 +143,20 @@ class SwingBreakoutDowSwingExit1Min(Strategy):
         self.dow_trend = self.I(lambda: self.data.DowTrend, overlay=False, name="Dow Trend (Weekly)")
         self.initial_risk_amount = self.equity * self.risk_pct
 
+    def quality_ok(self, is_long):
+        if self.min_trend_age is not None and self.data.TrendAge[-1] < self.min_trend_age:
+            return False
+        if self.min_weekly_adx is not None and self.data.WeeklyADX[-1] < self.min_weekly_adx:
+            return False
+        if self.min_h4_er is not None:
+            er = self.data.H4ER[-1] if is_long else -self.data.H4ER[-1]
+            if er < self.min_h4_er:
+                return False
+        return True
+
     def allowed(self, is_long):
+        if not self.quality_ok(is_long):
+            return False
         trend = self.dow_trend[-1]
         if self.dow_mode is None:
             return True
@@ -153,11 +211,8 @@ class SwingBreakoutDowSwingExit1Min(Strategy):
             self.place_entry(False, round(current_sl, self.price_decimals))
 
 
-def main(cfg=CFG):
-    out_dir = Path(cfg.result_root) / f"{datetime.now():%Y%m%d_%H%M}_{cfg.run_label}"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    symbol = Path(cfg.data_path).name
-
+def prepare(cfg):
+    """データを読み込み、検証期間の1分足（シグナル・決済スイング・週足トレンド・質の列付き）を作る"""
     df_1min, avg_relative_spread = load_gmo_click_1min_data(
         cfg.data_path, price_side=cfg.price_side, price_decimals=cfg.price_decimals,
     )
@@ -177,11 +232,30 @@ def main(cfg=CFG):
     df_ext = map_signals_to_1min(df_1min, signals, cfg.session_start_hour, cfg.signal_hours)
     df_ext = df_ext.join(compute_exit_swings(df_1min, cfg.exit_window, cfg.session_start_hour, cfg.signal_hours))
     df_ext = map_weekly_trend_to_1min(df_ext, weekly_trend, cfg.session_start_hour)
+    df_ext = add_quality_columns(df_ext, df_1min, weekly, weekly_trend, cfg)
 
     trading_day = get_trading_day_label(df_ext.index, cfg.session_start_hour)
     start_ts, end_ts = pd.Timestamp(cfg.start_date), pd.Timestamp(cfg.end_date)
     df = df_ext.loc[(trading_day >= start_ts) & (trading_day <= end_ts)]
     del df_ext
+    return df_1min, df, commission_func, weekly_trend
+
+
+def run_backtest(df, cfg, commission_func):
+    bt = Backtest(df, SwingBreakoutDowSwingExit1Min, cash=cfg.cash, commission=commission_func,
+                  margin=cfg.margin, exclusive_orders=False)
+    stats = add_extra_stats(bt.run(
+        dow_mode=cfg.dow_mode, price_decimals=cfg.price_decimals, risk_pct=cfg.risk_pct,
+        min_trend_age=cfg.min_trend_age, min_weekly_adx=cfg.min_weekly_adx, min_h4_er=cfg.min_h4_er))
+    return bt, stats
+
+
+def main(cfg=CFG):
+    out_dir = Path(cfg.result_root) / f"{datetime.now():%Y%m%d_%H%M}_{cfg.run_label}"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    symbol = Path(cfg.data_path).name
+    df_1min, df, commission_func, weekly_trend = prepare(cfg)
+    start_ts, end_ts = pd.Timestamp(cfg.start_date), pd.Timestamp(cfg.end_date)
     period = f"{start_ts:%Y%m%d}-{end_ts:%Y%m%d}"
 
     used = weekly_trend.shift(1).fillna(0).astype(int)
@@ -190,10 +264,7 @@ def main(cfg=CFG):
     used_in_period.map(labels).rename("trend").to_csv(out_dir / f"weekly_trend_{period}.csv", encoding="utf-8-sig")
 
     print(f"\n================ バックテスト実行中（{symbol} {period} dow={cfg.dow_mode}） ================")
-    bt = Backtest(df, SwingBreakoutDowSwingExit1Min, cash=cfg.cash, commission=commission_func,
-                  margin=cfg.margin, exclusive_orders=False)
-    stats = add_extra_stats(bt.run(dow_mode=cfg.dow_mode, price_decimals=cfg.price_decimals,
-                                   risk_pct=cfg.risk_pct))
+    bt, stats = run_backtest(df, cfg, commission_func)
     print(stats)
     trades = stats["_trades"]
     trades.to_csv(out_dir / f"trades_{period}.csv", index=False, float_format=f"%.{cfg.price_decimals}f")

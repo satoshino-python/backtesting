@@ -13,6 +13,8 @@
 | `main_4H_fixedSL_multi.py` | 全通貨ペアを一括検証し、R倍数で合算。1時間足スイングのトレーリングストップも選べる | 4時間足 | 固定SL/TP または トレーリング | 損失額固定 |
 | `main_4H_fixedSL_dow.py` | 週足ダウ理論のトレンド方向にだけエントリーするフィルター版 | 4時間足＋週足 | 固定SL/TP＋建値ストップ | 損失額固定 |
 | `dow_trend.py` | ダウ理論のトレンド判定ライブラリ（単体では売買しない） | 任意 | – | – |
+| `main_4H_dow_swingExit.py` | 週足ダウ理論フィルター＋4時間足スイングのトレーリングストップ決済。トレンドの質フィルターも選べる | 4時間足＋週足 | 4Hスイングへのトレーリング | 損失額固定 |
+| `trend_quality_study.py` | 上の戦略にトレンドの質フィルターを組み合わせ、全ペアで期間を分けて比較 | 4時間足＋週足 | 同上 | 損失額固定 |
 | `dow_swing_chart.py` | ダウ理論のスイングとトレンド、トレードを確認するインタラクティブチャート | 1H/4H/D1/W1 | – | – |
 | `compare_runs.py` | `multi_results/` の複数の実行結果を並べて比較 | – | – | – |
 | `diagnose_trades.py` | 取引履歴CSVを、時間帯・曜日・ATR水準などの切り口で診断 | – | – | – |
@@ -206,6 +208,22 @@ python dow_swing_chart.py --trades dow_results/trades_20210101-20251231_strict.c
 - その他のオプション: `--symbol` / `--start` / `--end` / `--weekly-trend` / `--entry-atr` / `--risk`（1R の金額。既定 200）
 - スクリプトからは `make_chart(df_1min, path, title, start, end, trades=stats["_trades"], weekly_trend=..., risk=...)` で作れる。
   `main_4H_fixedSL_dow.py` はこれを使って毎回出力している。他の戦略の検証でも使える（週足トレンドを使わない場合は `weekly_trend=None`）。使い方の例は [CLAUDE.md](../CLAUDE.md)。
+
+### 4.10 `main_4H_dow_swingExit.py`（週足ダウ＋4Hスイング決済）
+- エントリー: `main_4H_fixedSL_dow.py` と同じ（4時間足 `window`=18 のスイングブレイク、週足ダウ `dow_n`=3、`dow_mode`="strict"）。片方が約定したら反対側の注文は取り消す。
+- 決済: TP・建値ストップなし。当初SL＝直近の4時間足スイング（前後 `exit_window`=6 本。買いなら Swing Low）。新しいスイングが確定するたび有利な方向にだけ動かす。
+  直近スイングがエントリー価格の反対側に無いときは発注しない。
+- 枚数: 当初SLまでの距離で 1R（初期資金 × `risk_pct`）になる枚数。
+- トレンドの質フィルター（`None` で無効）: `min_trend_age`（週足判定が同じ向きで続いている週数）、`min_weekly_adx`（週足ADX(14)）、
+  `min_h4_er`（4時間足の効率比 `er_period`=18 本。取引方向を正とする）。週足の値は前週末、4時間足は1本前の足で確定したものを使う。
+- 出力: `dow_results/<日時>_<run_label>/`（取引履歴、成績、日次資産、使った週足トレンド、設定、トレード付きダウ理論チャート、backtesting.py のチャート）。
+- 期末に保有中のトレードは取引履歴に入らないが、資産（収益率）には含み損益として入る。
+
+### 4.11 `trend_quality_study.py`（トレンドの質フィルターの比較）
+- `PAIRS` の各ペアで、`GRID`（継続週数 × 週足ADX × 4H効率比）の全組み合わせを実行し、R倍数で合算する。ペアごとに別プロセスで並列実行（`WORKERS`）。
+- `IN_SAMPLE`（既定 2021-2023）で条件を選び、`OUT_OF_SAMPLE`（2024-2025）で確かめる。全期間で1回実行し、エントリー日で分けて集計する。
+- 出力: `quality_results/<日時>_<RUN_LABEL>/`（`summary.csv`: 組み合わせ別の IS/OOS/全期間の成績とペア別R、`trades_all.csv`、`config.json`、`code/`）。
+- 1組み合わせ・1ペアあたり約35秒（5年分）。
 
 ## 5. `Config` の設定項目（4時間足系の共通項目）
 
