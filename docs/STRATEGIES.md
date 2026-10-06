@@ -251,6 +251,11 @@ python dow_swing_chart.py --trades dow_results/trades_20210101-20251231_strict.c
 |---|---|
 | `20261006_0140_EURUSD_w18` | EURUSD 2021〜2025、既定の設定（window 18、SL 0.5 ATR、TP 中央、幅 ≥ 2 ATR） |
 | `20261006_0155_EURUSD_w6` | 同じ設定で window 6 |
+| `20261006_0202_AUDUSD_w6` | AUDUSD、window 6（EURUSD と同じ設定） |
+| `20261006_0202_GBPUSD_w6` | GBPUSD、window 6（EURUSD と同じ設定） |
+| `20261006_0202_USDCHF_w6` | USDCHF、window 6（EURUSD と同じ設定） |
+| `20261006_0202_USDJPY_w6` | USDJPY、window 6（EURUSD と同じ設定） |
+| `summary_all_pairs_w6_20210101-20251231.csv` | window 6 の5ペア×3フィルターの合計Rとトレード数 |
 
 ## 5. `Config` の設定項目（4時間足系の共通項目）
 
