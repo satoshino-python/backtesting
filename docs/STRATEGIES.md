@@ -13,6 +13,7 @@
 | `main_4H_fixedSL_multi.py` | 全通貨ペアを一括検証し、R倍数で合算。1時間足スイングのトレーリングストップも選べる | 4時間足 | 固定SL/TP または トレーリング | 損失額固定 |
 | `main_4H_fixedSL_dow.py` | 週足ダウ理論のトレンド方向にだけエントリーするフィルター版 | 4時間足＋週足 | 固定SL/TP＋建値ストップ | 損失額固定 |
 | `dow_trend.py` | ダウ理論のトレンド判定ライブラリ（単体では売買しない） | 任意 | – | – |
+| `main_4H_range_reversal.py` | 水平ライン逆張り（レンジ戦略）。4時間足スイングの高値・安値に指値で逆張りし、ダウ理論のレンジ判定で絞る | 4時間足＋週足/4時間足 | 利確=レンジ中央 / 損切り=ラインの外側 | 損失額固定 |
 | `dow_swing_chart.py` | ダウ理論のスイングとトレンド、トレードを確認するインタラクティブチャート | 1H/4H/D1/W1 | – | – |
 | `compare_runs.py` | `multi_results/` の複数の実行結果を並べて比較 | – | – | – |
 | `diagnose_trades.py` | 取引履歴CSVを、時間帯・曜日・ATR水準などの切り口で診断 | – | – | – |
@@ -206,6 +207,49 @@ python dow_swing_chart.py --trades dow_results/trades_20210101-20251231_strict.c
 - その他のオプション: `--symbol` / `--start` / `--end` / `--weekly-trend` / `--entry-atr` / `--risk`（1R の金額。既定 200）
 - スクリプトからは `make_chart(df_1min, path, title, start, end, trades=stats["_trades"], weekly_trend=..., risk=...)` で作れる。
   `main_4H_fixedSL_dow.py` はこれを使って毎回出力している。他の戦略の検証でも使える（週足トレンドを使わない場合は `weekly_trend=None`）。使い方の例は [CLAUDE.md](../CLAUDE.md)。
+
+### 4.10 `main_4H_range_reversal.py`（水平ライン逆張り）
+ブレイクアウトとは逆に、レンジの上限・下限で逆張りする。
+
+- **ライン**: 4時間足の直近の Swing High（上限）と Swing Low（下限）。共通ルールと同じスイング（前後 `window` 本）と有効性の判定を使い、
+  **両方のラインが有効**で、レンジ幅（上限 − 下限）が `min_range_atr` × ATR 以上のときだけ取引する。
+- **エントリー**: ポジションが無いとき、毎バー置き直す。終値 < 上限なら上限に**売り指値**、終値 > 下限なら下限に**買い指値**。
+  片方が約定したら反対側の指値は取り消す（ブレイクアウト版のように、反対側の注文で決済されることはない）。
+- **決済**: 利確 = エントリー価格からレンジ幅 × `tp_range_frac` だけ内側（0.5 = 中央、1.0 = 反対側のライン）。
+  損切り = ラインの外側 ATR × `sl_buffer_atr`。建値ストップは既定で無効。
+- **枚数**: 損切り幅で 1R になるように決める（fixedSL と同じ）。
+- **レンジ判定フィルター**: ダウ理論の判定が「レンジ（0）」のときだけエントリーする。1回の実行で `compare_modes` を順番に検証し、比較表を作る。
+  - `"weekly"`: 週足（`main_4H_fixedSL_dow.py` と同じ週足・前週末の判定）
+  - `"h4"`: 4時間足（1本前の4時間足の終値時点の判定）
+  - `None`: フィルターなし
+
+**`RangeReversalConfig` の追加項目**（`Config` の全項目も使える。`sl_atr_multiplier` / `tp_atr_multiplier` は使わない）
+
+| 名前 | 既定 | 意味 |
+|---|---|---|
+| `sl_buffer_atr` | 0.5 | 損切り = ラインの外側 ATR × この値 |
+| `tp_range_frac` | 0.5 | 利確 = レンジ幅 × この値だけ内側 |
+| `min_range_atr` | 2.0 | レンジ幅の下限（ATR の倍数）。0 で制限なし |
+| `breakeven_trigger_r` | None | 建値ストップ（R）。None で無効 |
+| `dow_n` / `dow_atr_period` / `dow_min_swing_atr` / `dow_use_wick` | 3 / 14 / 1.0 / True | 週足ダウ理論の設定 |
+| `h4_dow_n` / `h4_dow_atr_period` / `h4_dow_min_swing_atr` / `h4_dow_use_wick` | 3 / 14 / 1.0 / True | 4時間足ダウ理論の設定 |
+| `filter_mode` | `"weekly"` | チャートを作るモード |
+| `compare_modes` | `(None, "weekly", "h4")` | 比較表に並べるモード |
+| `result_root` / `run_label` | `range_results` / `"rangeRev"` | 結果は `range_results/<日時>_<run_label>/` に保存し、上書きしない |
+
+- 現在の設定: EURUSD、2025-01-01〜2025-12-31。期間などは `dataclasses.replace(CFG, ...)` で上書きして `main(cfg)` を呼ぶ。
+- 出力: `comparison_<期間>.csv`、`trades_<期間>_<モード>.csv`、`weekly_trend_<期間>.csv`、`config.json`、
+  `dow_trade_chart_<通貨>_<期間>_<モード>.html`（トレード付きダウ理論チャート。エントリーラインがそのままレンジの上限・下限）、
+  `chart_<期間>_<モード>.html`（backtesting.py のチャート）。
+- `execution_timeframe="1min"` のみ対応。
+- `window=18` では、両方のラインが有効なのは4時間足の約40%で、レンジ幅の中央値は約9 × ATR（EURUSD 2021〜2025）。
+  ラインまで届くことが少ないため、トレード数は少なめになる。
+
+**これまでの実行**（`range_results/` 内）
+
+| フォルダ | 内容 |
+|---|---|
+| `20261006_0140_EURUSD_w18` | EURUSD 2021〜2025、既定の設定（window 18、SL 0.5 ATR、TP 中央、幅 ≥ 2 ATR） |
 
 ## 5. `Config` の設定項目（4時間足系の共通項目）
 
