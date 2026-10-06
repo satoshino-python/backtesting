@@ -216,7 +216,7 @@ python dow_swing_chart.py --trades dow_results/trades_20210101-20251231_strict.c
 - **エントリー**: ポジションが無いとき、毎バー置き直す。終値 < 上限なら上限に**売り指値**、終値 > 下限なら下限に**買い指値**。
   片方が約定したら反対側の指値は取り消す（ブレイクアウト版のように、反対側の注文で決済されることはない）。
 - **決済**: 利確 = エントリー価格からレンジ幅 × `tp_range_frac` だけ内側（0.5 = 中央、1.0 = 反対側のライン）。
-  損切り = ラインの外側 ATR × `sl_buffer_atr`。建値ストップは既定で無効。
+  `tp_atr` を指定すると、代わりに ATR × `tp_atr` だけ内側。損切り = ラインの外側 ATR × `sl_buffer_atr`。建値ストップは既定で無効。
 - **枚数**: 損切り幅で 1R になるように決める（fixedSL と同じ）。
 - **レンジ判定フィルター**: ダウ理論の判定が「レンジ（0）」のときだけエントリーする。1回の実行で `compare_modes` を順番に検証し、比較表を作る。
   - `"weekly"`: 週足（`main_4H_fixedSL_dow.py` と同じ週足・前週末の判定）
@@ -229,6 +229,7 @@ python dow_swing_chart.py --trades dow_results/trades_20210101-20251231_strict.c
 |---|---|---|
 | `sl_buffer_atr` | 0.5 | 損切り = ラインの外側 ATR × この値 |
 | `tp_range_frac` | 0.5 | 利確 = レンジ幅 × この値だけ内側 |
+| `tp_atr` | None | 指定すると利確 = ATR × この値だけ内側（`tp_range_frac` より優先） |
 | `min_range_atr` | 2.0 | レンジ幅の下限（ATR の倍数）。0 で制限なし |
 | `breakeven_trigger_r` | None | 建値ストップ（R）。None で無効 |
 | `dow_n` / `dow_atr_period` / `dow_min_swing_atr` / `dow_use_wick` | 3 / 14 / 1.0 / True | 週足ダウ理論の設定 |
@@ -256,6 +257,8 @@ python dow_swing_chart.py --trades dow_results/trades_20210101-20251231_strict.c
 | `20261006_0202_USDCHF_w6` | USDCHF、window 6（EURUSD と同じ設定） |
 | `20261006_0202_USDJPY_w6` | USDJPY、window 6（EURUSD と同じ設定） |
 | `summary_all_pairs_w6_20210101-20251231.csv` | window 6 の5ペア×3フィルターの合計Rとトレード数 |
+| `20261006_0208_<ペア>_w6_sl1tp1` | 5ペア、window 6、損切り・利確とも 1 × ATR（`sl_buffer_atr=1.0`、`tp_atr=1.0`） |
+| `summary_all_pairs_w6_sl1tp1_20210101-20251231.csv` | 上の5ペア×3フィルターの合計R・勝率・年別R |
 
 ## 5. `Config` の設定項目（4時間足系の共通項目）
 

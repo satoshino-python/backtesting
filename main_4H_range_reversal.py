@@ -12,6 +12,7 @@
 
 【決済】
   - 利確 = エントリー価格から、レンジ幅 × tp_range_frac だけ内側（0.5 = レンジ中央、1.0 = 反対側のライン）
+    tp_atr を指定すると、代わりに ATR × tp_atr だけ内側
   - 損切り = ラインの外側 ATR × sl_buffer_atr
   - 建値ストップ（breakeven_trigger_r）は既定で無効
 
@@ -61,6 +62,7 @@ from main_4H_fixedSL_dow import resample_to_weekly_bars, map_weekly_trend_to_1mi
 class RangeReversalConfig(Config):
     sl_buffer_atr: float = 0.5       # 損切り = ラインの外側 ATR × この値
     tp_range_frac: float = 0.5       # 利確 = エントリーからレンジ幅 × この値だけ内側（0.5=中央、1.0=反対側のライン）
+    tp_atr: float | None = None      # 指定すると利確 = エントリーから ATR × この値だけ内側（tp_range_frac より優先）
     min_range_atr: float = 2.0       # レンジ幅がこの値 × ATR 未満なら取引しない（0 で制限なし）
     breakeven_trigger_r: float | None = None  # 建値ストップ（R）。None で無効
     # 週足ダウ理論（main_4H_fixedSL_dow.py と同じ。単位は週足の本数）
@@ -107,6 +109,7 @@ class RangeReversal1Min(Strategy):
     """
     sl_buffer_atr = 0.5
     tp_range_frac = 0.5
+    tp_atr = None
     min_range_atr = 2.0
     breakeven_trigger_r = None
     price_decimals = 5
@@ -132,12 +135,13 @@ class RangeReversal1Min(Strategy):
     def place_entry(self, is_long, line, width, atr):
         d = self.price_decimals
         entry = round(line, d)
+        tp_dist = width * self.tp_range_frac if self.tp_atr is None else atr * self.tp_atr
         if is_long:
             sl = round(entry - atr * self.sl_buffer_atr, d)
-            tp = round(entry + width * self.tp_range_frac, d)
+            tp = round(entry + tp_dist, d)
         else:
             sl = round(entry + atr * self.sl_buffer_atr, d)
-            tp = round(entry - width * self.tp_range_frac, d)
+            tp = round(entry - tp_dist, d)
         sl_dist = abs(entry - sl)
         if sl_dist <= 0 or tp == entry:
             return
@@ -232,7 +236,7 @@ def main(cfg=CFG):
         print(f"  {mode:>6}: {(df[col] == 0).mean() * 100:.1f}%")
 
     params = dict(
-        sl_buffer_atr=cfg.sl_buffer_atr, tp_range_frac=cfg.tp_range_frac, min_range_atr=cfg.min_range_atr,
+        sl_buffer_atr=cfg.sl_buffer_atr, tp_range_frac=cfg.tp_range_frac, tp_atr=cfg.tp_atr, min_range_atr=cfg.min_range_atr,
         breakeven_trigger_r=cfg.breakeven_trigger_r, price_decimals=cfg.price_decimals, risk_pct=cfg.risk_pct,
     )
     rows = {}
