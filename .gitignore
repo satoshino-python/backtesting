@@ -6,3 +6,6 @@ venv/
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# 4時間足のキャッシュ（build_h4_cache.py で再生成できる）
+cache/

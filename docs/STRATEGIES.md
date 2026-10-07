@@ -22,6 +22,9 @@
 | `compare_runs.py` | `multi_results/` の複数の実行結果を並べて比較 | – | – | – |
 | `diagnose_trades.py` | 取引履歴CSVを、時間帯・曜日・ATR水準などの切り口で診断 | – | – | – |
 | `tests/test_dow_trend.py` | `dow_trend.py` のテスト | – | – | – |
+| `build_h4_cache.py` | 1分足を4時間足にまとめて `cache/h4_<ペア>.pkl` に保存（下の2本の下準備） | 4時間足 | – | – |
+| `trend_filter_study.py` | `fast_results` の取引に、エントリー直前の方向・強さの指標（ADX・ER・CHOP・移動平均・週足ダウなど）を付けて成績との関係を集計 | 4H/D1/W1 | – | – |
+| `filter_rerun.py` | 方向フィルター（`fast_engine` の `AllowLong`/`AllowShort` 列）を入れて全ペアを再検証。結果は `filter_results/<日時>_rerun/` | 4時間足＋日足/週足 | 固定SL/TP と 1Hトレーリング | 損失額固定 |
 
 `main_4H_fixedSL_multi.py` と `main_4H_fixedSL_dow.py` は、`main_4H_fixedSL.py` の関数と Strategy を import して使っている。
 **`main_4H_fixedSL.py` を変更すると、この2つの結果も変わる。**

@@ -1,0 +1,247 @@
+<title>トレンドフィルター検証 6ペア</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: one phone-width column, same look as the スイングブレイクアウト report — verdict, filter table, yearly grid, pairs, indicator scan, caveats */
+:root {
+  --bg: #f3f5f7; --surface: #ffffff; --line: #dde2e8; --fg: #17202b; --muted: #5e6b7a;
+  --accent: #2a5bd7; --accent-soft: #e3eafb;
+  --pos: #18865a; --neg: #c8413a; --pos-bg: rgba(24,134,90,.14); --neg-bg: rgba(200,65,58,.14);
+  --f-head: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+  --f-num: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f141a; --surface: #171e26; --line: #2a333e; --fg: #e3e8ee; --muted: #93a0ae;
+  --accent: #79a2ff; --accent-soft: #1d2a45;
+  --pos: #3ccb8b; --neg: #f0726a; --pos-bg: rgba(60,203,139,.16); --neg-bg: rgba(240,114,106,.16);
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0f141a; --surface: #171e26; --line: #2a333e; --fg: #e3e8ee; --muted: #93a0ae;
+  --accent: #79a2ff; --accent-soft: #1d2a45;
+  --pos: #3ccb8b; --neg: #f0726a; --pos-bg: rgba(60,203,139,.16); --neg-bg: rgba(240,114,106,.16);
+  color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.6 var(--f-head); -webkit-text-size-adjust: 100%; }
+.wrap { max-width: 860px; margin: 0 auto; padding: 20px 16px 48px; display: grid; gap: 28px; }
+.wrap > * { min-width: 0; }
+h1 { font-size: 1.45rem; line-height: 1.3; margin: 0; font-weight: 700; text-wrap: balance; }
+h2 { font-size: 1.05rem; margin: 0 0 10px; font-weight: 700; text-wrap: balance; }
+p { margin: 0; }
+.sub { color: var(--muted); font-size: .85rem; margin-top: 6px; }
+.num { font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+.pos { color: var(--pos); } .neg { color: var(--neg); }
+.muted { color: var(--muted); }
+
+.seg { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 8px; margin-block: -8px; }
+.seg-in { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 4px; }
+.seg button { font: inherit; border: 0; background: transparent; color: var(--muted); padding: 8px 6px; border-radius: 9px; cursor: pointer; line-height: 1.25; }
+.seg button b { display: block; font-size: .92rem; color: var(--fg); }
+.seg button span { font-size: .72rem; }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.verdict { background: var(--surface); border: 1.5px solid var(--accent); border-radius: 14px; padding: 16px; display: grid; gap: 14px; }
+.verdict .tag { font-size: .72rem; color: var(--accent); letter-spacing: .06em; font-weight: 500; }
+.verdict .rule { font-size: 1.08rem; font-weight: 700; line-height: 1.5; text-wrap: balance; }
+.cmp { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.cmp div { background: var(--surface); padding: 10px; min-width: 0; }
+.cmp .l { font-size: .7rem; color: var(--muted); letter-spacing: .04em; }
+.cmp .v { font-family: var(--f-num); font-size: 1.15rem; font-weight: 600; white-space: nowrap; }
+.cmp .was { font-family: var(--f-num); font-size: .72rem; color: var(--muted); }
+
+.findings { display: grid; gap: 10px; }
+.find { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 4px; }
+.find h3 { margin: 0; font-size: .95rem; display: flex; gap: 8px; align-items: baseline; }
+.find .pill { font-size: .68rem; font-weight: 500; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
+.pill.good { background: var(--pos-bg); color: var(--pos); }
+.pill.bad { background: var(--neg-bg); color: var(--neg); }
+.pill.mid { background: var(--accent-soft); color: var(--accent); }
+.find p { font-size: .88rem; color: var(--muted); }
+.find p b { color: var(--fg); font-weight: 500; }
+
+.scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: .8rem; }
+th, td { padding: 7px 9px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+th { font-weight: 500; color: var(--muted); font-size: .72rem; background: var(--surface); }
+th:first-child, td:first-child { text-align: left; position: sticky; left: 0; background: var(--surface); font-weight: 500; }
+td:first-child { white-space: normal; min-width: 150px; max-width: 190px; font-size: .78rem; line-height: 1.4; }
+tr:last-child td { border-bottom: 0; }
+tr.base td { background: var(--accent-soft); }
+tr.pick td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+td.cell { font-family: var(--f-num); }
+td.hp { background: var(--pos-bg); } td.hn { background: var(--neg-bg); }
+.hint { font-size: .8rem; color: var(--muted); margin-top: 8px; }
+
+.defs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.def { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; min-width: 0; }
+.def h3 { margin: 0 0 6px; font-size: .9rem; }
+.def p { font-size: .86rem; }
+.def code { font-family: var(--f-num); font-size: .78rem; background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; }
+
+.bars { display: grid; gap: 6px; }
+.bar { display: grid; grid-template-columns: minmax(0, 9.5rem) 1fr; gap: 10px; align-items: center; font-size: .78rem; }
+.bar .name { line-height: 1.3; }
+.bar svg { width: 100%; height: 26px; display: block; }
+.bar svg text { font-family: var(--f-num); font-size: 9px; fill: var(--muted); }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: .76rem; color: var(--muted); margin-bottom: 8px; }
+.legend i { display: inline-block; width: 12px; height: 8px; border-radius: 2px; vertical-align: middle; margin-right: 5px; }
+
+ul.notes { margin: 0; padding-left: 1.2em; display: grid; gap: 8px; font-size: .88rem; }
+footer { font-size: .75rem; color: var(--muted); line-height: 1.7; }
+footer code { font-family: var(--f-num); font-size: .72rem; word-break: break-all; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>トレンドフィルター検証 6ペア</h1>
+    <p class="sub">スイングブレイクアウト高速版に方向・強さのフィルターを入れて再検証 / 2021-01〜2025-12（SP500 は 2024〜）/ 条件決め期間 2021〜2023・確認期間 2024〜2025</p>
+  </header>
+
+  <div class="seg"><div class="seg-in" role="group" aria-label="決済ルール">
+    <button id="m-fixed" data-m="fixed" aria-pressed="true"><b>固定 SL / TP</b><span>SL 1.5 / TP 2.5 ATR</span></button>
+    <button id="m-trail" data-m="trail" aria-pressed="false"><b>1H スイング追従</b><span>初期SL 1.5 ATR / 1H 幅5</span></button>
+  </div></div>
+
+  <section class="verdict">
+    <span class="tag">いちばん安定していた組み合わせ</span>
+    <p class="rule">日足の20日騰落が取引方向と同じ<br>かつ 4時間足の移動平均が逆向きに並んでいない</p>
+    <div class="cmp" id="cmp"></div>
+    <p class="sub" style="margin:0">両方の決済ルールで、条件決め期間・確認期間ともにプラス。6ペアすべてで合計Rがプラス。</p>
+  </section>
+
+  <section>
+    <h2>わかったこと</h2>
+    <div class="findings">
+      <div class="find"><h3><span class="pill good">効いた</span>方向が揃っているかどうか</h3>
+        <p>日足の20日騰落・4時間足の移動平均の並びなど、<b>「いま価格がどちらへ動いているか」と取引方向が一致するか</b>で成績がはっきり分かれた。逆向きのブレイクは両期間とも平均でマイナス。</p></div>
+      <div class="find"><h3><span class="pill bad">逆効果</span>トレンドの強さ（ADX・チョピネス）</h3>
+        <p>日足 ADX ≥ 20 で絞ると<b>成績は悪化</b>。ADX が高い（強いトレンドが既に続いた）局面のブレイクほど成績が悪く、ADX が低い局面の方が良かった。このブレイクアウトは「伸び切った後」より「動き始め」で取る方が合う。</p></div>
+      <div class="find"><h3><span class="pill mid">限定的</span>週足ダウ理論</h3>
+        <p>同方向だけに絞るとドローダウンは半分以下になるが、確認期間（2024〜2025）の利益はほぼゼロ。週足は転換の確定が遅く、逆向きを見送るだけのルールはかえって悪化した。</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>フィルター別の成績（R）</h2>
+    <div class="scroll"><table id="summary"></table></div>
+    <p class="hint">青い行がフィルターなし。最大DD は決済順に並べた累積Rの最大下落幅（含み損は含まない）。</p>
+  </section>
+
+  <section>
+    <h2>年別の合計R</h2>
+    <div class="scroll"><table id="yearly"></table></div>
+  </section>
+
+  <section>
+    <h2>ペア別の合計R</h2>
+    <div class="scroll"><table id="pairs"></table></div>
+  </section>
+
+  <section>
+    <h2>指標と成績の関係（全28指標から抜粋）</h2>
+    <div class="legend"><span><i style="background:var(--muted)"></i>2021〜2023</span><span><i style="background:var(--accent)"></i>2024〜2025</span></div>
+    <div class="bars" id="bars"></div>
+    <p class="hint">エントリー直前の指標値と各トレードのRの順位相関。右に伸びるほど「値が大きいほど成績が良い」。方向のある指標は取引方向に揃えた値。どれも 0.1 前後の弱い関係で、両期間で同じ向きのものだけが使える。</p>
+  </section>
+
+  <section>
+    <h2>ルールの定義</h2>
+    <div class="defs">
+      <div class="def"><h3>日足20日騰落</h3><p>直前に確定した日足（NY 17時区切り）の終値と20本前の終値を比べ、上がっていれば買いだけ、下がっていれば売りだけ逆指値を置く。</p></div>
+      <div class="def"><h3>4時間足の移動平均の並び</h3><p>直前に確定した4時間足で SMA <code>20</code>・<code>50</code>・<code>120</code> が 20 &lt; 50 &lt; 120 なら買いを見送り、20 &gt; 50 &gt; 120 なら売りを見送る。それ以外はどちらも可。</p></div>
+      <div class="def"><h3>入れ方</h3><p>条件に合わない方向の逆指値を置かない。見送った取引の代わりに入る取引も含めて、高速エンジンで全期間を再計算した。</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>注意点</h2>
+    <ul class="notes">
+      <li>候補の指標は全期間の結果を見て選んだため、2024〜2025 は完全な未使用データではない。2021〜2023 だけで選んでいたら週足 ADX・週足効率比が上位に来ており、それらは 2024〜2025 で効かなかった。</li>
+      <li>効果の大きさは控えめ（順位相関 0.1 前後）。改善分の約半分は EURUSD によるもの。</li>
+      <li>次の確認は 2026 年のデータで、ルールを変えずにそのまま流すこと。</li>
+      <li>SP500 は 2024 年からのデータしかなく、週足・日足の長期指標は計算できない期間がある。</li>
+    </ul>
+  </section>
+
+  <footer>
+    コード: <code>build_h4_cache.py</code>（4時間足のキャッシュ）、<code>trend_filter_study.py</code>（指標を付けて相関・分位を集計）、<code>filter_rerun.py</code>（フィルターを入れて再検証）。<code>fast_engine.py</code> に任意の AllowLong / AllowShort 列を追加（列が無ければ従来どおり。フィルターなしの再計算は元の 773 / 781 トレードと一致）。
+    結果は <code>filter_results/</code> に保存。
+  </footer>
+</div>
+
+<script>
+const D = {"summary": {"fixed": [{"filter": "none", "ALL_n": 773, "ALL_R": 11.48, "ALL_PF": 1.02, "ALL_maxDD": 44.27, "IS_R": -31.31, "OOS_R": 42.8, "IS_n": 433, "OOS_n": 340}, {"filter": "d1roc_h4ma", "ALL_n": 470, "ALL_R": 50.61, "ALL_PF": 1.18, "ALL_maxDD": 20.39, "IS_R": 11.2, "OOS_R": 39.41, "IS_n": 265, "OOS_n": 205}, {"filter": "d1_roc20", "ALL_n": 489, "ALL_R": 44.24, "ALL_PF": 1.15, "ALL_maxDD": 24.51, "IS_R": 7.69, "OOS_R": 36.55, "IS_n": 271, "OOS_n": 218}, {"filter": "h4_ma_aligned", "ALL_n": 308, "ALL_R": 39.08, "ALL_PF": 1.22, "ALL_maxDD": 14.7, "IS_R": 11.38, "OOS_R": 27.7, "IS_n": 184, "OOS_n": 124}, {"filter": "h4_ma_nocounter", "ALL_n": 655, "ALL_R": 23.42, "ALL_PF": 1.06, "ALL_maxDD": 36.71, "IS_R": -20.37, "OOS_R": 43.78, "IS_n": 379, "OOS_n": 276}, {"filter": "w1_dow_strict", "ALL_n": 226, "ALL_R": 4.71, "ALL_PF": 1.03, "ALL_maxDD": 16.82, "IS_R": 3.55, "OOS_R": 1.16, "IS_n": 140, "OOS_n": 86}, {"filter": "w1_dow_nocounter", "ALL_n": 536, "ALL_R": -8.79, "ALL_PF": 0.97, "ALL_maxDD": 35.32, "IS_R": -12.68, "OOS_R": 3.89, "IS_n": 288, "OOS_n": 248}, {"filter": "d1_adx_lt25", "ALL_n": 503, "ALL_R": 11.3, "ALL_PF": 1.04, "ALL_maxDD": 35.59, "IS_R": -11.89, "OOS_R": 23.2, "IS_n": 294, "OOS_n": 209}, {"filter": "d1_adx_ge20", "ALL_n": 427, "ALL_R": -27.41, "ALL_PF": 0.9, "ALL_maxDD": 56.48, "IS_R": -48.05, "OOS_R": 20.64, "IS_n": 226, "OOS_n": 201}], "trail": [{"filter": "none", "ALL_n": 781, "ALL_R": -16.44, "ALL_PF": 0.96, "ALL_maxDD": 57.95, "IS_R": -17.34, "OOS_R": 0.9, "IS_n": 437, "OOS_n": 344}, {"filter": "d1roc_h4ma", "ALL_n": 476, "ALL_R": 43.14, "ALL_PF": 1.21, "ALL_maxDD": 19.99, "IS_R": 18.97, "OOS_R": 24.16, "IS_n": 268, "OOS_n": 208}, {"filter": "d1_roc20", "ALL_n": 495, "ALL_R": 40.3, "ALL_PF": 1.18, "ALL_maxDD": 21.0, "IS_R": 18.07, "OOS_R": 22.23, "IS_n": 274, "OOS_n": 221}, {"filter": "h4_ma_aligned", "ALL_n": 312, "ALL_R": 32.15, "ALL_PF": 1.24, "ALL_maxDD": 13.67, "IS_R": 19.52, "OOS_R": 12.62, "IS_n": 186, "OOS_n": 126}, {"filter": "h4_ma_nocounter", "ALL_n": 661, "ALL_R": 11.0, "ALL_PF": 1.04, "ALL_maxDD": 39.18, "IS_R": -5.89, "OOS_R": 16.9, "IS_n": 382, "OOS_n": 279}, {"filter": "w1_dow_strict", "ALL_n": 230, "ALL_R": 20.17, "ALL_PF": 1.18, "ALL_maxDD": 14.49, "IS_R": 19.99, "OOS_R": 0.18, "IS_n": 142, "OOS_n": 88}, {"filter": "w1_dow_nocounter", "ALL_n": 544, "ALL_R": -16.02, "ALL_PF": 0.94, "ALL_maxDD": 59.61, "IS_R": 7.41, "OOS_R": -23.43, "IS_n": 292, "OOS_n": 252}, {"filter": "d1_adx_lt25", "ALL_n": 509, "ALL_R": 28.21, "ALL_PF": 1.12, "ALL_maxDD": 28.7, "IS_R": 23.29, "OOS_R": 4.92, "IS_n": 296, "OOS_n": 213}, {"filter": "d1_adx_ge20", "ALL_n": 429, "ALL_R": -54.99, "ALL_PF": 0.75, "ALL_maxDD": 62.27, "IS_R": -46.74, "OOS_R": -8.25, "IS_n": 227, "OOS_n": 202}]}, "yearly": {"fixed": {"none": {"2021": -34.6, "2022": 26.0, "2023": -22.7, "2024": 26.2, "2025": 16.6}, "d1roc_h4ma": {"2021": -10.4, "2022": 25.6, "2023": -4.0, "2024": 18.7, "2025": 20.8}, "d1_roc20": {"2021": -12.4, "2022": 25.1, "2023": -5.0, "2024": 22.4, "2025": 14.2}, "h4_ma_aligned": {"2021": -9.0, "2022": 14.0, "2023": 6.4, "2024": 14.0, "2025": 13.7}, "h4_ma_nocounter": {"2021": -29.3, "2022": 25.3, "2023": -16.4, "2024": 25.0, "2025": 18.8}, "w1_dow_strict": {"2021": -11.3, "2022": 22.9, "2023": -8.1, "2024": -0.5, "2025": 1.7}, "w1_dow_nocounter": {"2021": -30.4, "2022": 31.4, "2023": -13.7, "2024": 8.5, "2025": -4.6}, "d1_adx_lt25": {"2021": -15.4, "2022": 24.1, "2023": -20.5, "2024": 21.7, "2025": 1.5}, "d1_adx_ge20": {"2021": -26.2, "2022": 3.8, "2023": -25.6, "2024": 16.4, "2025": 4.3}}, "trail": {"none": {"2021": -4.8, "2022": 23.6, "2023": -36.1, "2024": 10.7, "2025": -9.8}, "d1roc_h4ma": {"2021": 13.9, "2022": 18.8, "2023": -13.7, "2024": 9.4, "2025": 14.7}, "d1_roc20": {"2021": 12.9, "2022": 19.9, "2023": -14.7, "2024": 12.0, "2025": 10.2}, "h4_ma_aligned": {"2021": 13.5, "2022": 12.2, "2023": -6.2, "2024": 10.9, "2025": 1.8}, "h4_ma_nocounter": {"2021": -2.6, "2022": 23.2, "2023": -26.5, "2024": 13.4, "2025": 3.5}, "w1_dow_strict": {"2021": 2.0, "2022": 26.0, "2023": -8.0, "2024": -1.4, "2025": 1.6}, "w1_dow_nocounter": {"2021": 0.3, "2022": 31.8, "2023": -24.7, "2024": -3.2, "2025": -20.2}, "d1_adx_lt25": {"2021": 5.0, "2022": 34.4, "2023": -16.1, "2024": 19.5, "2025": -14.6}, "d1_adx_ge20": {"2021": -8.3, "2022": -2.8, "2023": -35.6, "2024": -3.1, "2025": -5.2}}}, "pairs": {"fixed": {"none": {"AUDUSD": -9.4, "EURUSD": 8.5, "GBPUSD": -7.1, "SP500": 10.9, "USDCHF": 1.2, "USDJPY": 7.3}, "d1roc_h4ma": {"AUDUSD": 4.0, "EURUSD": 26.1, "GBPUSD": 6.7, "SP500": 1.4, "USDCHF": 2.4, "USDJPY": 10.1}, "d1_roc20": {"AUDUSD": 0.5, "EURUSD": 25.7, "GBPUSD": 5.6, "SP500": 2.9, "USDCHF": 2.5, "USDJPY": 7.0}, "h4_ma_aligned": {"AUDUSD": 1.4, "EURUSD": 26.0, "GBPUSD": 3.4, "SP500": -4.5, "USDCHF": -0.8, "USDJPY": 13.5}, "h4_ma_nocounter": {"AUDUSD": -6.5, "EURUSD": 14.1, "GBPUSD": -4.2, "SP500": 1.3, "USDCHF": 2.5, "USDJPY": 16.2}, "w1_dow_strict": {"AUDUSD": -8.2, "EURUSD": 1.6, "GBPUSD": 2.7, "SP500": 2.8, "USDCHF": -2.3, "USDJPY": 8.2}, "w1_dow_nocounter": {"AUDUSD": -20.9, "EURUSD": 4.0, "GBPUSD": -12.2, "SP500": 8.3, "USDCHF": 0.8, "USDJPY": 11.2}, "d1_adx_lt25": {"AUDUSD": 0.6, "EURUSD": 7.8, "GBPUSD": -0.5, "SP500": -1.7, "USDCHF": 13.3, "USDJPY": -8.3}, "d1_adx_ge20": {"AUDUSD": -10.5, "EURUSD": -4.5, "GBPUSD": -17.0, "SP500": 8.2, "USDCHF": -15.8, "USDJPY": 12.1}}, "trail": {"none": {"AUDUSD": -6.8, "EURUSD": -5.8, "GBPUSD": -4.2, "SP500": 8.7, "USDCHF": -2.8, "USDJPY": -5.6}, "d1roc_h4ma": {"AUDUSD": 5.2, "EURUSD": 20.1, "GBPUSD": 9.8, "SP500": 5.2, "USDCHF": 0.4, "USDJPY": 2.6}, "d1_roc20": {"AUDUSD": 2.8, "EURUSD": 19.9, "GBPUSD": 8.7, "SP500": 6.9, "USDCHF": 1.3, "USDJPY": 0.6}, "h4_ma_aligned": {"AUDUSD": 12.6, "EURUSD": 14.5, "GBPUSD": 3.7, "SP500": -2.1, "USDCHF": 0.2, "USDJPY": 3.1}, "h4_ma_nocounter": {"AUDUSD": -5.3, "EURUSD": 3.8, "GBPUSD": 6.9, "SP500": 2.7, "USDCHF": -1.4, "USDJPY": 4.3}, "w1_dow_strict": {"AUDUSD": 2.2, "EURUSD": 7.2, "GBPUSD": 9.0, "SP500": 2.8, "USDCHF": -0.3, "USDJPY": -0.8}, "w1_dow_nocounter": {"AUDUSD": -13.0, "EURUSD": 2.8, "GBPUSD": -7.5, "SP500": 4.9, "USDCHF": 1.4, "USDJPY": -4.5}, "d1_adx_lt25": {"AUDUSD": -6.6, "EURUSD": 12.8, "GBPUSD": 7.1, "SP500": -1.8, "USDCHF": 13.0, "USDJPY": 3.7}, "d1_adx_ge20": {"AUDUSD": -9.8, "EURUSD": -17.8, "GBPUSD": -17.6, "SP500": 9.3, "USDCHF": -13.8, "USDJPY": -5.3}}}, "spear": {"fixed": {"W1_ABS_ER13": [0.132, 0.04], "W1_ADX14": [0.193, 0.007], "H4_MA_ORDER": [0.057, 0.103], "D1_ROC20": [0.062, 0.064], "W1_DOW_AGE_ALIGNED": [0.115, -0.021], "D1_R2_20": [0.081, 0.028], "D1_ABS_ER20": [0.041, 0.067], "D1_DONCH20": [0.048, 0.055], "D1_CHOP14": [0.056, 0.05], "W1_ROC13": [0.076, -0.012], "W1_DI": [0.087, -0.028], "W1_ER13": [0.064, -0.014], "D1_MA_ORDER": [0.08, -0.046], "D1_ER20": [0.038, 0.015], "D1_ABS_R2_20": [0.04, 0.018], "W1_ABOVE_MA26": [0.087, -0.064], "D1_ABOVE_MA100": [0.053, -0.026], "H4_ADX14": [-0.032, 0.077], "D1_ADX14": [0.027, -0.0], "D1_DI": [0.033, -0.013], "D1_ER10": [0.014, -0.009], "H4_DI": [-0.038, 0.071], "D1_MA50_SLOPE": [0.039, -0.065], "H4_R2_36": [-0.047, 0.033], "H4_ER18": [-0.065, 0.055], "W1_DOW": [0.03, -0.112], "H4_ABS_ER18": [-0.08, 0.029], "H4_CHOP14": [-0.12, -0.04]}, "trail": {"D1_ROC20": [0.093, 0.133], "H4_MA_ORDER": [0.084, 0.114], "D1_R2_20": [0.086, 0.092], "D1_DONCH20": [0.06, 0.116], "D1_ER20": [0.046, 0.104], "D1_ER10": [0.039, 0.095], "D1_CHOP14": [0.078, 0.062], "D1_ABOVE_MA100": [0.061, 0.014], "W1_ROC13": [0.068, -0.013], "D1_DI": [0.028, 0.039], "W1_DI": [0.049, -0.011], "W1_ER13": [0.049, -0.007], "H4_DI": [-0.021, 0.069], "W1_DOW_AGE_ALIGNED": [0.03, 0.005], "D1_ABS_ER20": [-0.012, 0.045], "W1_ABOVE_MA26": [0.077, -0.071], "D1_MA_ORDER": [0.051, -0.05], "H4_ADX14": [-0.029, 0.044], "H4_R2_36": [-0.02, 0.021], "W1_ADX14": [-0.014, -0.038], "W1_DOW": [0.026, -0.1], "H4_ER18": [-0.069, 0.038], "W1_ABS_ER13": [-0.033, -0.024], "D1_ABS_R2_20": [-0.015, -0.047], "H4_CHOP14": [-0.022, -0.046], "D1_MA50_SLOPE": [-0.002, -0.08], "H4_ABS_ER18": [-0.085, 0.018], "D1_ADX14": [-0.076, -0.016]}}};
+const NAMES = {
+  none: "フィルターなし",
+  d1roc_h4ma: "日足20日騰落が同方向 ＋ 4H移動平均が逆向きでない",
+  d1_roc20: "日足20日騰落が同方向",
+  h4_ma_aligned: "4H移動平均が同方向に並ぶときだけ",
+  h4_ma_nocounter: "4H移動平均が逆向きなら見送り",
+  w1_dow_strict: "週足ダウが同方向のときだけ",
+  w1_dow_nocounter: "週足ダウが逆方向なら見送り",
+  d1_adx_lt25: "日足ADX < 25 のときだけ",
+  d1_adx_ge20: "日足ADX ≥ 20 のときだけ"
+};
+const SHOW = ["none","d1roc_h4ma","d1_roc20","h4_ma_aligned","w1_dow_strict","d1_adx_ge20"];
+const IND = [
+  ["D1_ROC20","日足20日騰落（同方向）"],["H4_MA_ORDER","4H移動平均の並び"],["D1_R2_20","日足20本の回帰 R²（符号付き）"],
+  ["D1_DONCH20","日足20日レンジ内の位置"],["W1_DOW","週足ダウ（同方向）"],["W1_ADX14","週足ADX"],
+  ["D1_ADX14","日足ADX"],["D1_CHOP14","日足チョピネス"],["H4_ABS_ER18","4H効率比（強さ）"]
+];
+const PAIRS = ["AUDUSD","EURUSD","GBPUSD","SP500","USDCHF","USDJPY"];
+const f1 = v => (v > 0 ? "+" : "") + v.toFixed(1);
+const cls = v => v > 0 ? "pos" : v < 0 ? "neg" : "";
+const heat = v => v > 0.05 ? "hp" : v < -0.05 ? "hn" : "";
+let mode = "fixed";
+
+function render() {
+  const S = Object.fromEntries(D.summary[mode].map(r => [r.filter, r]));
+  const b = S.none, p = S.d1roc_h4ma;
+  document.getElementById("cmp").innerHTML = [
+    ["合計R", f1(p.ALL_R), f1(b.ALL_R), cls(p.ALL_R)],
+    ["最大DD", p.ALL_maxDD.toFixed(1) + "R", b.ALL_maxDD.toFixed(1) + "R", ""],
+    ["PF", p.ALL_PF.toFixed(2), b.ALL_PF.toFixed(2), ""]
+  ].map(([l, v, w, c]) => `<div><div class="l">${l}</div><div class="v ${c}">${v}</div><div class="was">なし ${w}</div></div>`).join("");
+
+  let h = `<tr><th>フィルター</th><th>取引数</th><th>合計R</th><th>PF</th><th>最大DD</th><th>2021-23</th><th>2024-25</th></tr>`;
+  for (const r of D.summary[mode]) {
+    h += `<tr class="${r.filter === "none" ? "base" : ""} ${r.filter === "d1roc_h4ma" ? "pick" : ""}"><td>${NAMES[r.filter]}</td>
+      <td class="cell">${r.ALL_n}</td><td class="cell ${cls(r.ALL_R)}">${f1(r.ALL_R)}</td><td class="cell">${r.ALL_PF.toFixed(2)}</td>
+      <td class="cell">${r.ALL_maxDD.toFixed(1)}</td><td class="cell ${cls(r.IS_R)}">${f1(r.IS_R)}</td><td class="cell ${cls(r.OOS_R)}">${f1(r.OOS_R)}</td></tr>`;
+  }
+  document.getElementById("summary").innerHTML = h;
+
+  const years = [2021, 2022, 2023, 2024, 2025];
+  h = `<tr><th>フィルター</th>${years.map(y => `<th>${y}</th>`).join("")}</tr>`;
+  for (const f of SHOW) {
+    const y = D.yearly[mode][f];
+    h += `<tr class="${f === "none" ? "base" : ""} ${f === "d1roc_h4ma" ? "pick" : ""}"><td>${NAMES[f]}</td>${years.map(k => `<td class="cell ${heat(y[k])}">${f1(y[k] ?? 0)}</td>`).join("")}</tr>`;
+  }
+  document.getElementById("yearly").innerHTML = h;
+
+  h = `<tr><th>フィルター</th>${PAIRS.map(p => `<th>${p}</th>`).join("")}</tr>`;
+  for (const f of SHOW) {
+    const y = D.pairs[mode][f];
+    h += `<tr class="${f === "none" ? "base" : ""} ${f === "d1roc_h4ma" ? "pick" : ""}"><td>${NAMES[f]}</td>${PAIRS.map(k => `<td class="cell ${heat(y[k])}">${f1(y[k] ?? 0)}</td>`).join("")}</tr>`;
+  }
+  document.getElementById("pairs").innerHTML = h;
+
+  const W = 220, M = 0.2, x = v => W / 2 + (v / M) * (W / 2 - 4);
+  document.getElementById("bars").innerHTML = IND.map(([k, name]) => {
+    const [a, c] = D.spear[mode][k];
+    const bar = (v, y, col) => { const x0 = Math.min(x(0), x(v)), w = Math.abs(x(v) - x(0)); return `<rect x="${x0}" y="${y}" width="${Math.max(w, 1)}" height="8" rx="1.5" fill="${col}"/>`; };
+    return `<div class="bar"><span class="name">${name}</span><svg viewBox="0 0 ${W} 26" preserveAspectRatio="none" role="img" aria-label="${name}: 2021-23 ${a}, 2024-25 ${c}">
+      <line x1="${x(0)}" x2="${x(0)}" y1="0" y2="20" stroke="var(--line)" stroke-width="1"/>
+      ${bar(a, 1, "var(--muted)")}${bar(c, 11, "var(--accent)")}
+    </svg></div>`;
+  }).join("") + `<div class="bar"><span></span><svg viewBox="0 0 ${W} 14" preserveAspectRatio="none" aria-hidden="true">
+      <text x="2" y="10">−0.2</text><text x="${x(0)}" y="10" text-anchor="middle">0</text><text x="${W - 2}" y="10" text-anchor="end">+0.2</text></svg></div>`;
+}
+
+document.querySelectorAll(".seg button").forEach(btn => btn.addEventListener("click", () => {
+  mode = btn.dataset.m;
+  document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", String(b === btn)));
+  render();
+}));
+render();
+</script>

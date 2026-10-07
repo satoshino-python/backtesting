@@ -184,6 +184,11 @@ class _Sim:
             # self.sh_valid[-1] の真偽（NaN は True 扱い）
             self.place_buy = ok & can_b & (self.C < sh) & (shv != 0)
             self.place_sell = ok & can_s & (self.C > sl_line) & (slv != 0)
+            # 任意: 方向フィルター（AllowLong / AllowShort 列が False のバーでは、その方向の注文を置かない）
+            if "AllowLong" in df.columns:
+                self.place_buy &= df["AllowLong"].to_numpy(bool)
+            if "AllowShort" in df.columns:
+                self.place_sell &= df["AllowShort"].to_numpy(bool)
         self.ok = ok
 
         check_b = self.slb < self.eb
