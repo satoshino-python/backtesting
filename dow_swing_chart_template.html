@@ -41,10 +41,11 @@
   <label><input id="shade" type="checkbox" checked> トレンド背景</label>
   <label><input id="zig" type="checkbox" checked> スイング線</label>
   <label><input id="conf" type="checkbox"> 確定位置(n本後)を表示</label>
+  <label class="keep" title="表示中の時間足の終値の単純移動平均。期間はカンマ区切り"><input id="smaon" type="checkbox" checked> 移動平均 <input id="maper" type="text" value="__MA__" size="9" style="background:#242b34;color:var(--fg);border:1px solid #38414d;border-radius:4px;padding:2px 5px;font:inherit"></label>
   <label>ジャンプ <input id="jump" type="date" min="2021-01-01" max="2025-12-31"></label>
   <button id="reset">全期間</button>
   <span id="trctl" class="keep" style="display:none; gap:6px 18px; flex-wrap:wrap; align-items:center">
-    <label>背景 <select id="bg"><option value="used" selected>検証で使った週足トレンド</option><option value="tf">表示中の時間足で計算</option></select></label>
+    <label>背景 <select id="bg"><option value="used" selected>検証で使った週足トレンド</option><option value="tf">表示中の時間足で計算</option><option value="filter">検証で使ったフィルター</option></select></label>
     <label><input id="trd" type="checkbox" checked> トレード</label>
     <label><input id="eln" type="checkbox" checked> <span id="elnlab">エントリーライン</span></label>
     <button id="prev">◀ 前のトレード</button><button id="next">次のトレード ▶</button>
@@ -56,6 +57,8 @@
 const DATA = __DATA__;
 const TR = __TRADES__;  // null: トレード表示なし（dow_swing_chart.py --trades で埋め込む）
 const UP = 1, RANGE = 0, DOWN = -1;
+const MA_COLORS = ["#ececec", "#3fd0c9", "#ff8c42", "#c77dff", "#9be15d"];
+const FS_NAME = { 1: "買いだけ許可", "-1": "売りだけ許可", 0: "どちらも見送り", 2: "両方許可" };
 
 /* ---------- dow_trend.py の移植（同じアルゴリズム） ---------- */
 function atrWilder(h, l, c, period) {
@@ -133,6 +136,15 @@ const M = { l: 8, r: 64, t: 10, b: 24 };
 const fmtT = (s, intraday) => { const x = new Date(s * 1000).toISOString(); return x.slice(0, 10) + (intraday ? " " + x.slice(11, 16) : ""); };
 const dec = 5;
 
+let maCache = { key: "", lines: [] };
+function maLines() {
+  const per = ($("maper").value || "").split(/[,\s]+/).map(Number).filter(p => p >= 2 && p <= 1000).slice(0, MA_COLORS.length);
+  const key = $("tf").value + "|" + per.join(",");
+  if (maCache.key === key) return maCache.lines;
+  const c = d.c, n = c.length;
+  const lines = per.map(p => { const a = new Array(n).fill(null); let s = 0; for (let i = 0; i < n; i++) { s += c[i]; if (i >= p) s -= c[i - p]; if (i >= p - 1) a[i] = s / p; } return { p, a }; });
+  maCache = { key, lines }; return lines;
+}
 function recompute() {
   const tf = $("tf").value, first = d !== DATA[tf];
   const prevTime = d ? d.t[Math.min(d.t.length - 1, Math.max(0, Math.round((view.from + view.to) / 2)))] : null;
@@ -227,6 +239,18 @@ function draw() {
     const yo = Y(d.o[i]), yc = Y(d.c[i]);
     ctx.fillRect(x - body / 2, Math.min(yo, yc), body, Math.max(1, Math.abs(yo - yc)));
   }
+  // 移動平均
+  if ($("smaon").checked) {
+    maLines().forEach((m, k) => {
+      ctx.strokeStyle = MA_COLORS[k]; ctx.lineWidth = 1.4; ctx.globalAlpha = .9; ctx.beginPath();
+      let on = false;
+      for (let i = Math.max(0, i0 - 1); i <= Math.min(d.t.length - 1, i1 + 1); i++) {
+        const v = m.a[i]; if (v == null) { on = false; continue; }
+        if (!on) { ctx.moveTo(X(i), Y(v)); on = true; } else ctx.lineTo(X(i), Y(v));
+      }
+      ctx.stroke(); ctx.globalAlpha = 1;
+    });
+  }
   // スイング線とマーカー
   const P = res.piv;
   if ($("zig").checked) {
@@ -265,6 +289,8 @@ function draw() {
       const nm = tr => tr === 1 ? "上昇" : tr === -1 ? "下降" : "レンジ";
       let txt = `${fmtT(d.t[i], intraday)}  (NY時間, #${i})\nO ${d.o[i].toFixed(dec)}  H ${d.h[i].toFixed(dec)}\nL ${d.l[i].toFixed(dec)}  C ${d.c[i].toFixed(dec)}\nトレンド判定（この時間足）: ${nm(res.trend[i])}`;
       if (TR && d.ut) txt += `\n週足トレンド（検証で使用）: ${nm(d.ut[i] ?? 0)}`;
+      if (TR && d.fs) txt += `\nフィルター: ${d.fs[i] == null ? "-" : FS_NAME[d.fs[i]]}`;
+      if ($("smaon").checked) { const ms = maLines().filter(m => m.a[i] != null).map(m => `SMA${m.p} ${m.a[i].toFixed(dec)}`); if (ms.length) txt += "\n" + ms.join("  "); }
       if (TR && d.esh && $("eln").checked)
         txt += `\nエントリーライン 買い ${fmtP(d.esh[i])}${d.eshv[i] ? "" : "（無効）"} / 売り ${fmtP(d.esl[i])}${d.eslv[i] ? "" : "（無効）"}`;
       const t = TR && $("trd").checked ? tradeAt(i, mouse.y, Y) : null;
@@ -276,7 +302,10 @@ function draw() {
   else if (!$("leg").checked) info.innerHTML = "";
   else info.innerHTML =
     `<span class="sw" style="background:var(--sh)"></span>スイングハイ　<span class="sw" style="background:var(--sl)"></span>スイングロー　` +
-    `<span class="sw" style="background:rgba(43,182,115,.5)"></span>上昇　<span class="sw" style="background:rgba(229,83,75,.5)"></span>下降　背景なし=レンジ` +
+    (bgMode() === "filter"
+      ? `背景（フィルター${TR.filterLabel ? "：" + TR.filterLabel : ""}）: <span class="sw" style="background:rgba(43,182,115,.5)"></span>買いだけ許可　<span class="sw" style="background:rgba(229,83,75,.5)"></span>売りだけ許可　背景なし=見送り`
+      : `背景（${bgMode() === "used" ? "検証で使った週足トレンド" : "この時間足のダウ理論"}）: <span class="sw" style="background:rgba(43,182,115,.5)"></span>上昇　<span class="sw" style="background:rgba(229,83,75,.5)"></span>下降　背景なし=レンジ`) +
+    ($("smaon").checked ? "<br>" + maLines().map((m, k) => `<span class="sw" style="background:${MA_COLORS[k]}"></span>SMA${m.p}`).join("　") + `（${$("tf").value}足）` : "") +
     (TR ? `<br><span class="sw" style="background:#b18cff"></span>▲買い / <span class="sw" style="background:#ff6fd1"></span>▼売り エントリー　● 決済（緑=勝ち / 赤=負け）　点線=SL・TP　<span class="sw" style="background:#c9a227"></span>買いライン　<span class="sw" style="background:#5b8fd9"></span>売りライン（薄い=無効）` : "");
   placeInfo(mouse ? [mouse.x, mouse.y] : (TR && cur >= 0 ? (() => { const t = TR.trades[cur], [ei, xi] = tradeIdx(t); return [X((ei + xi) / 2), Y(t.ep)]; })() : null));
 }
@@ -290,14 +319,21 @@ function placeInfo(f) {
 
 /* ---------- トレード表示（TR があるときだけ） ---------- */
 const fmtP = p => p == null ? "-" : (+p).toFixed(dec);
+function bgMode() {
+  if (TR && d.fs && $("bg").value === "filter") return "filter";
+  if (TR && d.ut && $("bg").value === "used") return "used";
+  return "tf";
+}
 function bgTrend() {
-  if (TR && d.ut && $("bg").value === "used") return d.ut.map(v => v ?? 0);
+  const m = bgMode();
+  if (m === "filter") return d.fs.map(v => v === 1 || v === -1 ? v : 0);
+  if (m === "used") return d.ut.map(v => v ?? 0);
   return res.trend;
 }
 function tradeIdx(t) { return t.idx[$("tf").value]; }
 function tradeText(t) {
   const r = t.pnl / TR.risk, nm = v => v === 1 ? "上昇" : v === -1 ? "下降" : "レンジ";
-  return `── トレード（${t.d > 0 ? "買い" : "売り"} / 週足 ${nm(t.wk)}）──\n` +
+  return `── トレード（${t.d > 0 ? "買い" : "売り"}${DATA["4H"].ut ? " / 週足 " + nm(t.wk) : ""}）──\n` +
     `エントリー ${t.et}  @ ${fmtP(t.ep)}\n決済       ${t.xt}  @ ${fmtP(t.xp)}\n` +
     `SL ${fmtP(t.sl)}  TP ${fmtP(t.tp)}  枚数 ${Math.abs(t.size).toLocaleString()}\n` +
     `損益 ${t.pnl.toFixed(2)}（${r >= 0 ? "+" : ""}${r.toFixed(2)}R） ${t.reason}`;
@@ -395,11 +431,13 @@ cv.addEventListener("touchmove", e => {
 let timer = null;
 for (const id of ["n", "ap", "ma", "tf"]) $(id).addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(recompute, 30); });
 for (const id of ["wick"]) $(id).addEventListener("change", recompute);
-for (const id of ["shade", "zig", "conf"]) $(id).addEventListener("change", draw);
+for (const id of ["shade", "zig", "conf", "smaon"]) $(id).addEventListener("change", draw);
+$("maper").addEventListener("change", draw);
 $("reset").onclick = resetView;
 if (TR) {
   $("trctl").style.display = "inline-flex";
   if (!DATA["4H"].ut) { $("bg").value = "tf"; $("bg").options[0].disabled = true; }  // 週足トレンドを使わない戦略
+  if (DATA["4H"].fs) $("bg").value = "filter"; else $("bg").options[2].disabled = true;  // 方向フィルターを使った検証
   for (const id of ["trd", "eln", "bg"]) $(id).addEventListener("change", draw);
   $("prev").onclick = () => gotoTrade(-1); $("next").onclick = () => gotoTrade(1);
   window.addEventListener("keydown", e => { if (e.key === "ArrowRight") gotoTrade(1); else if (e.key === "ArrowLeft") gotoTrade(-1); });

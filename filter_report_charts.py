@@ -9,6 +9,7 @@
 """
 import contextlib
 import io
+import sys
 import warnings
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import replace
@@ -27,7 +28,8 @@ from dow_swing_chart import make_chart
 from filter_rerun import FILTERS, MODES, H1_WINDOW, PAIRS, features_on_1min
 
 TARGET = "d1roc_h4ma"
-OUT = Path("filter_results") / f"{datetime.now():%Y%m%d_%H%M}_{TARGET}_charts"
+# 引数でフォルダを指定すると、そこに出力する（同じ実行のチャートを作り直すとき）
+OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("filter_results") / f"{datetime.now():%Y%m%d_%H%M}_{TARGET}_charts"
 MODE_TEXT = {"fixed": "固定SL 1.5 / TP 2.5 ATR", "trail": "1Hスイング追従（前後5本・当初SL 1.5 ATR）"}
 
 
@@ -49,6 +51,11 @@ def run_pair(pair):
         df = df_ext.loc[(day >= start_ts) & (day <= end_ts)].copy()
         first_day, last_day = get_trading_day_label(df.index, 17)[[0, -1]]
         feat = features_on_1min(pair, df.index)
+        # チャートの背景用: 1分足（助走期間を含む全期間）でのフィルターの状態
+        fa = features_on_1min(pair, df_1min.index)
+        al = np.broadcast_to(np.asarray(FILTERS[TARGET][1](fa), bool), len(fa))
+        as_ = np.broadcast_to(np.asarray(FILTERS[TARGET][2](fa), bool), len(fa))
+        state = pd.Series(np.where(al & as_, 2, np.where(al, 1, np.where(as_, -1, 0))), index=df_1min.index)
         rate = spread / 2
         comm = lambda size, price: round(abs(size) * price * rate, cfg.price_decimals)  # noqa: E731
         risk = cfg.cash * cfg.risk_pct
@@ -72,7 +79,8 @@ def run_pair(pair):
                                f"{pair} {first_day:%Y-%m-%d} ~ {last_day:%Y-%m-%d} / {FILTERS[TARGET][0]} / {MODE_TEXT[mode]}",
                                first_day, last_day, trades=tr, weekly_trend=None, mode=MODES[mode]["exit_mode"],
                                risk=risk, entry_window=cfg.window, entry_atr=cfg.atr_period,
-                               price_decimals=cfg.price_decimals, session_start_hour=17, signal_hours=4)
+                               price_decimals=cfg.price_decimals, session_start_hour=17, signal_hours=4,
+                               filter_state=state, filter_label=FILTERS[TARGET][0], ma_periods=(20, 50, 120))
     return pair, rows
 
 

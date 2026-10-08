@@ -102,7 +102,8 @@ def load_trades(trades, labels, price_decimals=5):
 
 def make_chart(df_1min, path, title, start=None, end=None, trades=None, weekly_trend=None,
                mode="", risk=200.0, entry_window=18, entry_atr=18, price_decimals=5,
-               session_start_hour=17, signal_hours=4):
+               session_start_hour=17, signal_hours=4, filter_state=None, filter_label="",
+               ma_periods=(20, 50, 120)):
     """
     チャートの HTML を path に書き出す（スクリプトから呼び出す用）。
 
@@ -112,6 +113,11 @@ def make_chart(df_1min, path, title, start=None, end=None, trades=None, weekly_t
     weekly_trend : 各週に使った週足トレンド（index=週の金曜日、値=1/0/-1、または "上昇"/"レンジ"/"下降"）。
                    pd.Series かCSVのパス。None なら背景は「表示中の時間足で計算」だけになる
     risk         : 1R の金額（初期資金 × risk_pct）。トレードの損益を R で表示するのに使う
+    filter_state : 方向フィルターの状態（index=1分足の時刻、値 1=買いだけ許可 / -1=売りだけ許可 /
+                   0=どちらも見送り / 2=両方許可）。渡すと背景に「検証で使ったフィルター」を選べる（既定でこれを表示）。
+                   各足の値は足の最初の1分足の値（1H/4H では足の中で一定）
+    filter_label : フィルターの説明（凡例と詳細に表示）
+    ma_periods   : 移動平均（表示中の時間足の終値の単純移動平均）の期間。チャートの設定で変えられる。() で既定オフ
     entry_window / entry_atr / signal_hours : エントリー側 Swing High/Low ラインの設定（1H/4H に表示）
     """
     extra = {}
@@ -127,6 +133,10 @@ def make_chart(df_1min, path, title, start=None, end=None, trades=None, weekly_t
             wt = weekly_trend if pd.api.types.is_numeric_dtype(weekly_trend) else weekly_trend.map(TREND_CODE)
             df_1min["UsedTrend"] = wt.reindex(bar_label(df_1min.index, "W1", session_start_hour)).to_numpy()
             extra["UsedTrend"] = "ut"
+        if filter_state is not None:
+            fs = pd.Series(filter_state).reindex(df_1min.index)
+            df_1min["FilterState"] = fs.to_numpy(dtype=float)
+            extra["FilterState"] = "fs"
 
     day = get_trading_day_label(df_1min.index, session_start_hour)
     mask = np.ones(len(df_1min), dtype=bool)
@@ -138,14 +148,14 @@ def make_chart(df_1min, path, title, start=None, end=None, trades=None, weekly_t
 
     data, labels = {}, {}
     for tf in TIMEFRAMES:
-        cols = {k: v for k, v in extra.items() if tf in ("1H", "4H") or k == "UsedTrend"}
+        cols = {k: v for k, v in extra.items() if tf in ("1H", "4H") or k in ("UsedTrend", "FilterState")}
         data[tf], labels[tf] = to_bars(df, tf, cols, session_start_hour)
         print(f"{tf}: {len(data[tf]['t']):,} 本")
 
     tr = None
     if trades is not None:
         tr = dict(trades=load_trades(trades, labels, price_decimals), risk=risk, mode=mode,
-                  entryWindow=entry_window)
+                  entryWindow=entry_window, filterLabel=filter_label)
         rs = np.array([t["pnl"] for t in tr["trades"]]) / risk
         print(f"ℹ️ トレード {len(rs)} 件 / 合計 {rs.sum():+.2f}R")
 
@@ -153,6 +163,7 @@ def make_chart(df_1min, path, title, start=None, end=None, trades=None, weekly_t
     path.parent.mkdir(parents=True, exist_ok=True)
     html = (TEMPLATE.read_text(encoding="utf-8")
             .replace("__TITLE__", title)
+            .replace("__MA__", ",".join(str(int(p)) for p in ma_periods))
             .replace("__TRADES__", json.dumps(tr, ensure_ascii=False, separators=(",", ":")))
             .replace("__DATA__", json.dumps(data, separators=(",", ":"))))
     path.write_text(html, encoding="utf-8")
