@@ -1,0 +1,265 @@
+<title>ダウ構造ブレイク 6ペア</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: one phone-width column, same look as the トレンドフィルター report — verdict, equity curve, tables, charts, rules, caveats */
+:root {
+  --bg: #f3f5f7; --surface: #ffffff; --line: #dde2e8; --fg: #17202b; --muted: #5e6b7a;
+  --accent: #2a5bd7; --accent-soft: #e3eafb;
+  --pos: #18865a; --neg: #c8413a; --pos-bg: rgba(24,134,90,.14); --neg-bg: rgba(200,65,58,.14);
+  --f-head: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+  --f-num: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f141a; --surface: #171e26; --line: #2a333e; --fg: #e3e8ee; --muted: #93a0ae;
+  --accent: #79a2ff; --accent-soft: #1d2a45;
+  --pos: #3ccb8b; --neg: #f0726a; --pos-bg: rgba(60,203,139,.16); --neg-bg: rgba(240,114,106,.16);
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0f141a; --surface: #171e26; --line: #2a333e; --fg: #e3e8ee; --muted: #93a0ae;
+  --accent: #79a2ff; --accent-soft: #1d2a45;
+  --pos: #3ccb8b; --neg: #f0726a; --pos-bg: rgba(60,203,139,.16); --neg-bg: rgba(240,114,106,.16);
+  color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.6 var(--f-head); -webkit-text-size-adjust: 100%; }
+.wrap { max-width: 860px; margin: 0 auto; padding: 20px 16px 48px; display: grid; gap: 28px; }
+.wrap > * { min-width: 0; }
+h1 { font-size: 1.45rem; line-height: 1.3; margin: 0; font-weight: 700; text-wrap: balance; }
+h2 { font-size: 1.05rem; margin: 0 0 10px; font-weight: 700; text-wrap: balance; }
+p { margin: 0; }
+.sub { color: var(--muted); font-size: .85rem; margin-top: 6px; }
+.num { font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+.pos { color: var(--pos); } .neg { color: var(--neg); }
+.muted { color: var(--muted); }
+
+.seg { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 8px; margin-block: -8px; }
+.seg-in { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 4px; }
+.seg button { font: inherit; border: 0; background: transparent; color: var(--muted); padding: 8px 6px; border-radius: 9px; cursor: pointer; line-height: 1.25; }
+.seg button b { display: block; font-size: .92rem; color: var(--fg); }
+.seg button span { font-size: .72rem; }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.verdict { background: var(--surface); border: 1.5px solid var(--accent); border-radius: 14px; padding: 16px; display: grid; gap: 14px; }
+.verdict .tag { font-size: .72rem; color: var(--accent); letter-spacing: .06em; font-weight: 500; }
+.verdict .rule { font-size: 1.08rem; font-weight: 700; line-height: 1.5; text-wrap: balance; }
+.cmp { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.cmp div { background: var(--surface); padding: 10px; min-width: 0; }
+.cmp .l { font-size: .7rem; color: var(--muted); letter-spacing: .04em; }
+.cmp .v { font-family: var(--f-num); font-size: 1.15rem; font-weight: 600; white-space: nowrap; }
+.cmp .was { font-family: var(--f-num); font-size: .72rem; color: var(--muted); }
+
+.findings { display: grid; gap: 10px; }
+.find { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 4px; }
+.find h3 { margin: 0; font-size: .95rem; display: flex; gap: 8px; align-items: baseline; }
+.find .pill { font-size: .68rem; font-weight: 500; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
+.pill.good { background: var(--pos-bg); color: var(--pos); }
+.pill.bad { background: var(--neg-bg); color: var(--neg); }
+.pill.mid { background: var(--accent-soft); color: var(--accent); }
+.find p { font-size: .88rem; color: var(--muted); }
+.find p b { color: var(--fg); font-weight: 500; }
+
+.scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: .8rem; }
+th, td { padding: 7px 9px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+th { font-weight: 500; color: var(--muted); font-size: .72rem; background: var(--surface); }
+th:first-child, td:first-child { text-align: left; position: sticky; left: 0; background: var(--surface); font-weight: 500; }
+td:first-child { white-space: normal; min-width: 150px; max-width: 190px; font-size: .78rem; line-height: 1.4; }
+tr:last-child td { border-bottom: 0; }
+tr.base td { background: var(--accent-soft); }
+tr.pick td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+td.cell { font-family: var(--f-num); }
+td.hp { background: var(--pos-bg); } td.hn { background: var(--neg-bg); }
+.hint { font-size: .8rem; color: var(--muted); margin-top: 8px; }
+
+.defs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.def { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; min-width: 0; }
+.def h3 { margin: 0 0 6px; font-size: .9rem; }
+.def p { font-size: .86rem; }
+.def code { font-family: var(--f-num); font-size: .78rem; background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; }
+
+.bars { display: grid; gap: 6px; }
+.bar { display: grid; grid-template-columns: minmax(0, 9.5rem) 1fr; gap: 10px; align-items: center; font-size: .78rem; }
+.bar .name { line-height: 1.3; }
+.bar svg { width: 100%; height: 26px; display: block; }
+.bar svg text { font-family: var(--f-num); font-size: 9px; fill: var(--muted); }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: .76rem; color: var(--muted); margin-bottom: 8px; }
+.legend i { display: inline-block; width: 12px; height: 8px; border-radius: 2px; vertical-align: middle; margin-right: 5px; }
+
+ul.notes { margin: 0; padding-left: 1.2em; display: grid; gap: 8px; font-size: .88rem; }
+footer { font-size: .75rem; color: var(--muted); line-height: 1.7; }
+footer code { font-family: var(--f-num); font-size: .72rem; word-break: break-all; }
+
+:root { --s-base: #8a96a3; --s-n3: #2a5bd7; --s-n5: #c77d12; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --s-base: #7d8996; --s-n3: #79a2ff; --s-n5: #e9a23b; } }
+:root[data-theme="dark"] { --s-base: #7d8996; --s-n3: #79a2ff; --s-n5: #e9a23b; }
+.eq { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 8px 6px; position: relative; }
+.eq svg { width: 100%; height: auto; display: block; touch-action: pan-y; }
+.eq svg text { font-family: var(--f-num); font-size: 11px; fill: var(--muted); }
+.eq .grid { stroke: var(--line); stroke-width: 1; }
+.eq .zero { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.eq .ln { fill: none; stroke-width: 2; stroke-linejoin: round; }
+.eq .xh { stroke: var(--muted); stroke-width: 1; }
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; font: 12px/1.5 var(--f-num); color: var(--fg); box-shadow: 0 2px 8px rgba(0,0,0,.12); white-space: nowrap; }
+.charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.charts a { display: grid; gap: 2px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; color: var(--fg); text-decoration: none; }
+.charts a:hover, .charts a:focus-visible { border-color: var(--accent); outline: none; }
+.charts a b { font-size: .92rem; } .charts a span { font: .76rem var(--f-num); }
+</style>
+<div class="wrap">
+  <header>
+    <h1>ダウ構造ブレイク 6ペア</h1>
+    <p class="sub">4時間足で高値・安値を切り上げていたら直近高値の上抜けで買い、切り下げていたら直近安値の下抜けで売り / 2021-01〜2025-12（SP500 は 2024〜）/ 前半 2021〜2023・後半 2024〜2025</p>
+  </header>
+
+  <div class="seg"><div class="seg-in" role="group" aria-label="決済ルール">
+    <button id="m-fixed" data-m="fixed" aria-pressed="true"><b>固定 SL / TP</b><span>SL 1.5 / TP 2.5 ATR</span></button>
+    <button id="m-trail" data-m="trail" aria-pressed="false"><b>1H スイング追従</b><span>当初SL 1.5 ATR / 1H 前後5本</span></button>
+  </div></div>
+
+  <section class="verdict">
+    <span class="tag">ダウ構造ブレイク n=3（4時間足・左右3本のスイング）</span>
+    <p class="rule">従来のブレイクアウトよりは良いが、<br>前半と後半で安定せず、USDJPY 頼み</p>
+    <div class="cmp" id="cmp"></div>
+    <p class="sub" style="margin:0" id="cmpnote"></p>
+  </section>
+
+  <section>
+    <h2>わかったこと</h2>
+    <div class="findings">
+      <div class="find"><h3><span class="pill good">改善</span>従来のブレイクアウトより良い</h3>
+        <p>同じ決済ルールで比べると、合計R・PF・最大DDのどれも従来（4時間足 前後18本のスイング、方向を問わない）より良い。特に<b>売り</b>の成績が大きく改善した（従来の売りは合計ほぼ 0R）。</p></div>
+      <div class="find"><h3><span class="pill bad">不安定</span>期間とペアで結果がばらつく</h3>
+        <p>固定SL/TPは利益の大半が後半（2024〜2025）、1Hスイング追従は前半に集中し後半はほぼ 0R。どちらも<b>USDJPY を除くと合計 +3〜11R</b>しか残らず、PF は 1.06〜1.13 と薄い。</p></div>
+      <div class="find"><h3><span class="pill mid">比較</span>先に調べたフィルターには届かない</h3>
+        <p>前回の「日足20日騰落が同方向＋4H移動平均が逆向きでない」は両方の決済ルールで前半・後半ともプラス、最大DDも約20R。今回のダウ構造ブレイク単体はそれより劣る。スイング幅を n=5 にしても傾向は同じ。</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>合算の損益曲線（R）</h2>
+    <div class="legend" id="eqlegend"></div>
+    <div class="eq" id="eq"></div>
+    <p class="hint">6ペアの累積R（含み損益込み）を週末ごとに合計。グラフに触れると各時点の値を表示。</p>
+  </section>
+
+  <section>
+    <h2>成績一覧（R）</h2>
+    <div class="scroll"><table id="summary"></table></div>
+    <p class="hint">青い行が従来のブレイクアウト。最大DD は決済順に並べた累積Rの最大下落幅（前回のレポートと同じ定義）。参考行は <code>filter_results/</code> の前回の検証の値。</p>
+  </section>
+
+  <section>
+    <h2>年別の合計R</h2>
+    <div class="scroll"><table id="yearly"></table></div>
+  </section>
+
+  <section>
+    <h2>ペア別の合計R</h2>
+    <div class="scroll"><table id="pairs"></table></div>
+  </section>
+
+  <section>
+    <h2>トレード付きダウ理論チャート（n=3）</h2>
+    <div class="charts" id="charts"></div>
+    <p class="hint">背景は検証で使った方向（青=買いだけ / 赤=売りだけ / 無色=見送り）、黄・青の水平線が実際に逆指値を置いたライン。チャートのダウ判定をピボット幅 3・ATR 1.0 の4時間足にすると、エントリーに使ったスイングと同じものが表示される。1ファイル約 2.9MB。</p>
+  </section>
+
+  <section>
+    <h2>売買ルール・設定</h2>
+    <div class="defs">
+      <div class="def"><h3>スイング</h3><p>4時間足（NY 17時区切り）で、左右 <code>n</code> 本より厳密に高い（低い）足。<code>dow_trend.py</code> と同じく、ATR(14) × 1.0 未満の小さな押し・戻りは採用せず、高値と安値は交互に並ぶ。右側 n 本がそろった時点で確定。</p></div>
+      <div class="def"><h3>買い</h3><p>直近のスイングハイ・ローがどちらも1つ前より高く、直近のスイングローがまだ割られていないとき、直近のスイングハイ（まだ超えられていないもの）に買い逆指値。</p></div>
+      <div class="def"><h3>売り</h3><p>買いの逆。直近のスイングハイ・ローがどちらも1つ前より低く、直近のスイングハイがまだ超えられていないとき、直近のスイングローに売り逆指値。</p></div>
+      <div class="def"><h3>決済・枚数</h3><p>従来と同じ2通り。固定: SL 1.5 / TP 2.5 × ATR(EMA 18)。追従: 1時間足スイング（前後5本）にSLを移動、TP なし。1回の損失 = 初期資金の 2%（1R）。スプレッド込み、1分足で約定判定。</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>読むときの注意</h2>
+    <ul class="notes">
+      <li>前半・後半は条件を決めるための分割ではない（n=3 はリポジトリの既定値をそのまま使い、全期間で1回だけ実行）。n=5 は感度の確認用。</li>
+      <li>合計Rの多くを USDJPY（2022年の円安など一方向の相場）が占める。ペアを入れ替えると結論が変わりうる。</li>
+      <li>損切りは ATR 倍率で、ダウ理論でいう「押し安値割れ」では切っていない。押し安値に損切りを置く版は未検証。</li>
+      <li>エントリー後の反対側の逆指値は置かない（買いと売りの条件は同時に成り立たない）。</li>
+      <li>SP500 は 2024 年からのデータだけ。</li>
+    </ul>
+  </section>
+
+  <footer>
+    コード: <code>dow_structure_breakout.py</code>（検証）、<code>dow_trend.swing_structure()</code>（各足の直近スイング）、<code>dow_swing_chart.make_chart(entry_lines=)</code>（実際に使ったラインを表示）。
+    結果: <code>fast_results/20261009_0538_dow_structure/</code>（trades_all.csv、summary.csv、yearly.csv、by_pair.csv、equity_R.csv、config.json、code/）。
+    従来の行は前回の高速版の結果（773 / 781 トレード）と完全に一致。
+  </footer>
+</div>
+
+<script>
+const D = {"summary":{"fixed":[{"k":"base","n":773,"win":39.3,"R":11.5,"PF":1.02,"dd":44.3,"IS":-31.3,"OOS":42.8,"L":11.1,"S":0.4,"exJPY":4.2},{"k":"dow_n3","n":993,"win":39.8,"R":34.6,"PF":1.06,"dd":43.8,"IS":2.5,"OOS":32.1,"L":7.7,"S":26.9,"exJPY":10.9},{"k":"dow_n5","n":674,"win":39.8,"R":22.8,"PF":1.06,"dd":36.3,"IS":17.9,"OOS":4.9,"L":9.9,"S":12.9,"exJPY":12.6},{"k":"ref","n":470,"win":null,"R":50.61,"PF":1.18,"dd":20.39,"IS":11.2,"OOS":39.41,"L":null,"S":null,"exJPY":null}],"trail":[{"k":"base","n":781,"win":35.9,"R":-16.4,"PF":0.96,"dd":57.5,"IS":-17.3,"OOS":0.9,"L":-16.8,"S":0.4,"exJPY":-10.9},{"k":"dow_n3","n":1033,"win":37.9,"R":62.5,"PF":1.13,"dd":33.5,"IS":61.7,"OOS":0.8,"L":21.8,"S":40.7,"exJPY":3.1},{"k":"dow_n5","n":702,"win":38.7,"R":41.4,"PF":1.12,"dd":29.9,"IS":38.4,"OOS":3.0,"L":22.4,"S":19.0,"exJPY":10.0},{"k":"ref","n":476,"win":null,"R":43.14,"PF":1.21,"dd":19.99,"IS":18.97,"OOS":24.16,"L":null,"S":null,"exJPY":null}]},"yearly":{"fixed":{"base":{"2021":-33.6,"2022":26.0,"2023":-23.7,"2024":27.2,"2025":15.5},"dow_n3":{"2021":2.1,"2022":2.8,"2023":-2.4,"2024":22.5,"2025":9.6},"dow_n5":{"2021":18.4,"2022":3.2,"2023":-3.7,"2024":17.0,"2025":-12.1}},"trail":{"base":{"2021":-4.8,"2022":23.6,"2023":-36.1,"2024":11.5,"2025":-10.6},"dow_n3":{"2021":11.0,"2022":42.5,"2023":5.9,"2024":4.7,"2025":-1.5},"dow_n5":{"2021":20.7,"2022":30.6,"2023":-15.3,"2024":22.7,"2025":-17.3}}},"pairs":{"fixed":{"base":{"AUDUSD":[-9.4,152],"EURUSD":[8.5,149],"GBPUSD":[-7.1,142],"SP500":[10.9,50],"USDCHF":[1.2,145],"USDJPY":[7.3,135]},"dow_n3":{"AUDUSD":[1.8,169],"EURUSD":[-11.8,198],"GBPUSD":[10.3,177],"SP500":[2.9,84],"USDCHF":[7.6,182],"USDJPY":[23.7,183]},"dow_n5":{"AUDUSD":[-14.6,115],"EURUSD":[4.8,132],"GBPUSD":[13.3,135],"SP500":[-4.3,54],"USDCHF":[13.5,121],"USDJPY":[10.2,117]}},"trail":{"base":{"AUDUSD":[-6.8,153],"EURUSD":[-5.8,151],"GBPUSD":[-4.2,143],"SP500":[8.7,51],"USDCHF":[-2.8,145],"USDJPY":[-5.6,138]},"dow_n3":{"AUDUSD":[-10.2,179],"EURUSD":[-6.5,197],"GBPUSD":[14.5,180],"SP500":[-4.9,90],"USDCHF":[10.1,191],"USDJPY":[59.5,196]},"dow_n5":{"AUDUSD":[-6.9,122],"EURUSD":[-3.5,138],"GBPUSD":[14.5,139],"SP500":[-4.6,56],"USDCHF":[10.5,126],"USDJPY":[31.4,121]}}},"eq":{"fixed":{"base":[-0.8,-4.1,-9.2,-9.6,-8.4,-6.8,-8.3,-9.3,-9.6,-10.7,-13.8,-5.6,-6.8,-8.6,-9.6,-9.4,-9.8,-10.2,-10.1,-10.6,-12.6,-20.8,-24.1,-20.1,-21.2,-24.7,-27.6,-30.5,-29.6,-29.6,-32.8,-37.2,-36.6,-37.6,-35.4,-37.5,-37.0,-33.5,-32.4,-32.5,-31.2,-31.1,-34.4,-33.0,-30.4,-30.1,-28.5,-27.2,-29.3,-36.4,-37.3,-32.4,-35.6,-37.1,-37.1,-34.8,-38.9,-40.3,-41.4,-40.2,-44.3,-41.2,-39.5,-39.1,-41.7,-40.7,-35.8,-32.4,-29.1,-28.3,-26.1,-27.1,-21.8,-21.5,-18.6,-18.6,-21.7,-22.0,-20.4,-20.4,-19.1,-15.8,-16.8,-11.9,-12.5,-14.4,-10.5,-12.7,-8.9,-5.3,-6.3,-7.5,-2.4,-4.4,-3.3,-3.3,-3.0,-3.0,-1.4,-1.4,-4.8,-6.2,-7.6,-8.1,-9.4,-7.6,-4.8,-3.9,-3.8,-2.7,-7.0,-4.5,-4.5,-5.8,-4.5,-1.8,-3.0,-6.6,-6.8,-6.8,-6.7,-9.4,-10.7,-8.4,-8.9,-9.9,-10.5,-13.4,-14.4,-14.8,-15.2,-10.3,-10.3,-10.7,-10.2,-11.5,-14.8,-16.4,-22.9,-21.6,-24.1,-28.4,-24.5,-31.4,-31.7,-31.1,-33.5,-33.5,-34.5,-33.0,-32.4,-32.5,-31.2,-34.2,-33.5,-31.3,-33.3,-35.4,-32.6,-33.7,-35.1,-37.8,-40.7,-37.6,-38.0,-31.4,-31.4,-30.0,-30.0,-33.7,-28.6,-27.5,-26.9,-23.4,-22.6,-18.7,-17.7,-18.1,-20.2,-23.3,-20.7,-25.5,-22.7,-19.8,-16.7,-14.1,-15.1,-15.5,-16.5,-13.3,-17.4,-17.1,-17.5,-16.9,-18.8,-13.9,-14.2,-14.7,-11.4,-11.9,-13.8,-8.8,-4.9,-6.7,-5.9,-8.5,-4.6,-5.9,-1.4,1.3,-2.5,-3.3,-3.2,-3.3,-3.0,-2.3,-0.1,-0.0,-0.0,-5.8,-7.2,0.4,3.8,3.7,5.3,5.0,2.1,3.5,2.5,-1.4,-6.5,-5.3,-5.2,1.4,0.3,-2.6,-0.3,-0.8,4.4,4.0,-1.2,-2.6,-7.6,-13.0,-11.5,-8.2,-2.1,-3.0,3.4,2.1,1.4,7.6,7.6,7.5,4.7,5.0,7.7,9.6,11.0,13.5,11.5],"dow_n3":[-4.1,-5.9,-7.6,-9.7,-4.8,-6.2,-5.7,-1.3,2.6,2.6,1.2,-0.2,3.1,8.3,8.7,10.3,8.6,4.9,4.9,5.5,5.5,1.3,-0.1,3.7,-0.4,-2.6,-3.0,-3.4,-3.3,-2.4,-0.9,-2.4,-1.2,-1.6,4.3,3.3,8.4,8.3,9.3,8.8,9.3,8.0,5.6,5.0,5.8,9.6,10.1,6.0,5.0,4.0,3.7,2.2,-3.5,-0.2,1.4,1.0,-3.9,-4.4,-6.2,-2.0,0.9,0.9,-1.2,3.7,3.3,4.1,0.7,4.1,6.9,8.3,6.8,4.2,9.9,10.7,15.8,14.4,13.3,10.2,10.1,13.4,11.6,10.3,8.1,6.8,12.8,8.2,12.0,11.8,9.8,12.9,9.6,10.6,10.2,6.8,13.4,17.3,18.6,17.2,15.8,14.8,15.1,11.2,7.0,4.9,2.4,3.0,3.3,0.9,-0.2,-3.2,-1.6,1.3,-1.7,-3.8,-5.9,-5.8,-7.1,-7.3,-10.8,-12.8,-14.3,-16.6,-16.5,-17.9,-15.2,-21.8,-19.0,-14.7,-13.5,-14.3,-14.9,-11.0,-9.9,-11.7,-12.5,-12.4,-14.7,-16.4,-18.4,-13.4,-14.8,-17.3,-14.0,-16.0,-17.7,-22.1,-19.6,-18.7,-16.9,-17.3,-12.9,-6.1,-7.6,-5.7,-2.6,2.5,2.1,-0.4,-0.3,-2.0,-5.5,-3.2,-2.1,-0.2,-4.8,5.0,4.7,10.0,12.0,10.2,10.5,8.3,2.0,-1.7,-2.2,-1.3,3.8,4.6,2.9,0.9,2.6,4.5,7.4,10.3,10.5,12.3,13.1,12.2,15.5,19.7,18.2,15.9,12.9,9.8,11.0,14.6,15.5,17.2,21.6,19.2,14.2,21.3,17.4,20.8,23.0,23.1,26.8,25.6,28.2,28.3,26.1,26.9,22.5,22.4,18.9,17.9,18.7,17.8,17.8,12.8,9.3,10.9,11.2,12.6,11.7,13.1,11.8,15.0,18.7,15.7,11.3,10.4,9.6,15.3,18.5,16.6,16.7,22.9,26.0,28.6,27.9,27.5,26.6,25.1,25.0,28.9,32.8,30.9,31.2,32.5,35.1,35.8,35.8,38.1,41.2,40.5,41.0,37.6,36.6,36.0,35.2],"dow_n5":[-3.5,-4.3,-3.9,-3.9,0.0,0.0,1.7,0.5,4.8,4.7,3.3,2.8,6.1,10.0,11.0,15.8,15.0,16.3,15.9,13.4,12.3,11.3,10.7,13.0,12.8,13.6,13.7,10.5,7.4,8.6,8.2,7.7,11.0,11.6,15.9,14.9,18.4,17.3,17.3,16.8,18.5,19.5,14.4,16.2,18.2,20.5,18.7,17.7,16.7,16.7,15.9,18.6,13.3,13.5,13.5,15.5,13.7,14.3,14.6,17.2,19.0,19.7,18.7,21.2,21.5,21.9,22.6,27.0,29.1,31.0,31.7,29.3,34.7,33.3,33.9,30.8,29.7,27.4,27.7,28.1,27.6,28.3,26.6,26.3,26.9,24.9,25.9,26.8,26.8,29.1,28.0,28.0,25.0,24.0,24.0,28.9,30.6,29.2,28.2,28.2,26.1,25.7,26.1,21.5,20.9,20.9,21.5,19.5,17.4,17.2,16.4,19.3,18.3,17.9,17.4,15.5,15.3,15.1,13.1,13.1,9.2,5.6,7.7,7.9,6.7,-0.6,-1.1,7.9,8.8,10.0,9.6,9.6,8.6,7.6,9.2,7.2,6.2,6.8,5.8,7.4,8.3,5.5,12.1,9.0,5.9,6.8,9.2,11.3,11.5,9.4,10.9,14.5,13.3,12.4,15.7,17.9,16.9,13.8,14.5,12.5,8.5,10.2,12.3,15.1,13.7,12.9,12.0,16.4,18.4,17.5,12.6,11.2,10.2,10.2,10.7,14.6,17.9,19.9,22.1,21.0,22.3,20.6,23.3,29.0,28.6,30.2,30.8,29.8,28.6,34.2,29.1,26.7,25.7,23.9,25.0,21.6,22.5,22.0,28.5,24.3,20.4,27.1,25.6,29.0,30.6,31.4,35.9,35.9,33.2,33.9,34.3,35.1,32.8,33.1,33.2,30.0,25.4,29.7,28.3,28.0,24.7,27.4,26.0,25.7,28.3,27.4,24.3,25.4,25.2,23.4,22.0,19.5,19.0,22.7,22.0,20.1,24.2,23.2,24.8,24.8,24.6,22.6,22.6,21.5,20.1,22.7,25.3,25.3,27.6,25.6,26.5,28.8,32.6,36.3,34.4,32.5,30.7,29.1,25.1,22.8,23.6]},"trail":{"base":[-1.4,-3.3,-6.8,-7.6,-4.7,-3.5,-2.3,-2.2,-3.1,-3.6,-6.0,0.2,-1.6,-3.0,-4.2,-3.0,-5.6,-4.7,-4.0,-4.7,-6.4,-10.3,-13.1,0.8,-3.5,-3.8,-5.8,-7.6,-5.8,-4.3,-6.0,-8.5,-2.4,-3.9,-3.0,-4.8,-5.5,-2.0,4.0,3.7,6.1,5.5,3.7,4.7,8.1,7.1,7.1,6.1,4.7,-1.9,-3.8,-4.8,-5.7,-5.0,-5.0,-5.1,-6.1,-9.5,-10.5,-8.3,-12.2,-11.1,-10.5,-10.9,-12.8,-12.7,-10.6,-5.8,5.2,6.0,5.6,4.1,5.0,5.0,8.8,16.8,15.3,13.9,15.9,15.8,16.2,21.2,19.7,22.5,22.0,21.0,22.6,20.6,22.2,22.7,23.9,23.1,24.8,23.0,23.9,23.9,23.2,22.5,22.9,21.8,20.7,19.5,19.1,18.8,13.5,12.0,11.8,12.4,12.3,11.6,9.0,12.7,12.1,10.7,11.1,12.3,10.6,8.1,10.0,10.0,9.7,8.3,7.7,8.4,9.6,7.8,7.2,3.8,4.1,3.2,2.8,9.8,9.8,9.0,8.5,4.4,1.5,-0.1,-4.3,-3.3,-4.8,-7.7,-7.7,-13.9,-13.8,-15.3,-19.9,-18.7,-19.3,-14.8,-15.0,-16.9,-14.2,-16.6,-16.5,-17.3,-19.0,-21.0,-17.9,-18.7,-22.9,-23.9,-24.7,-24.6,-24.5,-12.5,-14.5,-13.0,-13.6,-13.1,-3.8,-4.4,-5.8,-5.4,-4.3,-2.9,-2.0,-5.3,-6.9,-10.0,-5.1,-9.2,-7.2,-0.1,2.9,6.5,4.3,5.6,5.4,6.7,3.1,0.2,-0.6,-3.3,-5.3,-6.3,-6.6,-6.3,-7.0,-5.8,-8.4,-6.0,-2.5,-7.8,-9.4,-10.8,-4.4,-5.5,-3.7,-3.7,-5.2,-6.9,-8.3,-9.3,-10.0,-9.4,-11.6,-8.9,-8.9,-13.4,-14.8,0.8,1.1,0.2,0.1,-1.4,-7.1,-5.6,-7.6,-10.4,-13.4,-13.7,-14.0,-17.3,-18.3,-20.9,-20.4,-19.3,-19.6,-20.1,-22.7,-21.5,-25.7,-31.1,-31.7,-28.8,-27.1,-29.9,-22.1,-26.4,-27.1,-19.7,-18.4,-20.5,-22.0,-21.5,-19.4,-18.0,-16.6,-16.4,-16.4],"dow_n3":[-3.4,-5.0,-6.2,-8.3,-5.6,-7.0,-5.6,-5.7,4.3,4.3,2.3,2.2,5.5,8.3,6.4,4.5,3.1,1.6,1.6,-0.4,-0.4,-4.2,-5.5,10.6,3.9,3.2,3.4,2.4,1.9,5.0,6.5,6.7,9.1,8.7,14.3,12.2,15.1,13.4,14.5,14.6,16.1,15.0,13.8,13.2,14.8,18.6,22.2,16.8,16.0,15.3,14.4,11.1,7.5,12.4,13.0,14.9,13.1,11.1,8.8,12.5,16.5,17.6,15.5,23.6,24.4,24.9,22.4,26.5,32.0,31.1,30.3,29.7,33.8,31.7,41.0,47.2,45.2,42.2,39.8,39.9,38.5,36.9,36.2,36.8,42.2,40.5,43.8,47.3,47.8,51.9,51.8,52.3,49.3,47.7,51.0,52.9,65.5,61.7,63.7,62.7,63.0,58.7,55.9,53.5,51.7,51.9,50.3,48.2,49.6,47.9,47.9,51.9,49.1,47.1,45.8,45.0,43.1,43.6,40.3,38.7,36.6,34.7,35.5,35.3,35.5,32.4,35.3,35.6,35.2,34.5,35.0,52.8,54.0,53.4,53.7,53.8,51.5,50.6,49.0,52.9,55.3,50.0,52.6,51.7,52.7,50.1,48.2,51.7,48.4,51.7,52.9,54.8,52.6,56.4,58.1,62.3,63.7,61.0,62.9,61.0,57.6,57.3,60.4,56.2,52.2,65.6,63.3,67.8,68.5,68.0,69.4,69.4,63.3,62.8,62.2,63.1,63.0,61.1,61.1,59.9,64.2,64.2,67.2,70.9,67.4,73.8,71.9,72.1,72.6,79.0,77.3,74.9,69.9,66.6,61.3,66.7,66.2,62.3,65.5,63.8,60.4,65.7,62.1,63.6,61.9,61.9,65.1,65.5,66.3,66.2,63.7,64.5,60.6,59.2,58.3,57.9,58.2,55.8,56.4,52.2,51.2,51.6,53.1,52.1,49.0,49.3,47.4,48.9,49.1,46.6,44.1,45.4,45.7,46.0,49.2,46.8,48.7,52.7,60.6,61.8,62.2,65.2,64.4,62.3,60.5,66.0,68.6,65.6,67.2,66.2,66.5,67.6,65.6,66.0,67.2,66.8,67.8,64.0,63.1,62.5,63.2],"dow_n5":[-3.4,-4.3,-4.5,-4.5,-2.0,-2.0,0.8,0.7,7.7,5.9,4.6,4.1,5.1,6.0,3.5,7.0,4.9,7.7,9.2,6.9,6.3,5.3,4.8,21.4,16.6,17.4,17.4,14.2,12.1,14.0,12.2,10.5,15.0,15.3,20.5,17.9,20.2,18.6,18.6,18.6,20.4,20.1,17.1,19.4,21.2,24.3,25.6,24.6,24.1,24.1,23.4,23.7,18.3,21.9,21.9,26.0,25.6,24.7,24.9,27.7,30.4,32.1,31.2,37.0,38.8,39.2,38.1,41.1,44.6,44.2,44.6,43.5,47.2,45.6,51.1,48.1,46.4,45.2,46.5,44.8,45.0,47.6,45.7,45.3,46.1,44.2,45.4,48.9,48.9,52.1,53.3,53.3,49.9,50.1,50.1,52.9,60.4,57.5,57.5,57.5,55.5,54.9,55.3,51.3,47.5,47.5,46.9,44.8,42.8,42.6,42.5,46.5,44.4,44.1,45.2,41.3,40.6,39.8,38.5,38.5,35.2,32.1,34.4,36.9,35.3,30.4,31.0,38.6,38.7,38.6,38.9,44.4,43.5,42.5,43.3,41.2,40.2,38.7,37.5,39.1,40.0,35.2,39.7,38.6,38.5,39.4,37.1,41.0,38.1,36.1,35.5,36.3,33.8,33.5,35.6,38.9,37.4,34.4,36.7,34.7,32.1,33.4,37.6,34.0,32.9,32.4,30.8,36.1,36.8,37.5,34.1,32.3,30.2,30.2,30.6,35.9,36.4,38.9,43.7,42.0,48.0,46.7,51.6,60.7,56.8,65.9,62.9,62.0,61.4,67.5,61.7,60.2,60.3,58.4,54.8,54.2,54.3,51.4,56.4,53.5,49.6,53.7,52.9,54.3,53.9,56.9,59.7,59.7,56.9,58.6,57.6,57.5,54.6,54.0,54.1,51.8,47.9,48.5,48.2,46.6,45.8,46.6,46.5,45.8,48.6,48.1,45.1,47.1,45.6,45.1,43.8,42.9,42.8,40.8,40.9,40.4,44.7,44.7,46.5,46.5,46.9,47.4,47.4,46.3,44.1,47.3,49.2,48.2,50.4,48.6,49.5,53.3,53.8,52.5,51.4,50.3,46.5,44.7,42.4,41.4,42.2]}},"dates":["2021-01-08","2021-01-15","2021-01-22","2021-01-29","2021-02-05","2021-02-12","2021-02-19","2021-02-26","2021-03-05","2021-03-12","2021-03-19","2021-03-26","2021-04-02","2021-04-09","2021-04-16","2021-04-23","2021-04-30","2021-05-07","2021-05-14","2021-05-21","2021-05-28","2021-06-04","2021-06-11","2021-06-18","2021-06-25","2021-07-02","2021-07-09","2021-07-16","2021-07-23","2021-07-30","2021-08-06","2021-08-13","2021-08-20","2021-08-27","2021-09-03","2021-09-10","2021-09-17","2021-09-24","2021-10-01","2021-10-08","2021-10-15","2021-10-22","2021-10-29","2021-11-05","2021-11-12","2021-11-19","2021-11-26","2021-12-03","2021-12-10","2021-12-17","2021-12-24","2021-12-31","2022-01-07","2022-01-14","2022-01-21","2022-01-28","2022-02-04","2022-02-11","2022-02-18","2022-02-25","2022-03-04","2022-03-11","2022-03-18","2022-03-25","2022-04-01","2022-04-08","2022-04-15","2022-04-22","2022-04-29","2022-05-06","2022-05-13","2022-05-20","2022-05-27","2022-06-03","2022-06-10","2022-06-17","2022-06-24","2022-07-01","2022-07-08","2022-07-15","2022-07-22","2022-07-29","2022-08-05","2022-08-12","2022-08-19","2022-08-26","2022-09-02","2022-09-09","2022-09-16","2022-09-23","2022-09-30","2022-10-07","2022-10-14","2022-10-21","2022-10-28","2022-11-04","2022-11-11","2022-11-18","2022-11-25","2022-12-02","2022-12-09","2022-12-16","2022-12-23","2022-12-30","2023-01-06","2023-01-13","2023-01-20","2023-01-27","2023-02-03","2023-02-10","2023-02-17","2023-02-24","2023-03-03","2023-03-10","2023-03-17","2023-03-24","2023-03-31","2023-04-07","2023-04-14","2023-04-21","2023-04-28","2023-05-05","2023-05-12","2023-05-19","2023-05-26","2023-06-02","2023-06-09","2023-06-16","2023-06-23","2023-06-30","2023-07-07","2023-07-14","2023-07-21","2023-07-28","2023-08-04","2023-08-11","2023-08-18","2023-08-25","2023-09-01","2023-09-08","2023-09-15","2023-09-22","2023-09-29","2023-10-06","2023-10-13","2023-10-20","2023-10-27","2023-11-03","2023-11-10","2023-11-17","2023-11-24","2023-12-01","2023-12-08","2023-12-15","2023-12-22","2023-12-29","2024-01-05","2024-01-12","2024-01-19","2024-01-26","2024-02-02","2024-02-09","2024-02-16","2024-02-23","2024-03-01","2024-03-08","2024-03-15","2024-03-22","2024-03-29","2024-04-05","2024-04-12","2024-04-19","2024-04-26","2024-05-03","2024-05-10","2024-05-17","2024-05-24","2024-05-31","2024-06-07","2024-06-14","2024-06-21","2024-06-28","2024-07-05","2024-07-12","2024-07-19","2024-07-26","2024-08-02","2024-08-09","2024-08-16","2024-08-23","2024-08-30","2024-09-06","2024-09-13","2024-09-20","2024-09-27","2024-10-04","2024-10-11","2024-10-18","2024-10-25","2024-11-01","2024-11-08","2024-11-15","2024-11-22","2024-11-29","2024-12-06","2024-12-13","2024-12-20","2024-12-27","2025-01-03","2025-01-10","2025-01-17","2025-01-24","2025-01-31","2025-02-07","2025-02-14","2025-02-21","2025-02-28","2025-03-07","2025-03-14","2025-03-21","2025-03-28","2025-04-04","2025-04-11","2025-04-18","2025-04-25","2025-05-02","2025-05-09","2025-05-16","2025-05-23","2025-05-30","2025-06-06","2025-06-13","2025-06-20","2025-06-27","2025-07-04","2025-07-11","2025-07-18","2025-07-25","2025-08-01","2025-08-08","2025-08-15","2025-08-22","2025-08-29","2025-09-05","2025-09-12","2025-09-19","2025-09-26","2025-10-03","2025-10-10","2025-10-17","2025-10-24","2025-10-31","2025-11-07","2025-11-14","2025-11-21","2025-11-28","2025-12-05","2025-12-12","2025-12-19","2025-12-26","2026-01-02"],"names":{"base":"従来（フィルターなし）","dow_n3":"ダウ構造ブレイク n=3","dow_n5":"ダウ構造ブレイク n=5","ref":"参考: 日足20日騰落＋4H移動平均"},"pairList":["AUDUSD","EURUSD","GBPUSD","SP500","USDCHF","USDJPY"]};
+let mode = "fixed";
+try { const m = localStorage.getItem("dsb-mode"); if (m === "fixed" || m === "trail") mode = m; } catch (e) {}
+const $ = id => document.getElementById(id);
+const fmt = (v, d = 1, sign = true) => v == null ? "–" : (sign && v > 0 ? "+" : "") + v.toFixed(d);
+const cls = v => v == null ? "" : v > 0 ? "pos" : v < 0 ? "neg" : "";
+const COL = { base: "var(--s-base)", dow_n3: "var(--s-n3)", dow_n5: "var(--s-n5)" };
+
+function cmp() {
+  const r = Object.fromEntries(D.summary[mode].map(x => [x.k, x]));
+  const a = r.dow_n3, b = r.base;
+  const cells = [["合計R", fmt(a.R), fmt(b.R), cls(a.R)], ["PF", a.PF.toFixed(2), b.PF.toFixed(2), ""],
+    ["最大DD", a.dd.toFixed(1) + "R", b.dd.toFixed(1) + "R", ""], ["取引数", a.n, b.n, ""],
+    ["前半 21-23", fmt(a.IS), fmt(b.IS), cls(a.IS)], ["後半 24-25", fmt(a.OOS), fmt(b.OOS), cls(a.OOS)]];
+  $("cmp").innerHTML = cells.map(c => `<div><div class="l">${c[0]}</div><div class="v ${c[3]}">${c[1]}</div><div class="was">従来 ${c[2]}</div></div>`).join("");
+  $("cmpnote").textContent = `USDJPY を除くと ${fmt(a.exJPY)}R（従来 ${fmt(b.exJPY)}R）。買い ${fmt(a.L)}R / 売り ${fmt(a.S)}R。`;
+}
+function summary() {
+  const h = "<tr><th>設定</th><th>取引数</th><th>勝率%</th><th>合計R</th><th>PF</th><th>最大DD</th><th>前半R</th><th>後半R</th><th>買いR</th><th>売りR</th><th>JPY除くR</th></tr>";
+  $("summary").innerHTML = h + D.summary[mode].map(r => `<tr class="${r.k === "base" ? "base" : r.k === "dow_n3" ? "pick" : ""}"><td>${D.names[r.k]}</td><td class="cell">${r.n}</td><td class="cell">${r.win == null ? "–" : r.win.toFixed(1)}</td><td class="cell ${cls(r.R)}">${fmt(r.R)}</td><td class="cell">${r.PF.toFixed(2)}</td><td class="cell">${r.dd.toFixed(1)}</td><td class="cell ${cls(r.IS)}">${fmt(r.IS)}</td><td class="cell ${cls(r.OOS)}">${fmt(r.OOS)}</td><td class="cell ${cls(r.L)}">${fmt(r.L)}</td><td class="cell ${cls(r.S)}">${fmt(r.S)}</td><td class="cell ${cls(r.exJPY)}">${fmt(r.exJPY)}</td></tr>`).join("");
+}
+function heat(v, max) { if (v == null) return ""; return v > 0 ? (v >= max * .35 ? "hp" : "") : (v <= -max * .35 ? "hn" : ""); }
+function grid(id, data, cols, get) {
+  const vals = Object.values(data).flatMap(o => cols.map(c => Math.abs(get(o, c) ?? 0)));
+  const max = Math.max(...vals, 1);
+  $(id).innerHTML = `<tr><th>設定</th>${cols.map(c => `<th>${c}</th>`).join("")}<th>合計</th></tr>` +
+    Object.entries(data).map(([k, o]) => { const tot = cols.reduce((a, c) => a + (get(o, c) ?? 0), 0);
+      return `<tr class="${k === "base" ? "base" : k === "dow_n3" ? "pick" : ""}"><td>${D.names[k]}</td>${cols.map(c => { const v = get(o, c); return `<td class="cell ${cls(v)} ${heat(v, max)}">${fmt(v)}</td>`; }).join("")}<td class="cell ${cls(tot)}">${fmt(tot)}</td></tr>`; }).join("");
+}
+function eqChart() {
+  const W = 640, H = 300, L = 40, R = 66, T = 10, B = 26;
+  const ser = D.eq[mode], keys = ["base", "dow_n5", "dow_n3"], n = D.dates.length;
+  const all = keys.flatMap(k => ser[k]);
+  const step = 20, lo = Math.floor(Math.min(0, ...all) / step) * step, hi = Math.ceil(Math.max(0, ...all) / step) * step;
+  const x = i => L + (W - L - R) * i / (n - 1), y = v => T + (H - T - B) * (hi - v) / (hi - lo);
+  let g = "";
+  for (let v = lo; v <= hi; v += step) g += `<line class="${v === 0 ? "zero" : "grid"}" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${v > 0 ? "+" : ""}${v}</text>`;
+  let lastYear = "";
+  D.dates.forEach((d, i) => { const yr = d.slice(0, 4); if (yr !== lastYear) { lastYear = yr; if (i > 0) g += `<line class="grid" x1="${x(i)}" x2="${x(i)}" y1="${T}" y2="${H - B}"/>`; g += `<text x="${x(i) + 4}" y="${H - 8}">${yr}</text>`; } });
+  // 右端のラベルが重ならないように並べる
+  const ends = keys.map(k => ({ k, v: ser[k][n - 1], yy: y(ser[k][n - 1]) })).sort((a, b) => a.yy - b.yy);
+  for (let i = 1; i < ends.length; i++) if (ends[i].yy - ends[i - 1].yy < 14) ends[i].yy = ends[i - 1].yy + 14;
+  for (const k of keys) g += `<path class="ln" stroke="${COL[k]}" d="${ser[k].map((v, i) => (i ? "L" : "M") + x(i).toFixed(1) + " " + y(v).toFixed(1)).join("")}"/>`;
+  for (const e of ends) g += `<circle cx="${x(n - 1)}" cy="${y(e.v)}" r="4" fill="${COL[e.k]}" stroke="var(--surface)" stroke-width="2"/><text x="${x(n - 1) + 8}" y="${e.yy + 4}" style="fill:var(--fg)">${fmt(e.v)}</text>`;
+  g += `<line class="xh" id="xh" x1="0" x2="0" y1="${T}" y2="${H - B}" visibility="hidden"/>`;
+  $("eq").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="合算の累積R">${g}<rect id="hit" x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}" fill="transparent"/></svg><div class="tip" id="tip" hidden></div>`;
+  $("eqlegend").innerHTML = ["dow_n3", "dow_n5", "base"].map(k => `<span><i style="background:${COL[k]}"></i>${D.names[k]}</span>`).join("");
+  const svg = $("eq").querySelector("svg"), tip = $("tip"), xh = $("xh");
+  const move = ev => { const r = svg.getBoundingClientRect(); const px = (ev.clientX - r.left) * W / r.width;
+    const i = Math.max(0, Math.min(n - 1, Math.round((px - L) / (W - L - R) * (n - 1))));
+    xh.setAttribute("x1", x(i)); xh.setAttribute("x2", x(i)); xh.setAttribute("visibility", "visible");
+    tip.hidden = false; tip.innerHTML = `${D.dates[i]}<br>` + ["dow_n3", "dow_n5", "base"].map(k => `<span style="color:${COL[k]}">●</span> ${fmt(ser[k][i])}R`).join("<br>");
+    const left = (x(i) / W) * r.width; tip.style.top = "14px"; tip.style.left = (left > r.width / 2 ? left - tip.offsetWidth - 10 : left + 10) + "px"; };
+  $("hit").addEventListener("pointermove", move); $("hit").addEventListener("pointerdown", move);
+  $("hit").addEventListener("pointerleave", () => { tip.hidden = true; xh.setAttribute("visibility", "hidden"); });
+}
+function charts() {
+  $("charts").innerHTML = D.pairList.map(p => { const v = D.pairs[mode].dow_n3[p];
+    return `<a href="dow_trade_chart_${p}_${mode}.html"><b>${p}</b><span class="${cls(v[0])}">${fmt(v[0])}R</span><span class="muted">${v[1]} トレード</span></a>`; }).join("");
+}
+function render() {
+  document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.m === mode));
+  cmp(); summary(); eqChart(); charts();
+  grid("yearly", D.yearly[mode], ["2021", "2022", "2023", "2024", "2025"], (o, c) => o[c]);
+  grid("pairs", D.pairs[mode], D.pairList, (o, c) => o[c] ? o[c][0] : null);
+}
+document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => { mode = b.dataset.m; try { localStorage.setItem("dsb-mode", mode); } catch (e) {} render(); }));
+render();
+</script>

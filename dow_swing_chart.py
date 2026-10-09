@@ -103,7 +103,7 @@ def load_trades(trades, labels, price_decimals=5):
 def make_chart(df_1min, path, title, start=None, end=None, trades=None, weekly_trend=None,
                mode="", risk=200.0, entry_window=18, entry_atr=18, price_decimals=5,
                session_start_hour=17, signal_hours=4, filter_state=None, filter_label="",
-               ma_periods=(20, 50, 120)):
+               ma_periods=(20, 50, 120), entry_lines=None):
     """
     チャートの HTML を path に書き出す（スクリプトから呼び出す用）。
 
@@ -119,12 +119,19 @@ def make_chart(df_1min, path, title, start=None, end=None, trades=None, weekly_t
     filter_label : フィルターの説明（凡例と詳細に表示）
     ma_periods   : 移動平均（表示中の時間足の終値の単純移動平均）の期間。チャートの設定で変えられる。() で既定オフ
     entry_window / entry_atr / signal_hours : エントリー側 Swing High/Low ラインの設定（1H/4H に表示）
+    entry_lines  : エントリーラインを自分で渡すとき（4時間足スイング以外のラインで検証した戦略用）。
+                   index=1分足の時刻、列 SignalSH / SignalSL / SignalSHValid / SignalSLValid の DataFrame。
+                   渡すと entry_window / entry_atr は使わない
     """
     extra = {}
     if trades is not None:
-        signals = compute_signals(resample_to_signal_bars(df_1min, session_start_hour, signal_hours),
-                                  window=entry_window, atr_period=entry_atr, price_decimals=price_decimals)
-        df_1min = map_signals_to_1min(df_1min, signals, session_start_hour, signal_hours)
+        if entry_lines is not None:
+            cols = ["SignalSH", "SignalSL", "SignalSHValid", "SignalSLValid"]
+            df_1min = df_1min.join(entry_lines[cols].reindex(df_1min.index))
+        else:
+            signals = compute_signals(resample_to_signal_bars(df_1min, session_start_hour, signal_hours),
+                                      window=entry_window, atr_period=entry_atr, price_decimals=price_decimals)
+            df_1min = map_signals_to_1min(df_1min, signals, session_start_hour, signal_hours)
         extra = {"SignalSH": "esh", "SignalSL": "esl", "SignalSHValid": "eshv", "SignalSLValid": "eslv"}
         if weekly_trend is not None:
             if isinstance(weekly_trend, (str, Path)):
