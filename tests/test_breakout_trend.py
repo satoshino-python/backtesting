@@ -8,7 +8,7 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from breakout_trend import BreakoutParams, fractal_pivots, simulate, equity_curve  # noqa: E402
+from breakout_trend import BreakoutParams, fractal_pivots, simulate, equity_curve, ma_filter_allow  # noqa: E402
 
 # ATR が早く使えるように期間を短くする。時間切れ・建値は使わない設定を基本にし、テストごとに変える
 P = BreakoutParams(atr_period=3, time_bars=999, be_atr=99.0, max_bars=999)
@@ -164,6 +164,45 @@ def test_short_is_mirror_of_long():
     for col in ("R", "MFE_ATR", "MAE_ATR", "Bars"):
         assert np.allclose(a[col].values, b[col].values), col
     assert a.ReasonCode.tolist() == b.ReasonCode.tolist()
+
+
+def test_ma_filter_allow_arrays():
+    up = np.arange(1, 30, dtype=float)
+    lo, sh = ma_filter_allow(up, (2, 3, 5))
+    assert lo[4:].all() and not sh.any() and not lo[:4].any()      # 長期の本数に満たない足は両方 False
+    lo, sh = ma_filter_allow(up[::-1].copy(), (2, 3, 5))
+    assert sh[4:].all() and not lo.any()
+
+
+def test_ma_filter_blocks_and_passes():
+    """上昇の並び（短期 > 中期 > 長期）なら買いが通り、並びが逆（期間を逆順に指定）なら見送る"""
+    rows = base_with_swing_high() + [(103.6, 104, 103, 103.8), (103.8, 104, 90, 91)] + flat(3, 91)
+    bars = make_bars(rows)
+    assert len(simulate(bars, replace(P, ma_filter=(2, 3, 5)))) == 1
+    assert len(simulate(bars, replace(P, ma_filter=(5, 3, 2)))) == 0
+
+
+def test_ma_filter_uses_signal_bar_close_only():
+    """フィルターはシグナル足の確定時点の SMA で決まる。末尾を切っても、残した範囲のトレードは変わらない"""
+    rng = np.random.default_rng(1)
+    c = 100 + np.cumsum(rng.normal(0, 0.5, 2500))
+    o = np.concatenate([[100], c[:-1]])
+    h = np.maximum(o, c) + rng.exponential(0.3, 2500)
+    l = np.minimum(o, c) - rng.exponential(0.3, 2500)
+    bars = make_bars(list(zip(o, h, l, c)))
+    q = BreakoutParams(ma_filter=(20, 75, 200))
+    full, none = simulate(bars, q), simulate(bars, BreakoutParams())
+    assert 0 < len(full) < len(none)
+    part = simulate(bars.iloc[:1800], q)
+    done = full[full.ExitTime < bars.index[1799]]
+    pd.testing.assert_frame_equal(part.iloc[:len(done)].reset_index(drop=True), done.reset_index(drop=True))
+    # 買いは 短期 > 中期 > 長期 のときだけ、売りは逆のときだけ
+    sma = lambda k: pd.Series(bars.Close.values).rolling(k).mean().to_numpy()
+    pos = {t: i for i, t in enumerate(bars.index)}
+    for _, tr in full.iterrows():
+        i = pos[tr.SignalTime]
+        ok = sma(20)[i] > sma(75)[i] > sma(200)[i] if tr.Dir == 1 else sma(20)[i] < sma(75)[i] < sma(200)[i]
+        assert ok
 
 
 def test_no_lookahead_random_walk():

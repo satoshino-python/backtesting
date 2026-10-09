@@ -19,6 +19,12 @@ COMPARE = {
 }
 
 
+def run_label(base):
+    """比較表での実行名: 左右◯本（＋移動平均フィルター）"""
+    ma = base.get("ma_filter")
+    return f"左右{base['fractal_n']}本" + (f"・MA{'/'.join(map(str, ma))}" if ma else "・MAなし")
+
+
 def clean(x):
     """JSON に入れられる値にする（NaN → None、numpy → Python）"""
     if isinstance(x, dict):
@@ -62,7 +68,7 @@ def main(run_dir, extra_runs=()):
     for d in extra_runs:   # 同じ戦略の別の実行（例: フラクタル左右3本）
         d = Path(d)
         rd = json.loads((d / "report_data.json").read_text(encoding="utf-8"))
-        label = f"左右{rd['base']['fractal_n']}本"
+        label = run_label(rd["base"])
         rows = {r["name"]: dict(trades=r["trades"], expectancy_R=r["expectancy_R"], total_R=r["total_R"], pf=r["pf"])
                 for r in rd["summary"]}
         a = rows["全体"]
@@ -81,8 +87,9 @@ def main(run_dir, extra_runs=()):
         mfe_ge_3=float((tr.MFE_ATR >= 3).mean() * 100),
         mfe_median=float(tr.MFE_ATR.median()),
     )
+    cfg = json.loads((run_dir / "config.json").read_text(encoding="utf-8"))
     data = dict(
-        meta=dict(created=rep["created"], out_dir=rep["out_dir"], start=rep["start"], end=rep["end"],
+        meta=dict(warmup=cfg.get("warmup_months", 1), created=rep["created"], out_dir=rep["out_dir"], start=rep["start"], end=rep["end"],
                   is_end=rep["is_end"], risk_pct=rep["risk_pct"], base=rep["base"], spreads=rep["spreads"]),
         pairs=pairs, summary=rep["summary"], yearly=rep["yearly"], yearly_stats=rep["yearly_stats"],
         by_reason=rep["by_reason"], by_side=rep["by_side"], mfe=dict(n3=rep["mfe"]["n3"], n6=rep["mfe"]["n6"],
@@ -95,9 +102,10 @@ def main(run_dir, extra_runs=()):
     )
     html = TEMPLATE.read_text(encoding="utf-8").replace(
         "__DATA__", json.dumps(clean(data), ensure_ascii=False, separators=(",", ":")))
-    n = rep["base"]["fractal_n"]
-    if n != 3:   # 初期値（左右3本）以外の実行は、別のアーティファクトとして区別できる名前にする
-        html = html.replace("ブレイクアウト・トレンドフォロー 6ペア", f"ブレイクアウト 左右{n}本 6ペア")
+    n, ma = rep["base"]["fractal_n"], rep["base"].get("ma_filter")
+    if n != 3 or ma:   # 初期値以外の実行は、別のアーティファクトとして区別できる名前にする
+        html = html.replace("ブレイクアウト・トレンドフォロー 6ペア",
+                            f"ブレイクアウト 左右{n}本{' MAフィルター' if ma else ''} 6ペア")
     out = run_dir / "report.html"
     out.write_text(html, encoding="utf-8")
     print(f"✅ {out} ({out.stat().st_size / 1e3:.0f} KB)")

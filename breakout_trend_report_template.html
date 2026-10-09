@@ -117,7 +117,7 @@ footer code { font-family: var(--f-num); font-size: .72rem; word-break: break-al
   </section>
 
   <section class="verdict">
-    <span class="tag">初期値の結果（仕様書どおり）</span>
+    <span class="tag" id="vtag">初期値の結果（仕様書どおり）</span>
     <p class="rule" id="verdict-rule"></p>
     <div class="cmp" id="cmp"></div>
     <p class="sub" style="margin:0" id="verdict-note"></p>
@@ -209,6 +209,10 @@ const cls = x => x == null ? "" : x > 0 ? "pos" : x < 0 ? "neg" : "";
 const heat = x => x == null ? "" : x > 0 ? "hp" : x < 0 ? "hn" : "";
 const all = D.summary[0];
 const B = D.meta.base;
+if (B.ma_filter) $("vtag").textContent = `初期値＋移動平均フィルター（SMA ${B.ma_filter.join(" > ")}）の結果`;
+const sensRows = D.sensitivity.filter(r => r.name !== "base");
+const nPos = sensRows.filter(r => r.expectancy_R > 0).length;
+const nBoth = sensRows.filter(r => r.is_expectancy_R > 0 && r.oos_expectancy_R > 0).length;
 
 // ---- header / verdict ----
 $("sub").textContent = `4時間足（NY 17:00 区切り）/ ${D.meta.start.slice(0, 7)}〜${D.meta.end.slice(0, 7)}（SP500 は 2024〜）/ ` +
@@ -229,7 +233,7 @@ $("verdict-note").textContent = `下の小さい数字は、比較用の実行�
 
 // ---- comparison ----
 if (cmpNames.length) {
-  const mine = `左右${B.fractal_n}本（この実行）`;
+  const mine = `この実行`;
   const runs = [[mine, Object.fromEntries(D.summary.map(r => [r.name, r]))], ...cmpNames.map(n => [n, D.compare[n].rows])];
   const names = ["全体", ...D.pairs];
   table($("cmp-tbl"), ["", ...runs.flatMap(([n]) => [`${n} 取引`, "期待値R", "合計R", "PF"])],
@@ -238,7 +242,7 @@ if (cmpNames.length) {
       return [r.trades, { v: sg(r.expectancy_R, 3), c: heat(r.expectancy_R) }, { v: sg(r.total_R, 1), c: heat(r.total_R) }, f(r.pf)];
     })]), (r, i) => i === 0 ? "base" : "");
   $("cmp-sec").hidden = false;
-  $("cmp-hint").textContent = "「左右◯本」は、このレポートと同じ売買ルールでフラクタルの左右本数だけを変えた実行。それ以外（固定SL/TP・1Hスイング追従）は既存のスイングブレイクアウト高速版（前後18本のスイングに逆指値、1分足で約定）で、売買ルールが違う。";
+  $("cmp-hint").textContent = "「左右◯本・MA…」は、このレポートと同じ売買ルールで、フラクタルの左右本数や移動平均フィルターの有無だけを変えた実行（助走期間が違うと、期間の頭の数ヶ月の取引が少し変わる）。それ以外（固定SL/TP・1Hスイング追従）は既存のスイングブレイクアウト高速版（前後18本のスイングに逆指値、1分足で約定）で、売買ルールが違う。";
 }
 
 // ---- findings ----
@@ -254,7 +258,7 @@ const finds = [
   ["mid", "損失の大半は初期損切り", `初期損切り ${rs["初期損切り"]?.count ?? 0} 件で <b>${sg(rs["初期損切り"]?.sum, 0)}R</b>、トレイル ${rs["トレイル"]?.count ?? 0} 件で <b>${sg(rs["トレイル"]?.sum, 0)}R</b>。` +
     `時間切れ（${rs["時間切れ"]?.count ?? 0} 件、平均 ${sg(rs["時間切れ"]?.mean)}R）は損を小さく切れているが、全体の差を埋めるほどではない。勝率 ${f(all.win_rate, 1)}%・ペイオフ ${f(all.payoff)}。`],
   [wfPickOos.expectancy_R > 0 ? "mid" : "bad", "パラメータを選んでも損益ゼロ近辺", `前半で期待値が最も高かった値を組み合わせると、後半は <b>${sg(wfPickOos.expectancy_R, 3)}R/トレード</b>（初期値 ${sg(wfBaseOos.expectancy_R, 3)}）。` +
-    `感度分析でもプラスになる設定は無く、コスト2倍では ${sg(c2.expectancy_R, 3)}R/トレードまで下がる。`],
+    `感度分析の ${sensRows.length} 通りのうち、全期間でプラスは ${nPos} 通り、前半・後半ともプラスは ${nBoth} 通り。コスト2倍では ${sg(c2.expectancy_R, 3)}R/トレードまで下がる。`],
 ];
 $("findings").innerHTML = finds.map(([p, h, t]) => `<div class="find"><h3><span class="pill ${p}">${{ good: "良い", bad: "弱い", mid: "要注意" }[p]}</span>${h}</h3><p>${t}</p></div>`).join("");
 
@@ -390,6 +394,7 @@ const rules = [
     `<b>売り</b>: 直近に確定したスイングローを終値で下抜けたら、次の足の始値で成行売り`,
     `一度抜けたスイングは使用済み（保有中などでエントリーしなかった場合も）。次のスイングが確定するまで同じ方向のシグナルは出ない`,
     `1ペア1ポジションまで。保有中のシグナルと、決済した足のシグナルは見送り`,
+    ...(B.ma_filter ? [`<b>方向フィルター</b>: シグナル足の確定時点で、4時間足の終値の単純移動平均 ${B.ma_filter.join(" / ")} が <b>${B.ma_filter.join(" > ")}</b> のときだけ買い、<b>${B.ma_filter.join(" < ")}</b> のときだけ売り。並びが揃っていない足と、長期線の本数に満たない足は見送り（見送ったシグナルのスイングも使用済みになる）`] : []),
   ], `ATR は ATR(${B.atr_period})・Wilder 方式。シグナル足の確定時の値を、そのトレードの間ずっと使う。`],
   ["決済", `買いの場合。売りは上下を逆に`, "ol", [
     `<b>初期損切り</b>: エントリー価格 − ${K(B.sl_atr + " ATR")}。この幅が <b>1R</b>`,
@@ -406,7 +411,7 @@ const rules = [
   ], ""],
   ["データと期間", "", "ul", [
     `GMOクリック証券の1分足の仲値を、NY 17:00 区切りの4時間足（17-21 / 21-1 / 1-5 / 5-9 / 9-13 / 13-17 時）にまとめる`,
-    `検証 ${D.meta.start.slice(0, 7)}〜${D.meta.end.slice(0, 7)}（SP500 = US500 CFD は 2024-01〜、つなぎ足の調整なし）。前の1ヶ月は助走でエントリーしない`,
+    `検証 ${D.meta.start.slice(0, 7)}〜${D.meta.end.slice(0, 7)}（SP500 = US500 CFD は 2024-01〜、つなぎ足の調整なし）。前の${D.meta.warmup}ヶ月は助走でエントリーしない`,
     `損益は R で評価。資金曲線は1トレード ${D.meta.risk_pct * 100}% リスクの複利`,
   ], ""],
 ];
@@ -414,8 +419,8 @@ $("rules").innerHTML = rules.map(([h, sub, tag, li, eg]) => `<div class="rcard">
   `<${tag}>${li.map(x => `<li>${x}</li>`).join("")}</${tag}>${eg ? `<p class="eg">${eg}</p>` : ""}</div>`).join("");
 $("notes").innerHTML = [
   "前半（2021〜2023）・後半（2024〜2025）はエントリー日で分けた。実行は全期間で1回。SP500 は後半にしかない。",
-  "感度分析の範囲は仕様書の例どおり。プラスになる設定が無いので、合わせ込みの心配より「この形のままでは優位性が見えない」ことの方が大きい。",
-  "ウォークフォワードで選んだ設定は、前半の期待値で1パラメータずつ選んだもの。後半で初期値より良いが、ほぼ損益ゼロ。",
+  `感度分析の範囲は仕様書の例どおり。プラスの設定は ${nPos} / ${sensRows.length} 通りで、少数のプラスは取引数の少なさによる偶然の可能性が高い。`,
+  "ウォークフォワードで選んだ設定は、前半の期待値で1パラメータずつ選んだ値を組み合わせたもの（その組み合わせ自体は前半でも試していない）。選んだ値の組み合わせで取引数が大きく変わることがある。",
   "既存の高速版（固定SL/TP・1Hスイング追従）とは、エントリー（逆指値 vs 終値ブレイクの次の始値）・決済・ATR の計算・約定の精度（1分足 vs 4時間足）が違う。",
   "4時間足だけで約定を判定しているため、同じ足でストップと有利な値動きの両方に触れた場合は常に不利側に倒している（保守的）。",
   "スワップ・CFD の価格調整額は含めない。資金曲線は全ペアを1つの口座で同時に持つ前提で、証拠金の制約は見ていない。",

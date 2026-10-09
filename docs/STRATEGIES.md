@@ -275,7 +275,8 @@ python dow_swing_chart.py --trades dow_results/trades_20210101-20251231_strict.c
   エントリー後に確定した直近スイングの近い方へトレイル、最大60本。ATR は ATR(14) Wilder をシグナル足の値で固定（`atr_mode`）。
 - 約定は4時間足の高値・安値で判定（1分足は使わない）。同じ足で建値条件とストップの両方に届いたらストップが先。
 - コスト: データの平均スプレッドを価格単位にして、1回の約定ごとに半分 + スリッページ（`SLIPPAGE`、既定0）。
-- `BreakoutParams` の項目: `fractal_n` / `atr_period` / `sl_atr` / `time_bars` / `time_atr` / `be_atr` / `trail_atr` / `trail_swing` / `max_bars` / `atr_mode`。
+- `BreakoutParams` の項目: `fractal_n` / `atr_period` / `sl_atr` / `time_bars` / `time_atr` / `be_atr` / `trail_atr` / `trail_swing` / `max_bars` / `atr_mode` /
+  `ma_filter`（4時間足SMAの並びによる方向フィルター。`(20, 75, 200)` なら 20>75>200 のときだけ買い、逆のときだけ売り。既定 `None`。仕様書13章）。
 - `breakout_trend_run.py` の設定（ファイル冒頭）: `PAIRS`、`START`/`END`（2021-01-01〜2025-12-31）、`IS_END`（2023-12-31。前半/後半の境目）、
   `RISK_PCT`（0.01）、`SENSITIVITY`（感度分析の値）、`COST_MULTS`、`RUN_LABEL`、`WORKERS`、`MAKE_CHARTS`、`SAVE_VARIANT_TRADES`。
   `python breakout_trend_run.py [ペア ...]` で実行（6ペア約1分）。続けて `python breakout_trend_report.py <結果フォルダ>` でレポートを作る。
@@ -291,6 +292,9 @@ python dow_swing_chart.py --trades dow_results/trades_20210101-20251231_strict.c
 |---|---|
 | `20261009_1350_base` | 初期値（左右3本）・6ペア・2021〜2025。合計 −136R（2353回、−0.058R/回、PF 0.88）。プラスは USDJPY だけ。感度分析でプラスの設定なし |
 | `20261009_1403_n18` | 同じルールでフラクタル左右18本。合計 −42R（675回、−0.062R/回、PF 0.87）。プラスは SP500 だけ。比較用に `python breakout_trend_report.py <この実行> <比較する実行>` で比較表を入れられる |
+| `20261009_1436_n3_noMA` / `20261009_1437_n18_noMA` | 上の2本と同じ設定で助走期間だけ2ヶ月に変えた比較用（結果は同じ）。レポートなし |
+| `20261009_1439_n3_ma20-75-200` | 左右3本＋SMA 20>75>200 フィルター。合計 −5.9R（867回、−0.007R/回、PF 0.99）。フィルターなし −136R から改善。USDJPY +36R、USDCHF +13R、AUDUSD −43R |
+| `20261009_1440_n18_ma20-75-200` | 左右18本＋同フィルター。合計 −23.2R（319回、−0.073R/回、PF 0.85）。フィルターなし −42R と1回あたりはほぼ同じ |
 
 ## 5. `Config` の設定項目（4時間足系の共通項目）
 
