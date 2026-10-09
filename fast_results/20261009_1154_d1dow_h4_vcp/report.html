@@ -1,0 +1,261 @@
+<title>VCPフィルター 6ペア</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: one phone-width column, same look as the ダウ構造ブレイク report — verdict, equity curve, tables, charts, rules, caveats */
+:root {
+  --bg: #f3f5f7; --surface: #ffffff; --line: #dde2e8; --fg: #17202b; --muted: #5e6b7a;
+  --accent: #2a5bd7; --accent-soft: #e3eafb;
+  --pos: #18865a; --neg: #c8413a; --pos-bg: rgba(24,134,90,.14); --neg-bg: rgba(200,65,58,.14);
+  --f-head: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+  --f-num: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f141a; --surface: #171e26; --line: #2a333e; --fg: #e3e8ee; --muted: #93a0ae;
+  --accent: #79a2ff; --accent-soft: #1d2a45;
+  --pos: #3ccb8b; --neg: #f0726a; --pos-bg: rgba(60,203,139,.16); --neg-bg: rgba(240,114,106,.16);
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0f141a; --surface: #171e26; --line: #2a333e; --fg: #e3e8ee; --muted: #93a0ae;
+  --accent: #79a2ff; --accent-soft: #1d2a45;
+  --pos: #3ccb8b; --neg: #f0726a; --pos-bg: rgba(60,203,139,.16); --neg-bg: rgba(240,114,106,.16);
+  color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.6 var(--f-head); -webkit-text-size-adjust: 100%; }
+.wrap { max-width: 860px; margin: 0 auto; padding: 20px 16px 48px; display: grid; gap: 28px; }
+.wrap > * { min-width: 0; }
+h1 { font-size: 1.45rem; line-height: 1.3; margin: 0; font-weight: 700; text-wrap: balance; }
+h2 { font-size: 1.05rem; margin: 0 0 10px; font-weight: 700; text-wrap: balance; }
+p { margin: 0; }
+.sub { color: var(--muted); font-size: .85rem; margin-top: 6px; }
+.num { font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+.pos { color: var(--pos); } .neg { color: var(--neg); }
+.muted { color: var(--muted); }
+
+.seg { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 8px; margin-block: -8px; }
+.seg-in { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 4px; }
+.seg button { font: inherit; border: 0; background: transparent; color: var(--muted); padding: 8px 6px; border-radius: 9px; cursor: pointer; line-height: 1.25; }
+.seg button b { display: block; font-size: .92rem; color: var(--fg); }
+.seg button span { font-size: .72rem; }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.verdict { background: var(--surface); border: 1.5px solid var(--accent); border-radius: 14px; padding: 16px; display: grid; gap: 14px; }
+.verdict .tag { font-size: .72rem; color: var(--accent); letter-spacing: .06em; font-weight: 500; }
+.verdict .rule { font-size: 1.08rem; font-weight: 700; line-height: 1.5; text-wrap: balance; }
+.cmp { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.cmp div { background: var(--surface); padding: 10px; min-width: 0; }
+.cmp .l { font-size: .7rem; color: var(--muted); letter-spacing: .04em; }
+.cmp .v { font-family: var(--f-num); font-size: 1.15rem; font-weight: 600; white-space: nowrap; }
+.cmp .was { font-family: var(--f-num); font-size: .72rem; color: var(--muted); }
+
+.findings { display: grid; gap: 10px; }
+.find { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 4px; }
+.find h3 { margin: 0; font-size: .95rem; display: flex; gap: 8px; align-items: baseline; }
+.find .pill { font-size: .68rem; font-weight: 500; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
+.pill.good { background: var(--pos-bg); color: var(--pos); }
+.pill.bad { background: var(--neg-bg); color: var(--neg); }
+.pill.mid { background: var(--accent-soft); color: var(--accent); }
+.find p { font-size: .88rem; color: var(--muted); }
+.find p b { color: var(--fg); font-weight: 500; }
+
+.scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: .8rem; }
+th, td { padding: 7px 9px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+th { font-weight: 500; color: var(--muted); font-size: .72rem; background: var(--surface); }
+th:first-child, td:first-child { text-align: left; position: sticky; left: 0; background: var(--surface); font-weight: 500; }
+td:first-child { white-space: normal; min-width: 150px; max-width: 190px; font-size: .78rem; line-height: 1.4; }
+tr:last-child td { border-bottom: 0; }
+tr.base td { background: var(--accent-soft); }
+tr.pick td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+td.cell { font-family: var(--f-num); }
+td.hp { background: var(--pos-bg); } td.hn { background: var(--neg-bg); }
+.hint { font-size: .8rem; color: var(--muted); margin-top: 8px; }
+
+.defs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.def { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; min-width: 0; }
+.def h3 { margin: 0 0 6px; font-size: .9rem; }
+.def p { font-size: .86rem; }
+.def code { font-family: var(--f-num); font-size: .78rem; background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; }
+
+.bars { display: grid; gap: 6px; }
+.bar { display: grid; grid-template-columns: minmax(0, 9.5rem) 1fr; gap: 10px; align-items: center; font-size: .78rem; }
+.bar .name { line-height: 1.3; }
+.bar svg { width: 100%; height: 26px; display: block; }
+.bar svg text { font-family: var(--f-num); font-size: 9px; fill: var(--muted); }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: .76rem; color: var(--muted); margin-bottom: 8px; }
+.legend i { display: inline-block; width: 12px; height: 8px; border-radius: 2px; vertical-align: middle; margin-right: 5px; }
+
+ul.notes { margin: 0; padding-left: 1.2em; display: grid; gap: 8px; font-size: .88rem; }
+footer { font-size: .75rem; color: var(--muted); line-height: 1.7; }
+footer code { font-family: var(--f-num); font-size: .72rem; word-break: break-all; }
+
+:root { --s-base: #8a96a3; --s-n3: #2a5bd7; --s-n5: #c77d12; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --s-base: #7d8996; --s-n3: #79a2ff; --s-n5: #e9a23b; } }
+:root[data-theme="dark"] { --s-base: #7d8996; --s-n3: #79a2ff; --s-n5: #e9a23b; }
+.eq { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 8px 6px; position: relative; }
+.eq svg { width: 100%; height: auto; display: block; touch-action: pan-y; }
+.eq svg text { font-family: var(--f-num); font-size: 11px; fill: var(--muted); }
+.eq .grid { stroke: var(--line); stroke-width: 1; }
+.eq .zero { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.eq .ln { fill: none; stroke-width: 2; stroke-linejoin: round; }
+.eq .xh { stroke: var(--muted); stroke-width: 1; }
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; font: 12px/1.5 var(--f-num); color: var(--fg); box-shadow: 0 2px 8px rgba(0,0,0,.12); white-space: nowrap; }
+.charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.charts a { display: grid; gap: 2px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; color: var(--fg); text-decoration: none; }
+.charts a:hover, .charts a:focus-visible { border-color: var(--accent); outline: none; }
+.charts a b { font-size: .92rem; } .charts a span { font: .76rem var(--f-num); }
+.charts-h { font-size: .86rem; font-weight: 500; margin: 4px 0 8px; }
+.grp { display: grid; gap: 14px; }
+</style>
+<div class="wrap">
+  <header>
+    <h1>VCPフィルター 6ペア</h1>
+    <p class="sub">日足ダウの方向 × 4時間足ブレイクに、ミネルヴィニの VCP のような「ベースの中の押しが2〜3回、毎回浅くなり、最後が十分小さい」ときだけ入る条件を追加 / 2021-01〜2025-12（SP500 は 2024〜）/ 前半 2021〜2023・後半 2024〜2025 / 1回の損失 2%</p>
+  </header>
+
+  <section class="verdict">
+    <span class="tag">対象: 日足3本 × 4H 18本 / 固定（SL 1.5 / TP 2.5 ATR）＋VCP</span>
+    <p class="rule">VCP が成立したブレイクは5年・6ペアで15回だけ。<br>成績も良くならなかった</p>
+    <div class="cmp" id="cmp"></div>
+    <p class="sub" style="margin:0">小さい数字は追加の条件なしの同じ設定。どの設定も合格ライン（PF ≥ 1.2、前半・後半ともプラス、4ペア以上でプラス）に届かなかった。</p>
+  </section>
+
+  <section>
+    <h2>わかったこと</h2>
+    <div class="findings">
+      <div class="find"><h3><span class="pill bad">逆効果</span>条件を足すほど平均Rが下がる</h3>
+        <p>条件なしの取引を VCP の条件で順に絞ると、平均R は +0.12 → -0.01 → -0.06 → -0.14R と下がっていった（下の表）。FX の4時間足では、<b>押しが縮小してからのブレイクが特に良いという傾向は見えなかった</b>。</p></div>
+      <div class="find"><h3><span class="pill mid">原因</span>「最後の押しが ATR×1.5 以下」でほとんど消える</h3>
+        <p>4時間足の押しの深さは中央値で 2.2ATR（四分位 1.7〜2.9ATR）あり、最後の押しが ATR×1.5 以下になることは少ない。押し2〜3回で毎回浅くなっている取引は61回あったが、この条件で15回まで減った。</p></div>
+      <div class="find"><h3><span class="pill mid">比較</span>前回の「押し2〜3回」とは別物</h3>
+        <p>前回の押し2〜3回（+24.7R・PF 1.50）は<b>日足の上げ波の起点から</b>押しを数えた。今回は<b>ブレイクする高値（ベース）の中</b>の押しで、縮小も条件にしている。数える範囲が違うので結果も違う。</p></div>
+      <div class="find"><h3><span class="pill mid">注意</span>取引が少なすぎて判断できない</h3>
+        <p>VCP ありの設定は 15〜47 回。1ペアあたり年1回前後で、数回の勝ち負けで結果が入れ替わる。この結果だけで「VCP は効かない」とまでは言えない。</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>累積R（日足3本 × 4H 18本 / 固定）</h2>
+    <div class="legend" id="eqlegend"></div>
+    <div class="eq" id="eq"></div>
+    <p class="hint">6ペアの取引を決済日順に並べた累積R（含み損益は含まない）。グラフに触れると各時点の値を表示。</p>
+  </section>
+
+  <section>
+    <h2>VCP の条件ごとの絞り込み（条件なしの取引で診断）</h2>
+    <div class="scroll"><table id="funnel"></table></div>
+    <p class="hint">押しの条件なしで行った248回の取引（前回の実行）に、エントリー時点の判定を付けて絞ったもの。平均Rは1回あたり、括弧は回数。</p>
+  </section>
+
+  <section>
+    <h2>成績一覧（R）</h2>
+    <div class="scroll"><table id="summary"></table></div>
+    <p class="hint">★ が対象の設定、◆ が前半の合計Rで機械的に選んだ設定。青い行は参考（前回までの実行）。日足なしの行は VCP の条件だけで方向を問わない。ペイオフ = 平均勝ちR ÷ 平均負けR の大きさ。</p>
+  </section>
+
+  <section>
+    <h2>年別の合計R</h2>
+    <div class="scroll"><table id="yearly"></table></div>
+    <p class="hint">「–」はその年の取引なし。</p>
+  </section>
+
+  <section>
+    <h2>ペア別の合計R</h2>
+    <div class="scroll"><table id="pairs"></table></div>
+  </section>
+
+  <section>
+    <h2>トレード付きダウ理論チャート</h2>
+    <div class="grp" id="charts"></div>
+    <p class="hint">各トレードの前のベースの中の押しを、高値→安値の紫の線と「T1 3.6ATR (-0.82%)」のような深さで表示する（「VCPの押し」で切り替え。「次のトレード」で移動するとベースの起点まで見える範囲になる）。カーソルを合わせると T1, T2… の高値・安値も表示する。1ファイル約 2.9MB。</p>
+  </section>
+
+  <section>
+    <h2>VCP の判定と売買ルール</h2>
+    <div class="defs">
+      <div class="def"><h3>ベース</h3><p>エントリーライン（4時間足の前後18本の高値。売りは安値）を付けた足から今まで。ラインがまだ抜かれていないことが前提。</p></div>
+      <div class="def"><h3>押し T1, T2, T3</h3><p>ベースの中で確定した4時間足のスイング（左右 <code>2</code> 本、ATR(14)×<code>0.5</code> 未満の揺れは不採用）を順に見て、安値ごとに「直前の安値（T1 はベースの高値）からの最高値 → その安値」を1回の押しとする。深さ = 高値 − 安値。</p></div>
+      <div class="def"><h3>VCP 成立</h3><p>押しが <code>2〜3</code> 回、深さが毎回前より浅い、最後の押しの深さが ATR(EMA 18) × <code>1.5</code> 以下。1本前の4時間足の終値までに確定した情報だけで判定する。出来高は FX のデータに無いので使わない。</p></div>
+      <div class="def"><h3>エントリー・決済</h3><p>日足ダウの方向（左右2本 / 3本。なしも比較）に合い、VCP が成立しているときだけ、ラインに逆指値。<b>固定</b>: SL 1.5 / TP 2.5 × ATR。<b>1H追従</b>: 1時間足スイングに損切りを移動。1回の損失 = 資金の 2%。</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>読むときの注意</h2>
+    <ul class="notes">
+      <li>VCP の数値（押し2〜3回、ATR×1.5、スイングの左右2本・ATR×0.5）は結果を見る前に決めた。結果を見てから緩めると、たまたま合う条件を選ぶことになりやすい。</li>
+      <li>株のミネルヴィニ流は日足・週足で数週間〜数か月のベースを見る。ここでは FX の4時間足（数日〜数週間）に当てはめている。</li>
+      <li>取引数が少なく、どの数字も偶然の範囲を出ない。</li>
+      <li>SP500 は 2024 年からのデータだけ。</li>
+    </ul>
+  </section>
+
+  <footer>
+    コード: <code>vcp.py</code>（VCP の判定）、<code>vcp_diagnose.py</code>（条件なしの取引で診断）、<code>dow_d1_h4_breakout.py --vcp</code>（検証）。
+    結果: <code>fast_results/20261009_1154_d1dow_h4_vcp/</code>（trades_all.csv、summary.csv、yearly.csv、by_pair.csv、config.json、code/）。診断: <code>fast_results/20261009_0620_d1dow_h4/vcp_diag/</code>。
+  </footer>
+</div>
+
+<script>
+const D = {"rows":[{"k":"none_h4w18_fixed","label":"日足なし × 4H 18本 / 固定","n":47,"win":36.2,"R":-3.5,"avg":-0.074,"PF":0.89,"pay":1.57,"aw":1.61,"al":-1.03,"dd":14.1,"IS":-3.1,"OOS":-0.4,"plus":3,"ex":2.3,"t":-0.39,"pick":false,"ok":false,"tgt":false,"ref":false},{"k":"n2_h4w18_fixed","label":"日足2本 × 4H 18本 / 固定","n":24,"win":41.7,"R":1.9,"avg":0.081,"PF":1.14,"pay":1.59,"aw":1.63,"al":-1.03,"dd":8.6,"IS":1.0,"OOS":1.0,"plus":3,"ex":3.7,"t":0.3,"pick":true,"ok":false,"tgt":false,"ref":false},{"k":"n3_h4w18_fixed","label":"日足3本 × 4H 18本 / 固定","n":15,"win":33.3,"R":-2.1,"avg":-0.141,"PF":0.79,"pay":1.59,"aw":1.63,"al":-1.03,"dd":8.7,"IS":-2.9,"OOS":0.8,"plus":2,"ex":-0.8,"t":-0.42,"pick":false,"ok":false,"tgt":true,"ref":false},{"k":"none_h4w18_trail","label":"日足なし × 4H 18本 / 1H追従","n":47,"win":34.0,"R":-5.1,"avg":-0.108,"PF":0.8,"pay":1.54,"aw":1.24,"al":-0.81,"dd":12.2,"IS":-4.4,"OOS":-0.6,"plus":2,"ex":-0.4,"t":-0.63,"pick":false,"ok":false,"tgt":false,"ref":false},{"k":"n2_h4w18_trail","label":"日足2本 × 4H 18本 / 1H追従","n":24,"win":33.3,"R":0.8,"avg":0.033,"PF":1.06,"pay":2.12,"aw":1.74,"al":-0.82,"dd":6.3,"IS":-0.9,"OOS":1.7,"plus":2,"ex":2.8,"t":0.12,"pick":false,"ok":false,"tgt":false,"ref":false},{"k":"n3_h4w18_trail","label":"日足3本 × 4H 18本 / 1H追従","n":15,"win":26.7,"R":-4.1,"avg":-0.276,"PF":0.54,"pay":1.47,"aw":1.2,"al":-0.81,"dd":7.0,"IS":-3.5,"OOS":-0.6,"plus":2,"ex":-1.1,"t":-1.07,"pick":false,"ok":false,"tgt":false,"ref":false}],"refs":[{"k":"ref0","label":"参考: 日足3本 × 4H 18本 / 固定（追加の条件なし）","n":248,"win":43.1,"R":30.6,"avg":0.123,"PF":1.21,"pay":1.6,"aw":1.63,"al":-1.02,"dd":19.2,"IS":3.5,"OOS":27.0,"plus":4,"ex":21.6,"t":1.48,"pick":false,"ok":false,"tgt":false,"ref":true},{"k":"refpb","label":"参考: 同じ設定 ＋押し2〜3回（日足の起点から数える）","n":95,"win":48.4,"R":24.7,"avg":0.26,"PF":1.5,"pay":1.59,"aw":1.62,"al":-1.02,"dd":9.1,"IS":13.8,"OOS":10.9,"plus":5,"ex":19.2,"t":1.91,"pick":false,"ok":false,"tgt":false,"ref":true}],"tgt":"n3_h4w18_fixed","pick":"n2_h4w18_fixed","order":["none_h4w18_fixed","n2_h4w18_fixed","n3_h4w18_fixed","none_h4w18_trail","n2_h4w18_trail","n3_h4w18_trail"],"labels":{"none_h4w18_fixed":"日足なし × 4H 18本 / 固定","n2_h4w18_fixed":"日足2本 × 4H 18本 / 固定","n3_h4w18_fixed":"日足3本 × 4H 18本 / 固定","none_h4w18_trail":"日足なし × 4H 18本 / 1H追従","n2_h4w18_trail":"日足2本 × 4H 18本 / 1H追従","n3_h4w18_trail":"日足3本 × 4H 18本 / 1H追従"},"yearly":{"none_h4w18_fixed":{"2021":0.3,"2022":3.6,"2023":-7.0,"2024":-2.8,"2025":2.4},"n2_h4w18_fixed":{"2021":3.4,"2022":null,"2023":-2.4,"2024":-2.3,"2025":3.3},"n3_h4w18_fixed":{"2021":-0.4,"2022":null,"2023":-2.5,"2024":-0.8,"2025":1.6},"none_h4w18_trail":{"2021":-1.3,"2022":1.6,"2023":-4.7,"2024":-4.0,"2025":3.4},"n2_h4w18_trail":{"2021":1.0,"2022":null,"2023":-1.9,"2024":-2.4,"2025":4.2},"n3_h4w18_trail":{"2021":-1.6,"2022":null,"2023":-2.0,"2024":-2.1,"2025":1.5}},"pairs":{"none_h4w18_fixed":{"AUDUSD":3.5,"EURUSD":1.5,"GBPUSD":-2.5,"SP500":-0.4,"USDCHF":0.1,"USDJPY":-5.7},"n2_h4w18_fixed":{"AUDUSD":0.6,"EURUSD":2.9,"GBPUSD":-2.1,"SP500":-1.0,"USDCHF":3.2,"USDJPY":-1.7},"n3_h4w18_fixed":{"AUDUSD":1.6,"EURUSD":-0.4,"GBPUSD":-2.1,"SP500":-1.0,"USDCHF":1.1,"USDJPY":-1.4},"none_h4w18_trail":{"AUDUSD":3.1,"EURUSD":2.3,"GBPUSD":-2.9,"SP500":-2.3,"USDCHF":-0.6,"USDJPY":-4.7},"n2_h4w18_trail":{"AUDUSD":-0.1,"EURUSD":4.4,"GBPUSD":-2.1,"SP500":-1.0,"USDCHF":1.6,"USDJPY":-2.0},"n3_h4w18_trail":{"AUDUSD":0.9,"EURUSD":-0.8,"GBPUSD":-2.1,"SP500":-1.0,"USDCHF":1.8,"USDJPY":-3.1}},"curves":{"vcp":{"t":["2021-05-19","2021-05-19","2021-07-19","2023-02-24","2023-03-09","2023-08-10","2023-08-21","2023-11-13","2024-04-01","2024-06-04","2024-08-15","2024-10-28","2024-11-13","2024-11-14","2025-09-16"],"r":[1.65,0.62,-0.4,1.2,0.2,-0.8,-1.86,-2.87,-3.87,-4.9,-5.92,-7.01,-5.35,-3.71,-2.11]},"nof":{"t":["2021-01-04","2021-01-15","2021-01-20","2021-01-27","2021-01-27","2021-01-29","2021-02-01","2021-02-03","2021-02-04","2021-02-19","2021-02-25","2021-03-01","2021-03-16","2021-03-18","2021-03-25","2021-03-25","2021-03-26","2021-04-01","2021-04-12","2021-04-29","2021-05-10","2021-05-19","2021-05-19","2021-05-19","2021-05-26","2021-06-01","2021-06-04","2021-06-04","2021-06-15","2021-06-16","2021-06-25","2021-07-01","2021-07-01","2021-07-01","2021-07-02","2021-07-02","2021-07-08","2021-07-09","2021-07-14","2021-07-19","2021-07-19","2021-07-20","2021-07-29","2021-08-04","2021-08-04","2021-08-13","2021-08-18","2021-09-08","2021-10-01","2021-10-10","2021-11-01","2021-12-08","2022-01-14","2022-02-08","2022-02-24","2022-03-01","2022-03-01","2022-03-02","2022-03-03","2022-04-05","2022-04-13","2022-04-22","2022-04-28","2022-05-09","2022-05-11","2022-05-11","2022-06-09","2022-06-30","2022-07-05","2022-07-14","2022-07-28","2022-08-10","2022-08-10","2022-08-31","2022-09-05","2022-09-21","2022-09-21","2022-09-21","2022-10-03","2022-10-11","2022-10-13","2022-10-21","2022-11-09","2022-11-09","2022-11-11","2022-11-24","2022-11-28","2022-11-28","2022-12-04","2022-12-05","2022-12-09","2022-12-14","2022-12-15","2022-12-15","2023-01-02","2023-01-02","2023-01-03","2023-01-18","2023-01-31","2023-02-01","2023-02-02","2023-02-14","2023-02-24","2023-03-07","2023-03-07","2023-03-09","2023-04-12","2023-04-13","2023-04-26","2023-04-26","2023-04-28","2023-05-01","2023-05-05","2023-05-10","2023-05-18","2023-07-10","2023-07-10","2023-07-27","2023-08-10","2023-08-21","2023-08-23","2023-08-29","2023-08-29","2023-09-05","2023-09-06","2023-09-13","2023-09-20","2023-09-21","2023-09-26","2023-10-25","2023-11-01","2023-11-13","2023-11-14","2023-11-22","2023-11-28","2023-12-14","2023-12-18","2023-12-19","2023-12-28","2023-12-28","2024-01-24","2024-02-12","2024-02-14","2024-02-15","2024-03-01","2024-03-05","2024-03-06","2024-03-07","2024-03-20","2024-03-26","2024-04-01","2024-04-10","2024-04-24","2024-04-24","2024-05-15","2024-05-15","2024-05-22","2024-06-04","2024-06-07","2024-06-12","2024-06-14","2024-06-18","2024-06-20","2024-07-31","2024-08-15","2024-08-21","2024-08-29","2024-09-06","2024-09-17","2024-09-18","2024-09-25","2024-09-25","2024-10-14","2024-10-28","2024-11-01","2024-11-03","2024-11-13","2024-11-14","2024-11-22","2024-11-25","2024-11-25","2024-12-04","2024-12-06","2024-12-16","2024-12-18","2024-12-30","2025-01-05","2025-01-09","2025-01-10","2025-01-10","2025-01-13","2025-01-15","2025-02-05","2025-02-20","2025-02-20","2025-02-21","2025-02-24","2025-03-04","2025-03-05","2025-03-20","2025-03-20","2025-04-02","2025-04-03","2025-04-03","2025-04-03","2025-04-04","2025-04-10","2025-04-21","2025-04-22","2025-05-06","2025-05-08","2025-05-08","2025-05-09","2025-05-29","2025-06-05","2025-06-05","2025-06-06","2025-06-11","2025-06-12","2025-06-12","2025-06-12","2025-06-16","2025-06-26","2025-06-26","2025-06-27","2025-07-10","2025-07-24","2025-07-31","2025-08-22","2025-08-27","2025-08-28","2025-09-02","2025-09-02","2025-09-05","2025-09-08","2025-09-16","2025-09-16","2025-09-30","2025-10-09","2025-10-10","2025-10-15","2025-10-29","2025-11-11","2025-11-25","2025-12-11","2025-12-12","2025-12-23","2025-12-24"],"r":[-1.01,-2.03,-3.06,-4.09,-5.11,-3.46,-1.86,-2.88,-1.23,-2.23,-3.24,-1.62,-2.63,-3.66,-2.04,-0.39,1.27,0.25,-0.78,-1.81,-0.17,1.48,0.41,-0.62,-1.64,-2.67,-3.68,-4.71,-5.72,-4.07,-5.08,-6.11,-7.13,-5.47,-6.5,-7.53,-8.55,-9.57,-10.59,-8.94,-9.96,-8.32,-6.71,-7.72,-8.75,-9.77,-10.79,-11.8,-12.86,-11.21,-12.22,-13.25,-14.3,-15.31,-13.67,-14.72,-15.74,-16.76,-17.77,-16.13,-14.47,-12.84,-11.18,-12.18,-10.53,-8.87,-9.89,-10.89,-9.23,-7.58,-5.96,-4.35,-2.69,-1.04,-2.05,-0.4,1.25,0.24,-0.76,0.89,2.52,1.48,0.47,-0.55,1.11,2.76,1.76,0.75,2.4,1.39,0.35,2.01,0.99,-0.03,-1.04,0.62,2.27,3.89,2.87,4.5,3.48,2.48,4.09,3.08,4.72,3.72,5.32,6.97,5.92,4.9,6.57,5.54,4.5,6.14,7.8,6.77,8.38,7.34,6.34,5.29,4.26,3.25,2.2,3.85,2.82,1.78,0.77,-0.24,1.41,3.06,2.06,1.05,2.7,1.67,3.32,2.28,1.26,2.91,4.56,3.53,2.52,1.49,0.46,-0.56,1.03,0.13,1.75,3.39,4.94,6.59,5.59,7.23,6.16,7.82,9.47,11.1,10.09,9.06,8.17,7.13,6.13,7.73,9.38,8.32,7.31,8.94,7.89,6.83,7.94,9.57,8.56,7.61,9.1,8.01,6.98,5.93,7.59,9.23,10.88,9.83,8.81,10.29,11.94,13.02,14.65,16.22,15.2,16.84,18.43,17.42,16.42,15.39,17.05,18.7,20.35,19.28,18.27,17.27,18.87,17.81,16.78,18.42,20.03,21.69,23.35,24.93,26.6,28.25,27.22,28.86,27.83,26.98,25.98,25.11,24.11,23.08,22.05,21.02,22.68,24.29,23.27,22.25,23.9,25.52,27.05,26.17,27.83,29.49,28.47,27.54,26.48,25.45,24.44,23.5,25.11,26.76,28.36,27.33,28.98,28.08,27.06,28.7,30.36,29.33,30.98,29.94,31.57,30.55]},"pb":{"t":["2021-01-20","2021-01-27","2021-01-27","2021-01-29","2021-02-01","2021-02-04","2021-02-25","2021-03-01","2021-03-25","2021-04-01","2021-05-10","2021-05-19","2021-05-26","2021-06-04","2021-06-04","2021-06-15","2021-06-16","2021-07-01","2021-07-02","2021-07-08","2021-07-09","2021-08-04","2021-08-13","2021-10-01","2022-02-24","2022-04-05","2022-04-13","2022-05-09","2022-06-09","2022-07-05","2022-07-14","2022-07-28","2022-09-05","2022-10-03","2022-10-13","2022-11-11","2022-11-28","2022-12-05","2022-12-09","2022-12-15","2022-12-15","2023-01-03","2023-01-18","2023-02-14","2023-02-24","2023-03-07","2023-04-12","2023-04-13","2023-04-26","2023-04-26","2023-05-18","2023-07-10","2023-07-10","2023-08-21","2023-08-29","2023-09-05","2023-09-06","2023-09-26","2023-11-14","2023-11-22","2023-12-19","2023-12-28","2024-01-24","2024-03-01","2024-03-05","2024-03-26","2024-04-01","2024-05-15","2024-06-14","2024-08-21","2024-09-17","2024-10-14","2024-12-30","2025-01-09","2025-01-13","2025-02-20","2025-02-20","2025-02-24","2025-03-05","2025-04-03","2025-04-04","2025-05-08","2025-05-09","2025-06-05","2025-06-12","2025-08-22","2025-08-28","2025-09-02","2025-09-02","2025-09-05","2025-09-16","2025-10-09","2025-10-15","2025-10-29","2025-11-11"],"r":[-1.03,-2.06,-3.08,-1.43,0.17,1.82,0.82,2.44,4.05,3.03,4.67,6.31,5.3,4.29,3.26,2.24,3.9,5.56,4.53,3.51,2.49,1.48,0.46,-0.6,1.04,2.68,4.33,3.33,2.32,3.97,5.63,7.25,6.24,5.24,6.86,8.52,7.52,6.5,5.46,4.44,3.42,5.06,6.69,5.69,7.3,6.28,7.88,9.54,8.48,7.47,9.13,8.1,9.71,8.66,7.6,9.25,8.22,9.87,11.52,10.5,12.14,13.8,12.79,14.38,13.48,15.13,14.13,15.76,14.75,16.39,17.49,18.98,20.55,22.19,21.19,22.85,24.49,23.48,25.08,26.74,28.32,27.29,26.29,25.26,24.24,23.22,22.16,21.13,20.12,19.18,20.78,22.43,21.4,23.04,24.7]}},"funnel":[{"name":"押しの条件なしの全取引","n":248,"win":43.1,"avg":0.123,"IS":0.025,"OOS":0.25,"ISn":140,"OOSn":108},{"name":"① 押しが2〜3回","n":110,"win":38.2,"avg":-0.011,"IS":-0.079,"OOS":0.088,"ISn":65,"OOSn":45},{"name":"② ＋毎回前より浅い","n":61,"win":36.1,"avg":-0.062,"IS":-0.109,"OOS":0.015,"ISn":38,"OOSn":23},{"name":"③ ＋最後が ATR×1.5 以下（VCP 成立）","n":15,"win":33.3,"avg":-0.141,"IS":-0.359,"OOS":0.108,"ISn":8,"OOSn":7}],"pp":{"n3_h4w18_fixed":{"AUDUSD":[1.6,1],"EURUSD":[-0.4,3],"GBPUSD":[-2.1,2],"SP500":[-1.0,1],"USDCHF":[1.1,4],"USDJPY":[-1.4,4]},"n2_h4w18_fixed":{"AUDUSD":[0.6,2],"EURUSD":[2.9,5],"GBPUSD":[-2.1,2],"SP500":[-1.0,1],"USDCHF":[3.2,7],"USDJPY":[-1.7,7]}}};
+const $ = id => document.getElementById(id);
+const fmt = (v, d = 1, sign = true) => v == null || Number.isNaN(v) ? "–" : (sign && v > 0 ? "+" : "") + v.toFixed(d);
+const cls = v => v == null ? "" : v > 0 ? "pos" : v < 0 ? "neg" : "";
+const R = Object.fromEntries(D.rows.map(r => [r.k, r]));
+const T = R[D.tgt], N = D.refs[0];
+$("cmp").innerHTML = [["合計R", fmt(T.R), fmt(N.R), cls(T.R)], ["PF", T.PF.toFixed(2), N.PF.toFixed(2), ""],
+  ["最大DD", T.dd.toFixed(1) + "R", N.dd.toFixed(1) + "R", ""], ["取引数", T.n, N.n, ""],
+  ["勝率", T.win.toFixed(1) + "%", N.win.toFixed(1) + "%", ""], ["ペイオフ", T.pay.toFixed(2), N.pay.toFixed(2), ""],
+  ["平均R", fmt(T.avg, 3), fmt(N.avg, 3), cls(T.avg)], ["前半 21-23", fmt(T.IS), fmt(N.IS), cls(T.IS)], ["後半 24-25", fmt(T.OOS), fmt(N.OOS), cls(T.OOS)]]
+  .map(c => `<div><div class="l">${c[0]}</div><div class="v ${c[3]}">${c[1]}</div><div class="was">条件なし ${c[2]}</div></div>`).join("");
+const mark = r => (r.tgt ? "★ " : "") + (r.pick ? "◆ " : "") + (r.ok ? "✓ " : "");
+const rowHtml = r => `<tr class="${r.ref ? "base" : r.tgt || r.pick ? "pick" : ""}"><td>${mark(r)}${r.label}</td><td class="cell">${r.n}</td><td class="cell">${r.win.toFixed(1)}</td><td class="cell pos">${fmt(r.aw, 2)}</td><td class="cell neg">${fmt(r.al, 2)}</td><td class="cell">${r.pay.toFixed(2)}</td><td class="cell ${cls(r.R)}">${fmt(r.R)}</td><td class="cell ${cls(r.avg)}">${fmt(r.avg, 3)}</td><td class="cell">${r.PF.toFixed(2)}</td><td class="cell">${r.dd.toFixed(1)}</td><td class="cell ${cls(r.IS)}">${fmt(r.IS)}</td><td class="cell ${cls(r.OOS)}">${fmt(r.OOS)}</td><td class="cell">${r.plus} / 6</td><td class="cell">${fmt(r.t, 2, false)}</td></tr>`;
+$("summary").innerHTML = "<tr><th>設定（＋VCP）</th><th>取引数</th><th>勝率%</th><th>平均勝ちR</th><th>平均負けR</th><th>ペイオフ</th><th>合計R</th><th>平均R</th><th>PF</th><th>最大DD</th><th>前半R</th><th>後半R</th><th>プラスのペア</th><th>t値</th></tr>" +
+  D.rows.map(rowHtml).join("") + D.refs.map(rowHtml).join("");
+$("funnel").innerHTML = "<tr><th>条件（日足3本 × 4H 18本 / 固定）</th><th>取引数</th><th>勝率%</th><th>平均R</th><th>前半 平均R</th><th>後半 平均R</th></tr>" +
+  D.funnel.map((f, k) => `<tr class="${k === 3 ? "pick" : ""}"><td>${f.name}</td><td class="cell">${f.n}</td><td class="cell">${f.win.toFixed(1)}</td><td class="cell ${cls(f.avg)}">${fmt(f.avg, 3)}</td><td class="cell ${cls(f.IS)}">${fmt(f.IS, 3)}（${f.ISn}）</td><td class="cell ${cls(f.OOS)}">${fmt(f.OOS, 3)}（${f.OOSn}）</td></tr>`).join("");
+function grid(id, data, cols) {
+  const max = Math.max(1, ...D.order.flatMap(k => cols.map(c => Math.abs(data[k][c] ?? 0))));
+  $(id).innerHTML = `<tr><th>設定（＋VCP）</th>${cols.map(c => `<th>${c}</th>`).join("")}</tr>` + D.order.map(k => { const r = R[k];
+    return `<tr class="${r.tgt || r.pick ? "pick" : ""}"><td>${mark(r)}${D.labels[k]}</td>${cols.map(c => { const v = data[k][c];
+      return `<td class="cell ${cls(v)} ${v == null ? "" : v >= max * .4 ? "hp" : v <= -max * .4 ? "hn" : ""}">${fmt(v)}</td>`; }).join("")}</tr>`; }).join("");
+}
+grid("yearly", D.yearly, ["2021", "2022", "2023", "2024", "2025"]);
+grid("pairs", D.pairs, ["AUDUSD", "EURUSD", "GBPUSD", "SP500", "USDCHF", "USDJPY"]);
+$("charts").innerHTML = [[D.tgt, "★ 対象の設定"], [D.pick, "◆ 前半で選んだ設定"]].map(([c, h]) =>
+  `<div><p class="charts-h">${h}: ${D.labels[c]} ＋VCP</p><div class="charts">${Object.entries(D.pp[c]).map(([p, v]) =>
+    `<a href="dow_trade_chart_${p}_${c}.html"><b>${p}</b><span class="${cls(v[0])}">${fmt(v[0])}R</span><span class="muted">${v[1]} トレード</span></a>`).join("")}</div></div>`).join("");
+(function eq() {
+  const W = 640, H = 280, L = 40, Rm = 64, Tm = 10, Bm = 26;
+  const COL = { vcp: "var(--s-n3)", pb: "var(--s-n5)", nof: "var(--s-base)" };
+  const NAME = { vcp: "＋VCP", pb: "＋押し2〜3回（前回）", nof: "追加の条件なし" };
+  const keys = ["nof", "pb", "vcp"];
+  const t0 = Date.parse("2021-01-01"), t1 = Date.parse("2026-01-01");
+  const all = keys.flatMap(k => D.curves[k].r);
+  const step = 10, lo = Math.floor(Math.min(0, ...all) / step) * step, hi = Math.ceil(Math.max(0, ...all) / step) * step;
+  const x = d => L + (W - L - Rm) * (Date.parse(d) - t0) / (t1 - t0), y = v => Tm + (H - Tm - Bm) * (hi - v) / (hi - lo);
+  let g = "";
+  for (let v = lo; v <= hi; v += step) g += `<line class="${v === 0 ? "zero" : "grid"}" x1="${L}" x2="${W - Rm}" y1="${y(v)}" y2="${y(v)}"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${v > 0 ? "+" : ""}${v}</text>`;
+  for (let yr = 2021; yr <= 2025; yr++) { const xx = x(yr + "-01-01"); if (yr > 2021) g += `<line class="grid" x1="${xx}" x2="${xx}" y1="${Tm}" y2="${H - Bm}"/>`; g += `<text x="${xx + 4}" y="${H - 8}">${yr}</text>`; }
+  const ends = [];
+  for (const k of keys) { const c = D.curves[k]; const pts = [[x("2021-01-01"), y(0)]];
+    c.t.forEach((d, i) => { pts.push([x(d), pts[pts.length - 1][1]]); pts.push([x(d), y(c.r[i])]); });
+    g += `<path class="ln" stroke="${COL[k]}" d="${pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join("")}"/>`;
+    const lv = c.r[c.r.length - 1]; ends.push({ k, v: lv, cx: x(c.t[c.t.length - 1]), yy: y(lv) }); }
+  ends.sort((a, b) => a.yy - b.yy); for (let i = 1; i < ends.length; i++) if (ends[i].yy - ends[i - 1].yy < 14) ends[i].yy = ends[i - 1].yy + 14;
+  for (const e of ends) g += `<circle cx="${e.cx}" cy="${y(e.v)}" r="4" fill="${COL[e.k]}" stroke="var(--surface)" stroke-width="2"/><text x="${W - Rm + 8}" y="${e.yy + 4}" style="fill:var(--fg)">${fmt(e.v)}</text>`;
+  g += `<line class="xh" id="xh" x1="0" x2="0" y1="${Tm}" y2="${H - Bm}" visibility="hidden"/>`;
+  $("eq").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="累積R">${g}<rect id="hit" x="${L}" y="${Tm}" width="${W - L - Rm}" height="${H - Tm - Bm}" fill="transparent"/></svg><div class="tip" id="tip" hidden></div>`;
+  const leg = ["vcp", "pb", "nof"];
+  $("eqlegend").innerHTML = leg.map(k => `<span><i style="background:${COL[k]}"></i>${NAME[k]}</span>`).join("");
+  const svg = $("eq").querySelector("svg"), tip = $("tip"), xh = $("xh");
+  const valAt = (k, ms) => { const c = D.curves[k]; let v = 0; for (let i = 0; i < c.t.length && Date.parse(c.t[i]) <= ms; i++) v = c.r[i]; return v; };
+  const move = ev => { const r = svg.getBoundingClientRect(); const px = Math.max(L, Math.min(W - Rm, (ev.clientX - r.left) * W / r.width));
+    const ms = t0 + (px - L) / (W - L - Rm) * (t1 - t0); xh.setAttribute("x1", px); xh.setAttribute("x2", px); xh.setAttribute("visibility", "visible");
+    tip.hidden = false; tip.innerHTML = new Date(ms).toISOString().slice(0, 10) + "<br>" + leg.map(k => `<span style="color:${COL[k]}">●</span> ${NAME[k]} ${fmt(valAt(k, ms))}R`).join("<br>");
+    const left = px / W * r.width; tip.style.top = "14px"; tip.style.left = (left > r.width / 2 ? left - tip.offsetWidth - 10 : left + 10) + "px"; };
+  $("hit").addEventListener("pointermove", move); $("hit").addEventListener("pointerdown", move);
+  $("hit").addEventListener("pointerleave", () => { tip.hidden = true; xh.setAttribute("visibility", "hidden"); });
+})();
+</script>

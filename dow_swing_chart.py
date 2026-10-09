@@ -66,13 +66,15 @@ def to_bars(df_1min, tf, extra_cols=(), session_start_hour=17):
     return out, b.index
 
 
-def load_trades(trades, labels, price_decimals=5, waves=None):
+def load_trades(trades, labels, price_decimals=5, waves=None, vcp=None):
     """
     取引履歴（backtesting.py の stats["_trades"]、またはそれを保存したCSVのパス）を、
     各時間足でのエントリー/決済の足番号を付けた dict のリストにする
 
     waves: 取引と同じ順のリスト。各要素は None か dict(kind="L"/"H", anchor=dict(time, price, day), points=[dict(time, price, n)])。
            チャートに「どの波を数えたか」（起点の日足スイングと、数えた4時間足のスイングの番号）を描く。time は NY の壁時計時刻
+    vcp  : 取引と同じ順のリスト。各要素は None か vcp.vcp_scan() の details の要素（ベースと押し T1, T2…）。
+           チャートに各押しを高値→安値の線と深さ（ATR 倍・%）で描く
     """
     def at(ts):  # 時刻 → 各時間足での足番号
         return {tf: int(lab.get_indexer(bar_label(pd.DatetimeIndex([pd.Timestamp(ts).tz_localize(None)]), tf))[0])
@@ -111,6 +113,12 @@ def load_trades(trades, labels, price_decimals=5, waves=None):
                                     day=w["anchor"]["day"].strftime("%Y-%m-%d")),
                 p=[dict(p=q["price"], n=q["n"], idx=at(q["time"]), t=pd.Timestamp(q["time"]).strftime("%m-%d %H:%M"))
                    for q in w["points"]])
+        v = vcp[k] if vcp is not None else None
+        if v:
+            out[-1]["v"] = dict(
+                k=v["kind"], ok=v["ok"], base=dict(p=v["base"]["price"], idx=at(v["base"]["time"])),
+                s=[dict(n=g["n"], hp=g["hi"], hi=at(g["hi_time"]), lp=g["lo"], li=at(g["lo_time"]),
+                        da=round(g["depth_atr"], 2), dp=round(g["depth_pct"], 2)) for g in v["segs"]])
         note = row.get("Note")                      # 任意: トレードの詳細に表示するメモ（例: 何回目の押しか）
         if isinstance(note, str) and note:
             out[-1]["note"] = note
@@ -120,7 +128,7 @@ def load_trades(trades, labels, price_decimals=5, waves=None):
 def make_chart(df_1min, path, title, start=None, end=None, trades=None, weekly_trend=None,
                mode="", risk=200.0, entry_window=18, entry_atr=18, price_decimals=5,
                session_start_hour=17, signal_hours=4, filter_state=None, filter_label="",
-               ma_periods=(20, 50, 120), entry_lines=None, waves=None):
+               ma_periods=(20, 50, 120), entry_lines=None, waves=None, vcp=None):
     """
     チャートの HTML を path に書き出す（スクリプトから呼び出す用）。
 
@@ -141,6 +149,7 @@ def make_chart(df_1min, path, title, start=None, end=None, trades=None, weekly_t
                    渡すと entry_window / entry_atr は使わない
     waves        : トレードごとに「数えた押し・戻りの波」（load_trades の waves を参照）。pullback_count.pullback_waves() の結果に
                    kind="L"/"H" を足したもの。渡すと起点の日足スイングと、数えた4時間足のスイングの番号を描く
+    vcp          : トレードごとに VCP の判定に使ったベースと押し（vcp.vcp_scan() の details）。渡すと T1, T2… を描く
     """
     extra = {}
     if trades is not None:
@@ -180,7 +189,7 @@ def make_chart(df_1min, path, title, start=None, end=None, trades=None, weekly_t
 
     tr = None
     if trades is not None:
-        tr = dict(trades=load_trades(trades, labels, price_decimals, waves), risk=risk, mode=mode,
+        tr = dict(trades=load_trades(trades, labels, price_decimals, waves, vcp), risk=risk, mode=mode,
                   entryWindow=entry_window, filterLabel=filter_label)
         rs = np.array([t["pnl"] for t in tr["trades"]]) / risk
         print(f"ℹ️ トレード {len(rs)} 件 / 合計 {rs.sum():+.2f}R")

@@ -47,6 +47,7 @@
   <span id="trctl" class="keep" style="display:none; gap:6px 18px; flex-wrap:wrap; align-items:center">
     <label>背景 <select id="bg"><option value="used" selected>検証で使った週足トレンド</option><option value="tf">表示中の時間足で計算</option><option value="filter">検証で使ったフィルター</option></select></label>
     <label><input id="trd" type="checkbox" checked> トレード</label>
+    <label title="VCP の判定に使ったベースの中の押し（T1, T2…）と深さ"><input id="vcpw" type="checkbox" checked> <span id="vcplab">VCPの押し</span></label>
     <label title="エントリー前に数えた押し・戻りの波（起点の日足スイングと、4時間足のスイングの番号）"><input id="pbw" type="checkbox" checked> <span id="pbwlab">押し・戻りのカウント</span></label>
     <label><input id="eln" type="checkbox" checked> <span id="elnlab">エントリーライン</span></label>
     <button id="prev">◀ 前のトレード</button><button id="next">次のトレード ▶</button>
@@ -197,6 +198,7 @@ function draw() {
       const [ei, xi] = tradeIdx(t); if (ei < 0 || xi < i0 || ei > i1) continue;
       for (const p of [t.sl, t.tp]) if (p != null) { lo = Math.min(lo, p); hi = Math.max(hi, p); }
       if (t.w && $("pbw").checked) { lo = Math.min(lo, t.w.a.p); hi = Math.max(hi, t.w.a.p); }
+      if (t.v && $("vcpw").checked) for (const g of t.v.s) { lo = Math.min(lo, g.lp, g.hp); hi = Math.max(hi, g.lp, g.hp); }
     }
   const pad = (hi - lo) * 0.06 || 0.001; lo -= pad; hi += pad;
   const X = i => M.l + (i - view.from + 0.5) * bw, Y = p => M.t + (hi - p) / (hi - lo) * ph;
@@ -340,7 +342,9 @@ function tradeText(t) {
     `SL ${fmtP(t.sl)}  TP ${fmtP(t.tp)}  枚数 ${Math.abs(t.size).toLocaleString()}\n` +
     `損益 ${t.pnl.toFixed(2)}（${r >= 0 ? "+" : ""}${r.toFixed(2)}R） ${t.reason}` + (t.note ? `\n${t.note}` : "") +
     (t.w ? `\n起点 日足${t.w.k === "L" ? "安値" : "高値"} ${t.w.a.day} @ ${fmtP(t.w.a.p)}` +
-      t.w.p.map(q => `\n${t.w.k === "L" ? "押し" : "戻り"}${q.n}  ${q.t} 確定足 @ ${fmtP(q.p)}`).join("") : "");
+      t.w.p.map(q => `\n${t.w.k === "L" ? "押し" : "戻り"}${q.n}  ${q.t} 確定足 @ ${fmtP(q.p)}`).join("") : "") +
+    (t.v ? `\nVCP（${t.v.ok ? "成立" : "不成立"}）ベースの起点 @ ${fmtP(t.v.base.p)}` +
+      t.v.s.map(g => `\nT${g.n}  ${fmtP(g.hp)} → ${fmtP(g.lp)}  ${g.da.toFixed(2)}ATR / ${g.dp.toFixed(2)}%`).join("") : "");
 }
 function tradeAt(i, my, Y) {
   // カーソルの足を含むトレードのうち、エントリー価格〜決済価格が縦方向に一番近いもの
@@ -382,6 +386,25 @@ function drawWaves(t, hot, X, Y, bw) {
   }
   ctx.textAlign = "left";
 }
+// VCP: ベースの中の押し（買い）/ 戻り（売り）を高値→安値の線で描き、T1, T2… と深さ（ATR 倍・%）を添える
+function drawVcp(t, hot, X, Y) {
+  const tf = $("tf").value, v = t.v, buy = v.k === "L";
+  const col = hot ? "#a77bff" : "rgba(167,123,255,.65)";
+  ctx.lineWidth = hot ? 2.5 : 1.8; ctx.strokeStyle = col;
+  for (const g of v.s) {
+    const hi = g.hi[tf], li = g.li[tf]; if (hi < 0 || li < 0) continue;
+    ctx.beginPath(); ctx.moveTo(X(hi), Y(g.hp)); ctx.lineTo(X(li), Y(g.lp)); ctx.stroke();
+  }
+  ctx.font = `${hot ? "bold " : ""}11px system-ui`; ctx.textAlign = "center";
+  for (const g of v.s) {
+    const li = g.li[tf]; if (li < 0) continue;
+    const x = X(li), y = Y(g.lp) + (buy ? 14 : -14), txt = `T${g.n} ${g.da.toFixed(1)}ATR (${buy ? "-" : "+"}${g.dp.toFixed(2)}%)`;
+    const w = ctx.measureText(txt).width + 8;
+    ctx.fillStyle = "rgba(20,24,30,.85)"; ctx.fillRect(x - w / 2, y - 8, w, 16);
+    ctx.fillStyle = col; ctx.textBaseline = "middle"; ctx.fillText(txt, x, y);
+  }
+  ctx.textAlign = "left";
+}
 function drawTrades(i0, i1, X, Y, bw) {
   // エントリーライン（4時間足 Swing High/Low。1本前の判定足までの確定情報＝バックテストと同じ値）
   if (d.esh && $("eln").checked) {
@@ -400,6 +423,7 @@ function drawTrades(i0, i1, X, Y, bw) {
     const [ei, xi] = tradeIdx(t);
     if (ei < 0 || xi < i0 - 1 || ei > i1 + 1) continue;
     if (t.w && $("pbw").checked) drawWaves(t, k === cur, X, Y, bw);
+    if (t.v && $("vcpw").checked) drawVcp(t, k === cur, X, Y);
     const win = t.pnl > 0, col = win ? "#2bd17e" : "#ff5a52";
     const xe = X(ei), xx = X(xi), ye = Y(t.ep), yx = Y(t.xp);
     // SL / TP（エントリーから決済まで）
@@ -433,6 +457,8 @@ function gotoTrade(step) {
   const c = (ei + xi) / 2; view = { from: c - span / 2, to: c + span / 2 };
   const w = TR.trades[cur].w, ai = w ? w.a.idx[$("tf").value] : -1;
   if (w && $("pbw").checked && ai >= 0 && ai < view.from + 6) view.from = ai - 8;  // 数えた波の起点が見えるように
+  const v = TR.trades[cur].v, bi = v ? v.base.idx[$("tf").value] : -1;
+  if (v && $("vcpw").checked && bi >= 0 && bi < view.from + 6) view.from = bi - 8;  // VCP のベースの起点が見えるように
   mouse = null; draw();
 }
 
@@ -476,7 +502,8 @@ if (TR) {
   if (!DATA["4H"].ut) { $("bg").value = "tf"; $("bg").options[0].disabled = true; }  // 週足トレンドを使わない戦略
   if (DATA["4H"].fs) $("bg").value = "filter"; else $("bg").options[2].disabled = true;  // 方向フィルターを使った検証
   if (!TR.trades.some(t => t.w)) { $("pbw").checked = false; $("pbw").disabled = true; $("pbwlab").style.opacity = .4; }
-  for (const id of ["trd", "eln", "bg", "pbw"]) $(id).addEventListener("change", draw);
+  if (!TR.trades.some(t => t.v)) { $("vcpw").checked = false; $("vcpw").disabled = true; $("vcplab").style.opacity = .4; }
+  for (const id of ["trd", "eln", "bg", "pbw", "vcpw"]) $(id).addEventListener("change", draw);
   $("prev").onclick = () => gotoTrade(-1); $("next").onclick = () => gotoTrade(1);
   window.addEventListener("keydown", e => { if (e.key === "ArrowRight") gotoTrade(1); else if (e.key === "ArrowLeft") gotoTrade(-1); });
 }
