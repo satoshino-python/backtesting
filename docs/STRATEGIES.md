@@ -28,6 +28,7 @@
 | `dow_structure_breakout.py` | 4時間足のダウ理論スイングで高値・安値とも切り上げ（切り下げ）なら、直近スイングハイ（ロー）に逆指値。従来版と比べる。結果は `fast_results/<日時>_dow_structure/` | 4時間足 | 固定SL/TP と 1Hトレーリング | 損失額固定 |
 | `dow_daily_breakout.py` | 日足ダウ・押し目ブレイク。日足で高値・安値を切り上げて押し目が確定したら直近高値に買い逆指値（売りは逆）、損切りは押し目の安値。専用の自前エンジンで、スイング幅×最小スイング幅×決済の12通りを全ペア検証。結果は `fast_results/<日時>_dow_daily/` | 日足 | 押し目追従 / 利確2R・3R | 損失額固定（1%） |
 | `compare_dow_daily.py` | `dow_daily_breakout.py` のエンジンと backtesting.py の結果が一致するかを確かめる | – | – | – |
+| `dow_d1_h4_breakout.py` | 日足ダウの方向（高値・安値の切り上げ=買いだけ / 切り下げ=売りだけ）× 4時間足ブレイク（ダウのスイング or 前後18本）。日足なしと比べる。結果は `fast_results/<日時>_d1dow_h4/` | 日足＋4時間足 | 固定SL/TP と 1Hトレーリング | 損失額固定 |
 
 `main_4H_fixedSL_multi.py` と `main_4H_fixedSL_dow.py` は、`main_4H_fixedSL.py` の関数と Strategy を import して使っている。
 **`main_4H_fixedSL.py` を変更すると、この2つの結果も変わる。**
