@@ -97,6 +97,9 @@ def load_trades(trades, labels, price_decimals=5):
             et=entry[k].strftime("%Y-%m-%d %H:%M"), xt=exit_[k].strftime("%Y-%m-%d %H:%M"),
             reason=reason, wk=0 if pd.isna(wk) else int(wk), idx=idx,
         ))
+        note = row.get("Note")                      # 任意: トレードの詳細に表示するメモ（例: 何回目の押しか）
+        if isinstance(note, str) and note:
+            out[-1]["note"] = note
     return out
 
 

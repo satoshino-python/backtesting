@@ -336,7 +336,7 @@ function tradeText(t) {
   return `── トレード（${t.d > 0 ? "買い" : "売り"}${DATA["4H"].ut ? " / 週足 " + nm(t.wk) : ""}）──\n` +
     `エントリー ${t.et}  @ ${fmtP(t.ep)}\n決済       ${t.xt}  @ ${fmtP(t.xp)}\n` +
     `SL ${fmtP(t.sl)}  TP ${fmtP(t.tp)}  枚数 ${Math.abs(t.size).toLocaleString()}\n` +
-    `損益 ${t.pnl.toFixed(2)}（${r >= 0 ? "+" : ""}${r.toFixed(2)}R） ${t.reason}`;
+    `損益 ${t.pnl.toFixed(2)}（${r >= 0 ? "+" : ""}${r.toFixed(2)}R） ${t.reason}` + (t.note ? `\n${t.note}` : "");
 }
 function tradeAt(i, my, Y) {
   // カーソルの足を含むトレードのうち、エントリー価格〜決済価格が縦方向に一番近いもの
