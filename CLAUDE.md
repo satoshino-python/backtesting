@@ -2,7 +2,8 @@
 
 FX（GMOクリック証券の1分足）のスイングブレイクアウト戦略を backtesting.py で検証するリポジトリ。
 各スクリプトのルール・設定・出力は [docs/STRATEGIES.md](docs/STRATEGIES.md)、ダウ理論判定の仕様は
-[docs/DOW_TREND_SPEC.md](docs/DOW_TREND_SPEC.md) にまとめてある。作業の前に読むこと。
+[docs/DOW_TREND_SPEC.md](docs/DOW_TREND_SPEC.md)、ブレイクアウト・トレンドフォロー戦略（`breakout_trend*.py`）の仕様は
+[docs/BREAKOUT_TREND_SPEC.md](docs/BREAKOUT_TREND_SPEC.md) にまとめてある。作業の前に読むこと。
 
 ## 実行
 - リポジトリのルートで実行する（`histData/` などを相対パスで探す）。ローカルの Python は `.venv/`。

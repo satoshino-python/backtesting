@@ -1,0 +1,379 @@
+<title>ブレイクアウト・トレンドフォロー 6ペア</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: one phone-width column, same look as the スイングブレイクアウト / トレンドフィルター reports — verdict, findings, curves, tables, histograms, sensitivity, charts, rules */
+:root {
+  --bg: #f3f5f7; --surface: #ffffff; --line: #dde2e8; --fg: #17202b; --muted: #5e6b7a;
+  --accent: #2a5bd7; --accent-soft: #e3eafb;
+  --pos: #18865a; --neg: #c8413a; --pos-bg: rgba(24,134,90,.14); --neg-bg: rgba(200,65,58,.14);
+  --s1: #2a5bd7; --s2: #d07a12; --s3: #18865a; --s4: #b0399b; --s5: #c8413a; --s6: #5b6b7d;
+  --f-head: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+  --f-num: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f141a; --surface: #171e26; --line: #2a333e; --fg: #e3e8ee; --muted: #93a0ae;
+  --accent: #79a2ff; --accent-soft: #1d2a45;
+  --pos: #3ccb8b; --neg: #f0726a; --pos-bg: rgba(60,203,139,.16); --neg-bg: rgba(240,114,106,.16);
+  --s1: #79a2ff; --s2: #f0a54a; --s3: #3ccb8b; --s4: #e07fd0; --s5: #f0726a; --s6: #a3b1c0;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0f141a; --surface: #171e26; --line: #2a333e; --fg: #e3e8ee; --muted: #93a0ae;
+  --accent: #79a2ff; --accent-soft: #1d2a45;
+  --pos: #3ccb8b; --neg: #f0726a; --pos-bg: rgba(60,203,139,.16); --neg-bg: rgba(240,114,106,.16);
+  --s1: #79a2ff; --s2: #f0a54a; --s3: #3ccb8b; --s4: #e07fd0; --s5: #f0726a; --s6: #a3b1c0;
+  color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.6 var(--f-head); -webkit-text-size-adjust: 100%; }
+.wrap { max-width: 860px; margin: 0 auto; padding: 20px 16px 48px; display: grid; gap: 28px; }
+.wrap > * { min-width: 0; }
+h1 { font-size: 1.45rem; line-height: 1.3; margin: 0; font-weight: 700; text-wrap: balance; }
+h2 { font-size: 1.05rem; margin: 0 0 10px; font-weight: 700; text-wrap: balance; }
+h3 { font-size: .92rem; margin: 14px 0 8px; font-weight: 700; }
+p { margin: 0; }
+.sub { color: var(--muted); font-size: .85rem; margin-top: 6px; }
+.num { font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+.pos { color: var(--pos); } .neg { color: var(--neg); }
+
+.verdict { background: var(--surface); border: 1.5px solid var(--accent); border-radius: 14px; padding: 16px; display: grid; gap: 14px; }
+.verdict .tag { font-size: .72rem; color: var(--accent); letter-spacing: .06em; font-weight: 500; }
+.verdict .rule { font-size: 1.08rem; font-weight: 700; line-height: 1.5; text-wrap: balance; }
+.cmp { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+@media (min-width: 620px) { .cmp { grid-template-columns: repeat(4, minmax(0,1fr)); } }
+.cmp div { background: var(--surface); padding: 10px; min-width: 0; }
+.cmp .l { font-size: .7rem; color: var(--muted); letter-spacing: .04em; }
+.cmp .v { font-family: var(--f-num); font-size: 1.15rem; font-weight: 600; white-space: nowrap; }
+.cmp .was { font-family: var(--f-num); font-size: .7rem; color: var(--muted); line-height: 1.45; }
+
+.findings { display: grid; gap: 10px; }
+.find { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 4px; }
+.find h3 { margin: 0; font-size: .95rem; display: flex; gap: 8px; align-items: baseline; }
+.pill { font-size: .68rem; font-weight: 500; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
+.pill.good { background: var(--pos-bg); color: var(--pos); }
+.pill.bad { background: var(--neg-bg); color: var(--neg); }
+.pill.mid { background: var(--accent-soft); color: var(--accent); }
+.find p { font-size: .88rem; color: var(--muted); }
+.find p b { color: var(--fg); font-weight: 500; }
+
+.scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: .8rem; }
+th, td { padding: 7px 9px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+th { font-weight: 500; color: var(--muted); font-size: .72rem; background: var(--surface); }
+th:first-child, td:first-child { text-align: left; position: sticky; left: 0; background: var(--surface); font-weight: 500; }
+tr:last-child td { border-bottom: 0; }
+tr.base td { background: var(--accent-soft); }
+tr.total td { font-weight: 600; }
+tr.pick td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+tr.grp td { background: var(--bg); color: var(--muted); font-size: .72rem; font-weight: 500; padding-block: 5px; }
+td.cell { font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+td.hp { background: var(--pos-bg); } td.hn { background: var(--neg-bg); }
+.hint { font-size: .8rem; color: var(--muted); margin-top: 8px; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 10px 8px; }
+.panel svg { width: 100%; height: auto; display: block; }
+.panel svg text { font-family: var(--f-num); font-size: 10px; fill: var(--muted); }
+.panel .ttl { font-size: .8rem; color: var(--muted); margin: 0 4px 6px; }
+.legend { display: flex; gap: 6px 14px; flex-wrap: wrap; font-size: .74rem; color: var(--muted); margin: 8px 4px 2px; }
+.legend i { display: inline-block; width: 12px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 5px; }
+.legend .v { font-family: var(--f-num); color: var(--fg); }
+.grid2 { display: grid; gap: 10px; }
+@media (min-width: 700px) { .grid2 { grid-template-columns: 1fr 1fr; } }
+.grid2 > * { min-width: 0; }
+
+.links { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.links a { display: grid; gap: 2px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; color: var(--fg); text-decoration: none; }
+.links a:hover, .links a:focus-visible { border-color: var(--accent); outline: none; }
+.links a b { font-size: .9rem; }
+.links a span { font-family: var(--f-num); font-size: .74rem; color: var(--muted); }
+
+.defs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.def { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; min-width: 0; }
+.def h3 { margin: 0 0 6px; font-size: .9rem; }
+.def p, .def li { font-size: .86rem; }
+.def ul { margin: 0; padding-left: 1.1em; display: grid; gap: 4px; }
+.def code { font-family: var(--f-num); font-size: .78rem; background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; }
+ul.notes { margin: 0; padding-left: 1.2em; display: grid; gap: 8px; font-size: .88rem; }
+footer { font-size: .75rem; color: var(--muted); line-height: 1.7; }
+footer code { font-family: var(--f-num); font-size: .72rem; word-break: break-all; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>ブレイクアウト・トレンドフォロー 6ペア</h1>
+    <p class="sub" id="sub"></p>
+  </header>
+
+  <section class="verdict">
+    <span class="tag">初期値の結果（仕様書どおり）</span>
+    <p class="rule" id="verdict-rule"></p>
+    <div class="cmp" id="cmp"></div>
+    <p class="sub" style="margin:0" id="verdict-note"></p>
+  </section>
+
+  <section>
+    <h2>わかったこと</h2>
+    <div class="findings" id="findings"></div>
+  </section>
+
+  <section>
+    <h2>損益曲線</h2>
+    <div class="grid2">
+      <div class="panel"><p class="ttl">累積R（決済日ベース）</p><div id="cum"></div><div class="legend" id="cum-legend"></div></div>
+      <div class="panel"><p class="ttl" id="eq-ttl"></p><div id="eq"></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>年別・ペア別の合計R</h2>
+    <div class="scroll"><table id="yearly"></table></div>
+    <p class="hint">エントリーした取引日の年で集計。SP500 は 2024年から。</p>
+  </section>
+
+  <section>
+    <h2>成績一覧</h2>
+    <div class="scroll"><table id="pairs"></table></div>
+    <h3>決済理由別</h3>
+    <div class="scroll"><table id="reasons"></table></div>
+    <h3>買い・売り / 年別</h3>
+    <div class="scroll"><table id="side"></table></div>
+  </section>
+
+  <section>
+    <h2>仮説の確認：ブレイク後はすぐ伸びて、あまり戻らないか</h2>
+    <div class="grid2">
+      <div class="panel"><p class="ttl">MFE（エントリー後の最大順行、ATR）</p><div id="h-mfe"></div><p class="hint" id="mfe-note" style="margin:6px 4px 0"></p></div>
+      <div class="panel"><p class="ttl">MAE（エントリー後の最大逆行、ATR）</p><div id="h-mae"></div><div class="legend" id="mae-legend"></div></div>
+    </div>
+    <div class="panel" style="margin-top:10px"><p class="ttl">1トレードの損益（R）</p><div id="h-r"></div></div>
+  </section>
+
+  <section>
+    <h2>感度分析（1つずつ変更）</h2>
+    <div class="scroll"><table id="sens"></table></div>
+    <p class="hint" id="sens-hint"></p>
+  </section>
+
+  <section>
+    <h2>ウォークフォワード</h2>
+    <div class="scroll"><table id="wf"></table></div>
+    <p class="hint" id="wf-hint"></p>
+  </section>
+
+  <section>
+    <h2>コスト2倍</h2>
+    <div class="scroll"><table id="cost"></table></div>
+    <p class="hint" id="cost-hint"></p>
+  </section>
+
+  <section>
+    <h2>トレード付きダウ理論チャート</h2>
+    <div class="links" id="charts"></div>
+    <p class="hint">エントリー ▲買い / ▼売り、決済 ●、最終ストップを表示。前後のトレードは ← → で移動。エントリーラインはチャート側のスイング計算（同値を含む）なので、この戦略のフラクタル（同値は不採用）と少し違う場合がある。</p>
+  </section>
+
+  <section>
+    <h2>売買ルールと設定</h2>
+    <div class="defs" id="rules"></div>
+  </section>
+
+  <section>
+    <h2>読むときの注意</h2>
+    <ul class="notes" id="notes"></ul>
+  </section>
+
+  <footer id="foot"></footer>
+</div>
+
+<script>
+const D = __DATA__;
+const $ = id => document.getElementById(id);
+const PAIR_COL = ["--s1", "--s2", "--s3", "--s4", "--s5", "--s6"];
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const f = (x, d = 2) => x == null ? "–" : Number(x).toFixed(d);
+const sg = (x, d = 2) => x == null ? "–" : (x > 0 ? "+" : "") + Number(x).toFixed(d);
+const cls = x => x == null ? "" : x > 0 ? "pos" : x < 0 ? "neg" : "";
+const heat = x => x == null ? "" : x > 0 ? "hp" : x < 0 ? "hn" : "";
+const all = D.summary[0];
+const B = D.meta.base;
+
+// ---- header / verdict ----
+$("sub").textContent = `4時間足（NY 17:00 区切り）/ ${D.meta.start.slice(0, 7)}〜${D.meta.end.slice(0, 7)}（SP500 は 2024〜）/ ` +
+  `前半 〜${D.meta.is_end.slice(0, 7)}・後半 それ以降 / コストはデータの平均スプレッド`;
+const usdjpy = D.summary.find(r => r.name === "USDJPY");
+$("verdict-rule").textContent = `6ペア合計 ${sg(all.total_R, 1)}R、1トレードあたり ${sg(all.expectancy_R, 3)}R。` +
+  `プラスは USDJPY（${sg(usdjpy.total_R, 1)}R）だけ`;
+const cmpNames = Object.keys(D.compare);
+const was = key => cmpNames.map(n => `${n}: ${key === "pf" ? f(D.compare[n][key]) : key === "trades" ? D.compare[n][key] : sg(D.compare[n][key], 1)}`).join("<br>");
+$("cmp").innerHTML = [
+  ["合計R", sg(all.total_R, 1), cls(all.total_R), "total_R"],
+  ["PF", f(all.pf), cls(all.pf - 1), "pf"],
+  ["最大DD", f(all.max_dd_R, 1) + "R", "", "max_dd_R"],
+  ["取引数", all.trades, "", "trades"],
+].map(([l, v, c, k]) => `<div><div class="l">${l}</div><div class="v ${c}">${v}</div><div class="was">${was(k)}</div></div>`).join("");
+$("verdict-note").textContent = `下の小さい数字は、同じ6ペア・同じ期間の既存のスイングブレイクアウト高速版（4時間足 前後18本・1分足で約定）。` +
+  `R の定義はどちらも初期損切り幅。固定％リスク ${D.meta.risk_pct * 100}% の資金曲線では ${sg(all.return_pct, 1)}%、最大DD ${f(all.max_dd_pct, 1)}%。`;
+
+// ---- findings ----
+const rs = Object.fromEntries(D.by_reason.map(r => [r.Reason, r]));
+const H = D.hyp;
+const wfo = D.walkforward;
+const wfBaseOos = wfo.find(r => r.name === "初期値" && r.period.startsWith("後半"));
+const wfPickOos = wfo.find(r => r.name !== "初期値" && r.period.startsWith("後半"));
+const c2 = D.cost.find(r => r.cost_mult === 2);
+const finds = [
+  ["bad", "仮説は一部だけ", `+3ATR まで伸びたのは ${f(H.mfe_ge_3, 1)}%、そのうち +6ATR まで伸びたのは <b>${f(D.mfe.pct, 1)}%</b>（${D.mfe.n6} / ${D.mfe.n3} 件）。` +
+    `一方で <b>${f(H.mfe_lt_1, 1)}% は +1ATR にも届かず</b>、MAE が初期損切り（${B.sl_atr}ATR）に達したのは ${f(H.mae_ge_15, 1)}%。「すぐ伸びて戻らない」ブレイクは少数派。`],
+  ["mid", "損失の大半は初期損切り", `初期損切り ${rs["初期損切り"]?.count ?? 0} 件で <b>${sg(rs["初期損切り"]?.sum, 0)}R</b>、トレイル ${rs["トレイル"]?.count ?? 0} 件で <b>${sg(rs["トレイル"]?.sum, 0)}R</b>。` +
+    `時間切れ（${rs["時間切れ"]?.count ?? 0} 件、平均 ${sg(rs["時間切れ"]?.mean)}R）は損を小さく切れているが、全体の差を埋めるほどではない。勝率 ${f(all.win_rate, 1)}%・ペイオフ ${f(all.payoff)}。`],
+  [wfPickOos.expectancy_R > 0 ? "mid" : "bad", "パラメータを選んでも損益ゼロ近辺", `前半で期待値が最も高かった値を組み合わせると、後半は <b>${sg(wfPickOos.expectancy_R, 3)}R/トレード</b>（初期値 ${sg(wfBaseOos.expectancy_R, 3)}）。` +
+    `感度分析でもプラスになる設定は無く、コスト2倍では ${sg(c2.expectancy_R, 3)}R/トレードまで下がる。`],
+];
+$("findings").innerHTML = finds.map(([p, h, t]) => `<div class="find"><h3><span class="pill ${p}">${{ good: "良い", bad: "弱い", mid: "要注意" }[p]}</span>${h}</h3><p>${t}</p></div>`).join("");
+
+// ---- line charts ----
+function lineChart(el, series, { unit = "", zero = true } = {}) {
+  const W = 400, Ht = 220, L = 38, R = 14, T = 8, Bm = 22;
+  const days = s => s.t.map(d => Date.parse(d));
+  const xs = series.flatMap(s => days(s)), ys = series.flatMap(s => s.v);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs);
+  let y0 = Math.min(0, ...ys), y1 = Math.max(0, ...ys);
+  const span = niceStep((y1 - y0) / 4);
+  y0 = Math.floor(y0 / span) * span; y1 = Math.ceil(y1 / span) * span;
+  const X = t => L + (t - x0) / (x1 - x0) * (W - L - R), Y = v => T + (y1 - v) / (y1 - y0) * (Ht - T - Bm);
+  let g = "";
+  for (let v = y0; v <= y1 + 1e-9; v += span)
+    g += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="${v === 0 ? 1.2 : .6}"/>` +
+      `<text x="${L - 4}" y="${Y(v) + 3}" text-anchor="end">${Math.round(v)}${unit}</text>`;
+  const y0d = new Date(x0).getFullYear(), y1d = new Date(x1).getFullYear();
+  for (let y = y0d + 1; y <= y1d; y++) {
+    const t = Date.parse(`${y}-01-01`); if (t < x0 || t > x1) continue;
+    g += `<line x1="${X(t)}" x2="${X(t)}" y1="${T}" y2="${Ht - Bm}" stroke="var(--line)" stroke-width=".6"/>` +
+      `<text x="${X(t)}" y="${Ht - 6}" text-anchor="middle">${y}</text>`;
+  }
+  const paths = series.map(s => {
+    const d = days(s);
+    const pts = [[X(d[0]), Y(0)], ...d.map((t, i) => [X(t), Y(s.v[i])])];
+    return `<path d="M${pts.map(p => p[0].toFixed(1) + "," + p[1].toFixed(1)).join("L")}" fill="none" stroke="var(${s.col})" stroke-width="${s.w || 1.2}" stroke-linejoin="round"/>`;
+  }).join("");
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${Ht}" role="img" aria-label="${series.map(s => s.name).join(", ")}">${g}${paths}</svg>`;
+}
+function niceStep(raw) {
+  const p = Math.pow(10, Math.floor(Math.log10(Math.max(raw, 1e-9)))), m = raw / p;
+  return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p;
+}
+const cumSeries = D.pairs.map((p, i) => ({ name: p, ...D.cum_pairs[p], col: PAIR_COL[i] }));
+cumSeries.push({ name: "合計", ...D.cum, col: "--fg", w: 2 });
+lineChart($("cum"), cumSeries);
+$("cum-legend").innerHTML = cumSeries.map(s => `<span><i style="background:var(${s.col})"></i>${s.name} <span class="v">${sg(s.v[s.v.length - 1], 1)}</span></span>`).join("");
+$("eq-ttl").textContent = `資金曲線（1トレード ${D.meta.risk_pct * 100}% リスク・複利・全ペアを1口座で同時保有、%）`;
+lineChart($("eq"), [{ name: "資金", t: D.equity.t, v: D.equity.pct, col: "--accent", w: 1.6 }], { unit: "%" });
+
+// ---- tables ----
+function table(el, head, rows, rowCls = () => "") {
+  el.innerHTML = `<thead><tr>${head.map(h => `<th>${h}</th>`).join("")}</tr></thead><tbody>` +
+    rows.map((r, i) => `<tr class="${rowCls(r, i)}">${r.map((c, j) => j === 0 ? `<td>${c}</td>` : `<td class="cell ${c?.c || ""}">${c?.v ?? c}</td>`).join("")}</tr>`).join("") + "</tbody>";
+}
+const years = Object.keys(D.yearly);
+table($("yearly"), ["年", ...D.pairs, "合計"], years.map(y => [y, ...[...D.pairs, "合計"].map(p => {
+  const v = D.yearly[y][p]; return { v: v == null ? "–" : sg(v, 1), c: heat(v) };
+})]).concat([["全期間", ...D.summary.slice(1).map(r => ({ v: sg(r.total_R, 1), c: heat(r.total_R) })), { v: sg(all.total_R, 1), c: heat(all.total_R) }]]),
+  (r, i) => i === years.length ? "total" : "");
+const statRow = r => [r.name, r.trades, f(r.win_rate, 1), { v: sg(r.expectancy_R, 3), c: cls(r.expectancy_R) }, { v: sg(r.total_R, 1), c: heat(r.total_R) },
+  f(r.pf), f(r.payoff), sg(r.avg_win_R), sg(r.avg_loss_R), f(r.max_dd_R, 1), r.max_losing_streak, f(r.max_dd_pct, 1), { v: sg(r.return_pct, 1), c: cls(r.return_pct) }];
+const statHead = ["", "取引数", "勝率%", "期待値R", "合計R", "PF", "ペイオフ", "平均勝ちR", "平均負けR", "最大DD R", "最大連敗", "最大DD%", "収益%"];
+table($("pairs"), statHead, D.summary.map(statRow), (r, i) => i === 0 ? "base" : "");
+table($("reasons"), ["決済理由", "件数", "割合%", "平均R", "合計R"],
+  D.by_reason.map(r => [r.Reason, r.count, f(r.share_pct, 1), { v: sg(r.mean), c: cls(r.mean) }, { v: sg(r.sum, 1), c: heat(r.sum) }]));
+table($("side"), statHead, [...D.by_side, ...D.yearly_stats].map(r => statRow({ ...r, name: String(r.name) })));
+
+// ---- histograms ----
+function histChart(el, sets, { mark = [], label = v => v } = {}) {
+  const W = 400, Ht = 170, L = 30, R = 14, T = 8, Bm = 22;
+  const h0 = sets[0].h, n = h0.counts.length;
+  const ymax = Math.max(...sets.flatMap(s => s.h.counts));
+  const step = niceStep(ymax / 4), top = Math.ceil(ymax / step) * step;
+  const bw = (W - L - R) / n, X = v => L + (v - h0.lo) / h0.step * bw, Y = c => T + (1 - c / top) * (Ht - T - Bm);
+  let g = "";
+  for (let v = 0; v <= top; v += step)
+    g += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width=".6"/><text x="${L - 4}" y="${Y(v) + 3}" text-anchor="end">${v}</text>`;
+  sets.forEach(s => s.h.counts.forEach((c, i) => {
+    if (c) g += `<rect x="${(L + i * bw + .5).toFixed(1)}" y="${Y(c).toFixed(1)}" width="${Math.max(bw - 1, .5).toFixed(1)}" height="${(Y(0) - Y(c)).toFixed(1)}" fill="var(${s.col})" fill-opacity="${s.op || .85}"/>`;
+  }));
+  const hi = h0.lo + n * h0.step;
+  const tickStep = niceStep((hi - h0.lo) / 6);
+  for (let v = Math.ceil(h0.lo / tickStep) * tickStep; v <= hi + 1e-9; v += tickStep)
+    g += `<text x="${X(v)}" y="${Ht - 6}" text-anchor="middle">${label(+v.toFixed(2))}</text>`;
+  mark.forEach(m => g += `<line x1="${X(m)}" x2="${X(m)}" y1="${T}" y2="${Ht - Bm}" stroke="var(--fg)" stroke-dasharray="3 3" stroke-width="1"/>`);
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${Ht}" role="img" aria-label="histogram">${g}</svg>`;
+}
+histChart($("h-mfe"), [{ h: D.hist_mfe, col: "--pos" }], { mark: [3, 6] });
+$("mfe-note").innerHTML = `点線は +3 / +6 ATR。+3ATR 到達 ${D.mfe.n3} 件のうち +6ATR 到達 ${D.mfe.n6} 件（<b>${f(D.mfe.pct, 1)}%</b>）。中央値 ${f(H.mfe_median)} ATR。右端の棒は 10ATR 以上を含む。`;
+histChart($("h-mae"), [{ h: D.hist_mae, col: "--neg", op: .55 }, { h: D.hist_mae_win, col: "--pos", op: .9 }], { mark: [B.sl_atr] });
+$("mae-legend").innerHTML = `<span><i style="background:var(--neg);opacity:.55"></i>全トレード</span><span><i style="background:var(--pos)"></i>勝ちトレード（中央値 ${f(H.win_mae_median)} ATR）</span><span>点線 = 初期損切り</span>`;
+histChart($("h-r"), [{ h: D.hist_r, col: "--accent" }], { mark: [0] });
+
+// ---- sensitivity ----
+const PNAME = { fractal_n: "フラクタル左右本数", atr_period: "ATR期間", sl_atr: "初期損切り（ATR）", time_bars: "時間切れ本数",
+  time_atr: "時間切れ到達基準（ATR）", be_atr: "建値移動（ATR）", trail_atr: "トレイル幅（ATR）", trail_swing: "スイング追随",
+  max_bars: "最大保有（本）", atr_mode: "ATRの扱い" };
+const base = D.sensitivity.find(r => r.name === "base");
+const sRow = (label, r, pick) => [label, r.trades, { v: sg(r.expectancy_R, 3), c: heat(r.expectancy_R) }, { v: sg(r.is_expectancy_R, 3), c: heat(r.is_expectancy_R) },
+  { v: sg(r.oos_expectancy_R, 3), c: heat(r.oos_expectancy_R) }, sg(r.total_R, 1), f(r.pf), f(r.max_dd_R, 1), f(r.mfe3_to_6_pct, 1)];
+let srows = [], scls = [];
+srows.push(sRow("初期値", base)); scls.push("base");
+Object.keys(PNAME).forEach(k => {
+  srows.push([PNAME[k], "", "", "", "", "", "", "", ""]); scls.push("grp");
+  const vals = D.sensitivity.filter(r => r.param === k).map(r => ({ v: r.value, r }));
+  vals.push({ v: String(B[k] === true ? "True" : B[k] === false ? "False" : B[k]), r: base, isBase: true });
+  vals.sort((a, b) => isNaN(a.v) ? 0 : Number(a.v) - Number(b.v));
+  vals.forEach(({ v, r, isBase }) => {
+    const shown = { True: "ON", False: "OFF", fixed: "固定", update: "毎バー更新" }[v] ?? v;
+    srows.push(sRow(`${shown}${isBase ? "（初期値）" : ""}`, r)); scls.push((isBase ? "base " : "") + (D.wf_params[k] === v ? "pick" : ""));
+  });
+});
+table($("sens"), ["設定", "取引数", "期待値 全期間", "前半", "後半", "合計R", "PF", "最大DD R", "+3→+6ATR %"], srows, (r, i) => scls[i]);
+$("sens-hint").textContent = "期待値は R/トレード。左に線が付いた行が、ウォークフォワードで前半の期待値から選んだ値。初期損切りを変えると 1R の大きさも変わる点に注意。";
+
+// ---- walk-forward / cost ----
+table($("wf"), ["設定", "期間", "取引数", "期待値R", "合計R", "PF", "勝率%", "最大DD R"],
+  wfo.map(r => [r.name, r.period, r.trades, { v: sg(r.expectancy_R, 3), c: heat(r.expectancy_R) }, sg(r.total_R, 1), f(r.pf), f(r.win_rate, 1), f(r.max_dd_R, 1)]),
+  r => r[0] === "初期値" ? "base" : "");
+$("wf-hint").textContent = "前半で選んだ値: " + Object.entries(D.wf_params).map(([k, v]) => `${PNAME[k]} ${({ True: "ON", False: "OFF", fixed: "固定", update: "毎バー更新" })[v] ?? v}`).join(" / ") +
+  "。パラメータごとに独立に選んで組み合わせたもの（組み合わせ自体は前半でも事前に試していない）。";
+table($("cost"), ["", "取引数", "期待値 全期間", "前半", "後半", "合計R", "PF"],
+  D.cost.map(r => [r.name, r.trades, { v: sg(r.expectancy_R, 3), c: heat(r.expectancy_R) }, sg(r.is_expectancy_R, 3), sg(r.oos_expectancy_R, 3), sg(r.total_R, 1), f(r.pf)]),
+  (r, i) => i === 0 ? "base" : "");
+$("cost-hint").textContent = "スプレッドとスリッページ（既定 0）を両方2倍。使ったスプレッド: " +
+  D.pairs.map(p => `${p} ${D.meta.spreads[p].bp.toFixed(2)}bp`).join(" / ") + "（仲値に対する比率）。";
+
+// ---- charts ----
+$("charts").innerHTML = D.charts.map((c, i) => {
+  const p = D.pairs[i], r = D.summary.find(s => s.name === p);
+  return `<a href="${c}"><b>${p}</b><span>${r.trades} 件 / <span class="${cls(r.total_R)}">${sg(r.total_R, 1)}R</span></span></a>`;
+}).join("");
+
+// ---- rules ----
+const rules = [
+  ["エントリー", [`4時間足のフラクタル（左右 ${B.fractal_n} 本より厳密に高い/低い）。右側 ${B.fractal_n} 本の確定後に既知`,
+    "直近の確定スイングを終値で抜けた足（前の終値 ≦ 基準 < 今の終値）の次の足の始値で成行",
+    "1度抜けたスイングは使用済み（エントリーしなくても）。保有中・決済した足のシグナルは無視"]],
+  ["決済", [`初期損切り ${B.sl_atr}ATR（= 1R）。ATR(${B.atr_period}) Wilder はシグナル足の値で固定`,
+    `${B.time_bars} 本目の終値までに +${B.time_atr}ATR へ届かなければ次の始値で撤退`,
+    `+${B.be_atr}ATR で建値へ。以後は「最高値 − ${B.trail_atr}ATR」とエントリー後の直近スイングの近い方へトレイル`,
+    `最大 ${B.max_bars} 本で次の始値で決済`]],
+  ["約定", ["ストップの変更は次の足から。高値・安値で判定し、窓開けは始値で約定",
+    "同じ足で建値条件とストップの両方 → ストップが先", "1回の約定ごとにスプレッドの半分を不利側に（往復でスプレッド1回分）"]],
+  ["データ", ["GMOクリック証券の1分足（仲値）を NY 17:00 区切りの4時間足に。日本時間 → NY 時間",
+    "助走1ヶ月（エントリーなし）。SP500 は US500 CFD、つなぎ足の調整なし", `判定・約定は4時間足だけ（1分足の値動きの順番は見ない）`]],
+];
+$("rules").innerHTML = rules.map(([h, li]) => `<div class="def"><h3>${h}</h3><ul>${li.map(x => `<li>${x}</li>`).join("")}</ul></div>`).join("");
+$("notes").innerHTML = [
+  "前半（2021〜2023）・後半（2024〜2025）はエントリー日で分けた。実行は全期間で1回。SP500 は後半にしかない。",
+  "感度分析の範囲は仕様書の例どおり。プラスになる設定が無いので、合わせ込みの心配より「この形のままでは優位性が見えない」ことの方が大きい。",
+  "ウォークフォワードで選んだ設定は、前半の期待値で1パラメータずつ選んだもの。後半で初期値より良いが、ほぼ損益ゼロ。",
+  "既存の高速版（比較の数字）とはスイングの幅（18本 vs 3本）・ATR の計算・約定の精度（1分足 vs 4時間足）が違う。取引数は約3倍。",
+  "4時間足だけで約定を判定しているため、同じ足でストップと有利な値動きの両方に触れた場合は常に不利側に倒している（保守的）。",
+  "スワップ・CFD の価格調整額は含めない。資金曲線は全ペアを1つの口座で同時に持つ前提で、証拠金の制約は見ていない。",
+].map(x => `<li>${x}</li>`).join("");
+$("foot").innerHTML = `作成 ${D.meta.created} / 結果フォルダ <code>${D.meta.out_dir}</code> / コード <code>breakout_trend.py</code> <code>breakout_trend_run.py</code> / 仕様 <code>docs/BREAKOUT_TREND_SPEC.md</code>`;
+</script>

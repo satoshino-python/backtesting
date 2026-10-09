@@ -79,7 +79,9 @@ def load_trades(trades, labels, price_decimals=5):
     for k, row in t.iterrows():
         long = row["Size"] > 0
         xp, ep, sl, tp = row["ExitPrice"], row["EntryPrice"], row["SL"], row["TP"]
-        if not pd.isna(tp) and abs(xp - tp) <= tol:
+        if "Reason" in t.columns:   # 決済理由を持つ取引履歴（breakout_trend.py など）はそのまま使う
+            reason = row["Reason"]
+        elif not pd.isna(tp) and abs(xp - tp) <= tol:
             reason = "利確(TP)"
         elif not pd.isna(sl) and abs(xp - sl) <= tol:
             reason = "建値ストップ" if abs(sl - ep) <= tol else "損切り(SL)"

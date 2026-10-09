@@ -1,6 +1,6 @@
 # 検証用コードの一覧と設定ガイド
 
-このフォルダの各スクリプトの「売買ルール」「設定できる項目」「出力」をまとめたもの（2026-10-05 時点のコードに基づく）。
+このフォルダの各スクリプトの「売買ルール」「設定できる項目」「出力」をまとめたもの（2026-10-09 時点のコードに基づく）。
 ダウ理論トレンド判定の詳細仕様は [DOW_TREND_SPEC.md](DOW_TREND_SPEC.md) を参照。
 
 ## 1. ファイル一覧
@@ -25,6 +25,10 @@
 | `build_h4_cache.py` | 1分足を4時間足にまとめて `cache/h4_<ペア>.pkl` に保存（下の2本の下準備） | 4時間足 | – | – |
 | `trend_filter_study.py` | `fast_results` の取引に、エントリー直前の方向・強さの指標（ADX・ER・CHOP・移動平均・週足ダウなど）を付けて成績との関係を集計 | 4H/D1/W1 | – | – |
 | `filter_rerun.py` | 方向フィルター（`fast_engine` の `AllowLong`/`AllowShort` 列）を入れて全ペアを再検証。結果は `filter_results/<日時>_rerun/` | 4時間足＋日足/週足 | 固定SL/TP と 1Hトレーリング | 損失額固定 |
+| `breakout_trend.py` | スイングブレイクアウト・トレンドフォロー戦略（[BREAKOUT_TREND_SPEC.md](BREAKOUT_TREND_SPEC.md)）の売買シミュレーションと集計。4時間足だけで判定・約定 | 4時間足 | 初期損切り・時間切れ・建値・ATR/スイングのトレイル・最大保有 | R評価（資金曲線は固定％リスク） |
+| `breakout_trend_run.py` | 上の戦略を全ペアで検証（初期値・感度分析・ウォークフォワード・コスト2倍）。結果は `breakout_results/<日時>_<ラベル>/` | 4時間足 | 同上 | 同上 |
+| `breakout_trend_report.py` | `breakout_trend_run.py` の結果フォルダからレポート（`report.html`）を作る | – | – | – |
+| `tests/test_breakout_trend.py` | `breakout_trend.py` のテスト（手で作った足で各ルールを確認） | – | – | – |
 
 `main_4H_fixedSL_multi.py` と `main_4H_fixedSL_dow.py` は、`main_4H_fixedSL.py` の関数と Strategy を import して使っている。
 **`main_4H_fixedSL.py` を変更すると、この2つの結果も変わる。**
@@ -260,6 +264,32 @@ python dow_swing_chart.py --trades dow_results/trades_20210101-20251231_strict.c
 - `compare_fast_engine.py`: `python compare_fast_engine.py EURUSD 2024-01-01 2024-12-31 [breakeven_trigger_r=1.0]`、
   `... exit_mode=swing_trail [initial_sl_rule=near] [h1_window=5]` で両方を実行して比べる。
   食い違ったら両方の取引履歴を `fast_compare_results/<日時>_<ペア>/` に保存する。
+
+### 4.13 `breakout_trend.py` / `breakout_trend_run.py`（ブレイクアウト・トレンドフォロー）
+仕様は [BREAKOUT_TREND_SPEC.md](BREAKOUT_TREND_SPEC.md)。ここまでのスクリプトとは別の戦略で、`main_4H_fixedSL.py` の Strategy は使わない
+（使うのは1分足の読み込み `load_gmo_click_1min_data()` と4時間足へのまとめ `resample_to_signal_bars()` だけ）。
+
+- エントリー: 4時間足のフラクタル（左右 `fractal_n`=3 本より**厳密に**高い/低い）を、**終値**で抜けた足の次の足の始値で成行。
+  抜けたスイングは使用済み（エントリーしなくても）。既存の「スイングに逆指値」とは違う。
+- 決済: 初期損切り 1.5ATR（= 1R）、6本で +1ATR に届かなければ撤退、+1.5ATR で建値、以後「最高値 − 2ATR」と
+  エントリー後に確定した直近スイングの近い方へトレイル、最大60本。ATR は ATR(14) Wilder をシグナル足の値で固定（`atr_mode`）。
+- 約定は4時間足の高値・安値で判定（1分足は使わない）。同じ足で建値条件とストップの両方に届いたらストップが先。
+- コスト: データの平均スプレッドを価格単位にして、1回の約定ごとに半分 + スリッページ（`SLIPPAGE`、既定0）。
+- `BreakoutParams` の項目: `fractal_n` / `atr_period` / `sl_atr` / `time_bars` / `time_atr` / `be_atr` / `trail_atr` / `trail_swing` / `max_bars` / `atr_mode`。
+- `breakout_trend_run.py` の設定（ファイル冒頭）: `PAIRS`、`START`/`END`（2021-01-01〜2025-12-31）、`IS_END`（2023-12-31。前半/後半の境目）、
+  `RISK_PCT`（0.01）、`SENSITIVITY`（感度分析の値）、`COST_MULTS`、`RUN_LABEL`、`WORKERS`、`MAKE_CHARTS`、`SAVE_VARIANT_TRADES`。
+  `python breakout_trend_run.py [ペア ...]` で実行（6ペア約1分）。続けて `python breakout_trend_report.py <結果フォルダ>` でレポートを作る。
+- 出力（`breakout_results/<日時>_<ラベル>/`）: `trades_base.csv`（トレード一覧）、`summary.csv`（全体・ペア別）、`yearly.csv` / `yearly_stats.csv`、
+  `by_reason.csv`、`sensitivity.csv`（全期間・前半・後半の期待値）、`walkforward.csv` / `trades_walkforward.csv`、`cost.csv`、`equity.csv`、
+  matplotlib のグラフ（`equity_all.png`、`equity_by_pair.png`、`r_hist.png`、`mfe_hist.png`、`mae_hist.png`）、
+  `dow_trade_chart_<ペア>_base.html`、`report_data.json`、`report.html`、`config.json`、`code/`。
+- テスト: `python tests/test_breakout_trend.py`。
+
+**これまでの実行**
+
+| フォルダ | 内容 |
+|---|---|
+| `20261009_1350_base` | 初期値・6ペア・2021〜2025。合計 −136R（2353回、−0.058R/回、PF 0.88）。プラスは USDJPY だけ。感度分析でプラスの設定なし |
 
 ## 5. `Config` の設定項目（4時間足系の共通項目）
 
