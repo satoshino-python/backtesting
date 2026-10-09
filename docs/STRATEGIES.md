@@ -26,6 +26,8 @@
 | `trend_filter_study.py` | `fast_results` の取引に、エントリー直前の方向・強さの指標（ADX・ER・CHOP・移動平均・週足ダウなど）を付けて成績との関係を集計 | 4H/D1/W1 | – | – |
 | `filter_rerun.py` | 方向フィルター（`fast_engine` の `AllowLong`/`AllowShort` 列）を入れて全ペアを再検証。結果は `filter_results/<日時>_rerun/` | 4時間足＋日足/週足 | 固定SL/TP と 1Hトレーリング | 損失額固定 |
 | `dow_structure_breakout.py` | 4時間足のダウ理論スイングで高値・安値とも切り上げ（切り下げ）なら、直近スイングハイ（ロー）に逆指値。従来版と比べる。結果は `fast_results/<日時>_dow_structure/` | 4時間足 | 固定SL/TP と 1Hトレーリング | 損失額固定 |
+| `dow_daily_breakout.py` | 日足ダウ・押し目ブレイク。日足で高値・安値を切り上げて押し目が確定したら直近高値に買い逆指値（売りは逆）、損切りは押し目の安値。専用の自前エンジンで、スイング幅×最小スイング幅×決済の12通りを全ペア検証。結果は `fast_results/<日時>_dow_daily/` | 日足 | 押し目追従 / 利確2R・3R | 損失額固定（1%） |
+| `compare_dow_daily.py` | `dow_daily_breakout.py` のエンジンと backtesting.py の結果が一致するかを確かめる | – | – | – |
 
 `main_4H_fixedSL_multi.py` と `main_4H_fixedSL_dow.py` は、`main_4H_fixedSL.py` の関数と Strategy を import して使っている。
 **`main_4H_fixedSL.py` を変更すると、この2つの結果も変わる。**

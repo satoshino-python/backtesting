@@ -1,0 +1,47 @@
+{
+  "run_label": "dow_daily",
+  "started_at": "2026-10-09T06:13:48",
+  "pairs": [
+    "AUDUSD",
+    "EURUSD",
+    "GBPUSD",
+    "SP500",
+    "USDCHF",
+    "USDJPY"
+  ],
+  "period": [
+    "2021-01-01",
+    "2025-12-31"
+  ],
+  "is_end": "2023-12-31",
+  "cash": 10000000,
+  "risk_pct": 0.01,
+  "grid": {
+    "n": [
+      2,
+      3
+    ],
+    "min_swing_atr": [
+      0.5,
+      1.0
+    ],
+    "exit": [
+      "trail",
+      "tp2",
+      "tp3"
+    ]
+  },
+  "defaults": {
+    "n": 2,
+    "min_swing_atr": 1.0,
+    "atr_period": 14,
+    "risk_atr_min": 0.5,
+    "risk_atr_max": 3.0,
+    "exit": "trail"
+  },
+  "pass_rule": {
+    "pf": 1.2,
+    "plus_pairs": 4
+  },
+  "picked": "n3_sw1.0_tp2"
+}

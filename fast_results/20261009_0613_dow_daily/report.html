@@ -1,0 +1,244 @@
+<title>日足ダウ押し目ブレイク 6ペア</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: one phone-width column, same look as the ダウ構造ブレイク report — verdict, equity curve, tables, charts, rules, caveats */
+:root {
+  --bg: #f3f5f7; --surface: #ffffff; --line: #dde2e8; --fg: #17202b; --muted: #5e6b7a;
+  --accent: #2a5bd7; --accent-soft: #e3eafb;
+  --pos: #18865a; --neg: #c8413a; --pos-bg: rgba(24,134,90,.14); --neg-bg: rgba(200,65,58,.14);
+  --f-head: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+  --f-num: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f141a; --surface: #171e26; --line: #2a333e; --fg: #e3e8ee; --muted: #93a0ae;
+  --accent: #79a2ff; --accent-soft: #1d2a45;
+  --pos: #3ccb8b; --neg: #f0726a; --pos-bg: rgba(60,203,139,.16); --neg-bg: rgba(240,114,106,.16);
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0f141a; --surface: #171e26; --line: #2a333e; --fg: #e3e8ee; --muted: #93a0ae;
+  --accent: #79a2ff; --accent-soft: #1d2a45;
+  --pos: #3ccb8b; --neg: #f0726a; --pos-bg: rgba(60,203,139,.16); --neg-bg: rgba(240,114,106,.16);
+  color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.6 var(--f-head); -webkit-text-size-adjust: 100%; }
+.wrap { max-width: 860px; margin: 0 auto; padding: 20px 16px 48px; display: grid; gap: 28px; }
+.wrap > * { min-width: 0; }
+h1 { font-size: 1.45rem; line-height: 1.3; margin: 0; font-weight: 700; text-wrap: balance; }
+h2 { font-size: 1.05rem; margin: 0 0 10px; font-weight: 700; text-wrap: balance; }
+p { margin: 0; }
+.sub { color: var(--muted); font-size: .85rem; margin-top: 6px; }
+.num { font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+.pos { color: var(--pos); } .neg { color: var(--neg); }
+.muted { color: var(--muted); }
+
+.seg { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--bg); padding-block: 8px; margin-block: -8px; }
+.seg-in { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 4px; }
+.seg button { font: inherit; border: 0; background: transparent; color: var(--muted); padding: 8px 6px; border-radius: 9px; cursor: pointer; line-height: 1.25; }
+.seg button b { display: block; font-size: .92rem; color: var(--fg); }
+.seg button span { font-size: .72rem; }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.verdict { background: var(--surface); border: 1.5px solid var(--accent); border-radius: 14px; padding: 16px; display: grid; gap: 14px; }
+.verdict .tag { font-size: .72rem; color: var(--accent); letter-spacing: .06em; font-weight: 500; }
+.verdict .rule { font-size: 1.08rem; font-weight: 700; line-height: 1.5; text-wrap: balance; }
+.cmp { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.cmp div { background: var(--surface); padding: 10px; min-width: 0; }
+.cmp .l { font-size: .7rem; color: var(--muted); letter-spacing: .04em; }
+.cmp .v { font-family: var(--f-num); font-size: 1.15rem; font-weight: 600; white-space: nowrap; }
+.cmp .was { font-family: var(--f-num); font-size: .72rem; color: var(--muted); }
+
+.findings { display: grid; gap: 10px; }
+.find { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 4px; }
+.find h3 { margin: 0; font-size: .95rem; display: flex; gap: 8px; align-items: baseline; }
+.find .pill { font-size: .68rem; font-weight: 500; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
+.pill.good { background: var(--pos-bg); color: var(--pos); }
+.pill.bad { background: var(--neg-bg); color: var(--neg); }
+.pill.mid { background: var(--accent-soft); color: var(--accent); }
+.find p { font-size: .88rem; color: var(--muted); }
+.find p b { color: var(--fg); font-weight: 500; }
+
+.scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: .8rem; }
+th, td { padding: 7px 9px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+th { font-weight: 500; color: var(--muted); font-size: .72rem; background: var(--surface); }
+th:first-child, td:first-child { text-align: left; position: sticky; left: 0; background: var(--surface); font-weight: 500; }
+td:first-child { white-space: normal; min-width: 150px; max-width: 190px; font-size: .78rem; line-height: 1.4; }
+tr:last-child td { border-bottom: 0; }
+tr.base td { background: var(--accent-soft); }
+tr.pick td:first-child { box-shadow: inset 3px 0 0 var(--accent); }
+td.cell { font-family: var(--f-num); }
+td.hp { background: var(--pos-bg); } td.hn { background: var(--neg-bg); }
+.hint { font-size: .8rem; color: var(--muted); margin-top: 8px; }
+
+.defs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.def { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; min-width: 0; }
+.def h3 { margin: 0 0 6px; font-size: .9rem; }
+.def p { font-size: .86rem; }
+.def code { font-family: var(--f-num); font-size: .78rem; background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; }
+
+.bars { display: grid; gap: 6px; }
+.bar { display: grid; grid-template-columns: minmax(0, 9.5rem) 1fr; gap: 10px; align-items: center; font-size: .78rem; }
+.bar .name { line-height: 1.3; }
+.bar svg { width: 100%; height: 26px; display: block; }
+.bar svg text { font-family: var(--f-num); font-size: 9px; fill: var(--muted); }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: .76rem; color: var(--muted); margin-bottom: 8px; }
+.legend i { display: inline-block; width: 12px; height: 8px; border-radius: 2px; vertical-align: middle; margin-right: 5px; }
+
+ul.notes { margin: 0; padding-left: 1.2em; display: grid; gap: 8px; font-size: .88rem; }
+footer { font-size: .75rem; color: var(--muted); line-height: 1.7; }
+footer code { font-family: var(--f-num); font-size: .72rem; word-break: break-all; }
+
+:root { --s-base: #8a96a3; --s-n3: #2a5bd7; --s-n5: #c77d12; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --s-base: #7d8996; --s-n3: #79a2ff; --s-n5: #e9a23b; } }
+:root[data-theme="dark"] { --s-base: #7d8996; --s-n3: #79a2ff; --s-n5: #e9a23b; }
+.eq { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px 8px 6px; position: relative; }
+.eq svg { width: 100%; height: auto; display: block; touch-action: pan-y; }
+.eq svg text { font-family: var(--f-num); font-size: 11px; fill: var(--muted); }
+.eq .grid { stroke: var(--line); stroke-width: 1; }
+.eq .zero { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.eq .ln { fill: none; stroke-width: 2; stroke-linejoin: round; }
+.eq .xh { stroke: var(--muted); stroke-width: 1; }
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; font: 12px/1.5 var(--f-num); color: var(--fg); box-shadow: 0 2px 8px rgba(0,0,0,.12); white-space: nowrap; }
+.charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.charts a { display: grid; gap: 2px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; color: var(--fg); text-decoration: none; }
+.charts a:hover, .charts a:focus-visible { border-color: var(--accent); outline: none; }
+.charts a b { font-size: .92rem; } .charts a span { font: .76rem var(--f-num); }
+</style>
+<div class="wrap">
+  <header>
+    <h1>日足ダウ押し目ブレイク 6ペア</h1>
+    <p class="sub">日足で高値・安値を切り上げて押し目が確定したら直近高値の上抜けで買い（売りは逆）、損切りは押し目の安値 / 2021-01〜2025-12（SP500 は 2024〜）/ 条件決め 2021〜2023・確認 2024〜2025 / 1回の損失 1%</p>
+  </header>
+
+  <section class="verdict">
+    <span class="tag">条件決め期間で選んだ設定: 左右3本・ATR×1.0 / 利確 2R</span>
+    <p class="rule">合格ラインに届いた設定はなし。<br>12通りすべてで優位性は見えなかった</p>
+    <div class="cmp" id="cmp"></div>
+    <p class="sub" style="margin:0">合格ライン（事前に決めたもの）: 全期間 PF ≥ 1.2、前半・後半ともプラス、6ペア中4ペア以上でプラス。選んだ設定は前半 +4.7R → 後半 -4.4R。</p>
+  </section>
+
+  <section>
+    <h2>わかったこと</h2>
+    <div class="findings">
+      <div class="find"><h3><span class="pill bad">優位性なし</span>押し目ブレイクの当たる確率がほぼ偶然と同じ</h3>
+        <p>2R 利確の勝率は 34%。2R 利確で収支トントンになる勝率は 33% なので、<b>「押し目の安値に先に戻るか、2R 先に届くか」はほぼ五分五分の確率どおり</b>。日足の形だけでは方向の手がかりになっていない。</p></div>
+      <div class="find"><h3><span class="pill bad">逆効果</span>押し目への追従は利益を早く切る</h3>
+        <p>新しい押し目に損切りを上げる決済は PF 0.5〜0.96 と最も悪い。左右2本の押し目は浅く、平均の勝ちが 0.9R しかない。損切りが動く前に −1R で終わる取引が全体の約3分の1あり、それだけで −26〜−33R。</p></div>
+      <div class="find"><h3><span class="pill mid">想定外</span>取引数がかなり少ない</h3>
+        <p>6ペア × 5年で 64〜106 回（1ペア年2〜4回）。事前の見込み（150〜300回）の半分以下で、<b>結果の差の多くは偶然の範囲</b>。「押し目が確定してから高値を抜く」までに日足で数日かかり、その間に形が崩れることが多い。</p></div>
+      <div class="find"><h3><span class="pill mid">補足</span>最小スイング幅はほぼ効かない</h3>
+        <p>ATR × 0.5 と 1.0 の結果はほぼ同じ。日足の左右2〜3本のスイングは、もともと ATR 1本分以上の幅があることが多い。</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>累積R（決済ルール別、左右3本・ATR×1.0）</h2>
+    <div class="legend" id="eqlegend"></div>
+    <div class="eq" id="eq"></div>
+    <p class="hint">6ペアの取引を決済日順に並べた累積R（含み損益は含まない）。グラフに触れると各時点の値を表示。</p>
+  </section>
+
+  <section>
+    <h2>全12通りの成績（R）</h2>
+    <div class="scroll"><table id="summary"></table></div>
+    <p class="hint">印の付いた行が条件決め期間（2021〜2023）の合計Rで選んだ設定（同じ成績の ATR×0.5 と並んだため ATR×1.0 側）。最大DD は決済順の累積Rの最大下落幅。期末に保有中だった取引（全体で12件）は含めていない。</p>
+  </section>
+
+  <section>
+    <h2>年別の合計R</h2>
+    <div class="scroll"><table id="yearly"></table></div>
+  </section>
+
+  <section>
+    <h2>ペア別の合計R</h2>
+    <div class="scroll"><table id="pairs"></table></div>
+  </section>
+
+  <section>
+    <h2>トレード付きダウ理論チャート（選んだ設定）</h2>
+    <div class="charts" id="charts"></div>
+    <p class="hint">背景はその日に置いた注文の向き（買いだけ / 売りだけ / なし）、水平線は直近の日足スイング。チャートのダウ判定を日足・ピボット幅 3・ATR 1.0 にすると、検証で使ったスイングと同じものが表示される。1ファイル約 2.9MB。</p>
+  </section>
+
+  <section>
+    <h2>売買ルール・設定</h2>
+    <div class="defs">
+      <div class="def"><h3>日足とスイング</h3><p>NY 17時区切りの日足。左右 <code>2</code> または <code>3</code> 本より厳密に高い（低い）日をスイングとし、ATR(14) × <code>0.5</code> / <code>1.0</code> 未満の揺れは採用しない。高値と安値は交互に並ぶ（<code>dow_trend.py</code> と同じ）。</p></div>
+      <div class="def"><h3>買いの条件</h3><p>確定したスイングが 前の高値 → 前の安値 → 直近の高値 → 押し目の安値 の順で、高値・安値とも切り上げ、どちらもまだ抜かれておらず、直近の高値と押し目の差が日足 ATR の 0.5〜3.0 倍。売りはすべて逆。</p></div>
+      <div class="def"><h3>注文</h3><p>前日の終値で条件を判定し、翌日に直近の高値へ買い逆指値。その日のうちに押し目の安値に触れたら取り消し、1日1回まで。ポジションは1ペア1つ。約定は1分足で判定。</p></div>
+      <div class="def"><h3>決済・枚数</h3><p>損切り = 押し目の安値。決済は3通り: 新しい押し目が確定するたびに損切りを引き上げる / 利確 2R / 利確 3R。1回の損失 = 資金の 1%。スプレッド込み。</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>読むときの注意</h2>
+    <ul class="notes">
+      <li>エンジンは新しく書いたもの。同じルールを backtesting.py でも書き、6ペア × 2設定 × 3決済の 36 通りで取引履歴と損益が完全に一致することを確認した。</li>
+      <li>取引数が少ないため、1つの設定の良し悪しを数Rの差で判断できない。ここで言えるのは「はっきりした優位性は無い」まで。</li>
+      <li>以前の4時間足の検証（1回2%リスク）とは足の長さ・損切りの決め方・取引数が違うので、合計Rを直接比べられない。平均R（1回あたり）で見ると、今回は −0.26〜+0.01R、4時間足のダウ構造ブレイクは +0.03〜+0.06R。</li>
+      <li>SP500 は 2024 年からのデータだけ。</li>
+    </ul>
+  </section>
+
+  <footer>
+    コード: <code>dow_daily_breakout.py</code>（戦略・自前エンジン・グリッド実行）、<code>compare_dow_daily.py</code>（backtesting.py との一致確認）。
+    結果: <code>fast_results/20261009_0613_dow_daily/</code>（trades_all.csv、summary.csv、yearly.csv、by_pair.csv、config.json、code/）。
+  </footer>
+</div>
+
+<script>
+const D = {"rows":[{"k":"n2_sw0.5_trail","label":"左右2本・ATR×0.5 / 押し目に追従","n":105,"win":27.6,"R":-27.1,"PF":0.5,"dd":27.1,"IS":-11.2,"OOS":-15.9,"plus":1,"L":-17.7,"S":-9.4,"pick":false},{"k":"n2_sw0.5_tp2","label":"左右2本・ATR×0.5 / 利確 2R","n":91,"win":30.8,"R":-7.8,"PF":0.88,"dd":14.4,"IS":4.6,"OOS":-12.5,"plus":3,"L":-12.5,"S":4.7,"pick":false},{"k":"n2_sw0.5_tp3","label":"左右2本・ATR×0.5 / 利確 3R","n":79,"win":19.0,"R":-19.8,"PF":0.69,"dd":27.5,"IS":-1.3,"OOS":-18.4,"plus":2,"L":-14.5,"S":-5.3,"pick":false},{"k":"n2_sw1.0_trail","label":"左右2本・ATR×1.0 / 押し目に追従","n":106,"win":28.3,"R":-26.7,"PF":0.51,"dd":26.7,"IS":-10.6,"OOS":-16.1,"plus":2,"L":-16.1,"S":-10.5,"pick":false},{"k":"n2_sw1.0_tp2","label":"左右2本・ATR×1.0 / 利確 2R","n":92,"win":30.4,"R":-8.8,"PF":0.86,"dd":14.4,"IS":3.6,"OOS":-12.5,"plus":3,"L":-13.5,"S":4.7,"pick":false},{"k":"n2_sw1.0_tp3","label":"左右2本・ATR×1.0 / 利確 3R","n":79,"win":19.0,"R":-19.8,"PF":0.69,"dd":27.5,"IS":-1.3,"OOS":-18.4,"plus":2,"L":-14.5,"S":-5.3,"pick":false},{"k":"n3_sw0.5_trail","label":"左右3本・ATR×0.5 / 押し目に追従","n":74,"win":31.1,"R":-1.6,"PF":0.96,"dd":17.4,"IS":-0.7,"OOS":-0.9,"plus":3,"L":-4.1,"S":2.5,"pick":false},{"k":"n3_sw0.5_tp2","label":"左右3本・ATR×0.5 / 利確 2R","n":68,"win":33.8,"R":0.3,"PF":1.01,"dd":13.3,"IS":4.7,"OOS":-4.4,"plus":3,"L":-6.4,"S":6.7,"pick":false},{"k":"n3_sw0.5_tp3","label":"左右3本・ATR×0.5 / 利確 3R","n":64,"win":25.0,"R":-0.6,"PF":0.99,"dd":20.3,"IS":3.7,"OOS":-4.4,"plus":2,"L":-1.4,"S":0.8,"pick":false},{"k":"n3_sw1.0_trail","label":"左右3本・ATR×1.0 / 押し目に追従","n":75,"win":30.7,"R":-2.6,"PF":0.94,"dd":18.4,"IS":-1.7,"OOS":-0.9,"plus":3,"L":-4.1,"S":1.5,"pick":false},{"k":"n3_sw1.0_tp2","label":"左右3本・ATR×1.0 / 利確 2R","n":68,"win":33.8,"R":0.3,"PF":1.01,"dd":13.3,"IS":4.7,"OOS":-4.4,"plus":3,"L":-6.4,"S":6.7,"pick":true},{"k":"n3_sw1.0_tp3","label":"左右3本・ATR×1.0 / 利確 3R","n":64,"win":25.0,"R":-0.6,"PF":0.99,"dd":20.3,"IS":3.7,"OOS":-4.4,"plus":2,"L":-1.4,"S":0.8,"pick":false}],"pick":"n3_sw1.0_tp2","yearly":{"n2_sw0.5_tp2":{"2021":-2.2,"2022":-1.1,"2023":5.9,"2024":-9.3,"2025":-1.1},"n2_sw0.5_tp3":{"2021":-2.1,"2022":-0.1,"2023":2.9,"2024":-15.3,"2025":-5.2},"n2_sw0.5_trail":{"2021":-7.3,"2022":-3.0,"2023":-2.1,"2024":-7.8,"2025":-6.8},"n2_sw1.0_tp2":{"2021":-2.2,"2022":-1.1,"2023":4.9,"2024":-9.3,"2025":-1.1},"n2_sw1.0_tp3":{"2021":-2.1,"2022":-0.1,"2023":2.9,"2024":-15.3,"2025":-5.2},"n2_sw1.0_trail":{"2021":-7.3,"2022":-3.1,"2023":-1.4,"2024":-8.0,"2025":-6.8},"n3_sw0.5_tp2":{"2021":-4.2,"2022":3.9,"2023":7.9,"2024":-12.3,"2025":4.9},"n3_sw0.5_tp3":{"2021":-5.1,"2022":10.9,"2023":1.9,"2024":-13.3,"2025":4.9},"n3_sw0.5_trail":{"2021":-5.3,"2022":9.8,"2023":-3.3,"2024":-8.9,"2025":6.2},"n3_sw1.0_tp2":{"2021":-4.2,"2022":3.9,"2023":7.9,"2024":-12.3,"2025":4.9},"n3_sw1.0_tp3":{"2021":-5.1,"2022":10.9,"2023":1.9,"2024":-13.3,"2025":4.9},"n3_sw1.0_trail":{"2021":-5.3,"2022":9.8,"2023":-4.3,"2024":-8.9,"2025":6.2}},"pairs":{"n2_sw0.5_tp2":{"AUDUSD":1.9,"EURUSD":-12.1,"GBPUSD":4.9,"SP500":-1.2,"USDCHF":-6.3,"USDJPY":5.0},"n2_sw0.5_tp3":{"AUDUSD":-6.1,"EURUSD":-7.1,"GBPUSD":0.9,"SP500":-3.2,"USDCHF":-7.3,"USDJPY":3.0},"n2_sw0.5_trail":{"AUDUSD":-7.8,"EURUSD":-8.6,"GBPUSD":1.8,"SP500":-1.6,"USDCHF":-9.1,"USDJPY":-1.8},"n2_sw1.0_tp2":{"AUDUSD":1.9,"EURUSD":-12.1,"GBPUSD":3.9,"SP500":-1.2,"USDCHF":-6.3,"USDJPY":5.0},"n2_sw1.0_tp3":{"AUDUSD":-6.1,"EURUSD":-7.1,"GBPUSD":0.9,"SP500":-3.2,"USDCHF":-7.3,"USDJPY":3.0},"n2_sw1.0_trail":{"AUDUSD":-7.8,"EURUSD":-8.6,"GBPUSD":0.5,"SP500":-1.6,"USDCHF":-9.3,"USDJPY":0.1},"n3_sw0.5_tp2":{"AUDUSD":-3.1,"EURUSD":-3.0,"GBPUSD":1.9,"SP500":1.8,"USDCHF":-1.2,"USDJPY":4.0},"n3_sw0.5_tp3":{"AUDUSD":-1.1,"EURUSD":1.0,"GBPUSD":0.9,"SP500":-0.2,"USDCHF":-0.2,"USDJPY":-1.0},"n3_sw0.5_trail":{"AUDUSD":-4.5,"EURUSD":-5.0,"GBPUSD":1.8,"SP500":0.4,"USDCHF":-1.6,"USDJPY":7.3},"n3_sw1.0_tp2":{"AUDUSD":-3.1,"EURUSD":-3.0,"GBPUSD":1.9,"SP500":1.8,"USDCHF":-1.2,"USDJPY":4.0},"n3_sw1.0_tp3":{"AUDUSD":-1.1,"EURUSD":1.0,"GBPUSD":0.9,"SP500":-0.2,"USDCHF":-0.2,"USDJPY":-1.0},"n3_sw1.0_trail":{"AUDUSD":-4.5,"EURUSD":-5.0,"GBPUSD":0.8,"SP500":0.4,"USDCHF":-1.6,"USDJPY":7.3}},"curves":{"n3_sw1.0_tp2":{"t":["2021-01-07","2021-02-14","2021-02-25","2021-02-26","2021-02-26","2021-04-12","2021-04-14","2021-04-19","2021-05-04","2021-06-17","2021-06-18","2021-07-19","2021-08-10","2021-08-10","2021-08-19","2021-09-03","2021-10-14","2021-10-19","2021-11-11","2022-03-07","2022-03-16","2022-04-08","2022-04-26","2022-07-28","2022-08-22","2022-09-21","2022-11-10","2023-01-13","2023-02-01","2023-02-24","2023-03-07","2023-05-05","2023-05-11","2023-05-17","2023-07-12","2023-08-24","2023-09-26","2023-11-13","2023-11-20","2023-12-28","2024-01-02","2024-01-05","2024-01-17","2024-03-07","2024-03-08","2024-03-28","2024-06-27","2024-07-24","2024-07-24","2024-10-16","2024-11-04","2024-12-18","2025-01-10","2025-01-15","2025-01-22","2025-02-25","2025-04-03","2025-04-04","2025-04-10","2025-04-11","2025-06-17","2025-06-22","2025-06-27","2025-07-31","2025-09-17","2025-10-07","2025-12-16","2025-12-23"],"r":[-1.0,-2.01,-3.01,-1.02,0.96,-0.05,-1.06,-2.06,-3.07,-4.09,-5.09,-6.1,-7.11,-8.12,-6.12,-7.13,-8.14,-6.15,-4.15,-2.16,-0.16,-1.17,0.82,-0.18,-1.19,0.8,-0.21,1.79,3.79,2.78,1.78,3.77,2.77,1.76,3.74,2.74,4.73,6.73,5.73,7.71,6.71,5.71,4.7,3.69,2.68,1.67,0.66,-0.34,-1.35,-2.36,-3.36,-4.55,-2.55,-3.55,-4.56,-5.57,-3.59,-4.6,-2.6,-0.6,-1.61,-2.62,-0.64,1.36,0.36,2.36,1.35,0.35]},"n3_sw1.0_tp3":{"t":["2021-01-07","2021-02-14","2021-02-25","2021-03-02","2021-03-04","2021-04-12","2021-04-14","2021-04-19","2021-05-04","2021-06-17","2021-06-18","2021-07-19","2021-08-10","2021-08-10","2021-09-03","2021-10-14","2021-12-03","2022-01-04","2022-03-07","2022-03-22","2022-04-08","2022-04-28","2022-07-28","2022-08-22","2022-09-25","2022-11-10","2023-02-24","2023-03-07","2023-05-17","2023-06-19","2023-07-13","2023-07-18","2023-07-18","2023-11-20","2023-12-07","2023-12-14","2024-01-02","2024-01-05","2024-01-17","2024-02-13","2024-03-07","2024-03-08","2024-03-28","2024-06-27","2024-07-24","2024-07-24","2024-10-16","2024-11-04","2024-12-18","2025-01-15","2025-01-22","2025-02-25","2025-04-04","2025-04-06","2025-04-08","2025-06-12","2025-06-17","2025-06-22","2025-07-01","2025-09-16","2025-10-10","2025-11-12","2025-12-16","2025-12-23"],"r":[-1.0,-2.01,-3.01,-0.04,2.96,1.95,0.94,-0.06,-1.07,-2.09,-3.09,-4.1,-5.11,-6.12,-7.12,-8.14,-5.14,-2.15,0.85,3.85,2.83,5.83,4.83,3.81,6.81,5.8,4.79,3.79,2.77,1.77,4.77,7.77,10.75,9.75,8.75,7.74,6.73,5.73,4.73,3.72,2.71,1.7,0.69,-0.33,-1.33,-2.34,-3.34,-4.34,-5.53,-6.53,-7.53,-8.55,-9.56,-6.57,-3.58,-0.59,-1.59,-2.6,0.38,3.38,2.38,1.38,0.37,-0.63]},"n3_sw1.0_trail":{"t":["2021-01-07","2021-02-14","2021-02-15","2021-02-22","2021-04-12","2021-04-13","2021-04-14","2021-04-19","2021-05-04","2021-06-03","2021-06-03","2021-07-06","2021-07-28","2021-07-29","2021-08-10","2021-08-10","2021-08-29","2021-10-14","2021-11-08","2022-04-08","2022-05-12","2022-05-26","2022-07-27","2022-08-01","2022-08-16","2022-08-22","2022-09-09","2022-10-26","2022-12-12","2022-12-19","2022-12-20","2023-01-03","2023-01-06","2023-01-08","2023-01-31","2023-02-06","2023-05-09","2023-05-17","2023-05-24","2023-08-14","2023-08-14","2023-10-10","2023-10-23","2023-11-20","2024-01-02","2024-01-05","2024-01-15","2024-01-15","2024-02-22","2024-03-08","2024-03-28","2024-05-30","2024-06-27","2024-07-23","2024-09-10","2024-10-01","2024-10-31","2024-12-18","2025-01-15","2025-01-22","2025-01-23","2025-01-27","2025-04-04","2025-04-30","2025-05-01","2025-05-08","2025-06-17","2025-06-19","2025-07-15","2025-08-01","2025-08-13","2025-09-09","2025-10-10","2025-11-26","2025-12-03"],"r":[-1.0,-2.01,-2.44,-3.3,-4.31,-0.01,-1.02,-2.02,-3.03,-3.45,-3.06,-2.99,-3.58,-3.04,-4.05,-5.06,-5.4,-6.29,-5.35,-6.36,2.13,7.53,7.05,7.37,6.36,5.35,4.35,4.13,4.09,3.48,4.4,4.75,3.75,2.74,2.15,1.14,0.34,-0.62,-1.63,-0.81,-1.7,-0.31,0.39,0.09,-0.92,-1.92,-2.23,-1.67,-2.16,-3.17,-4.11,-4.75,-5.76,-6.51,-6.37,-7.38,-7.65,-8.84,-9.84,-10.84,-9.65,-9.79,-10.8,-9.21,-7.42,-3.44,-4.22,-4.84,-3.12,-2.06,-2.83,-3.83,-3.04,-2.51,-2.59]}},"pickPairs":{"AUDUSD":[-3.1,9],"EURUSD":[-3.0,12],"GBPUSD":[1.9,13],"SP500":[1.8,4],"USDCHF":[-1.2,16],"USDJPY":[4.0,14]},"labels":{"n2_sw0.5_trail":"左右2本・ATR×0.5 / 押し目に追従","n2_sw0.5_tp2":"左右2本・ATR×0.5 / 利確 2R","n2_sw0.5_tp3":"左右2本・ATR×0.5 / 利確 3R","n2_sw1.0_trail":"左右2本・ATR×1.0 / 押し目に追従","n2_sw1.0_tp2":"左右2本・ATR×1.0 / 利確 2R","n2_sw1.0_tp3":"左右2本・ATR×1.0 / 利確 3R","n3_sw0.5_trail":"左右3本・ATR×0.5 / 押し目に追従","n3_sw0.5_tp2":"左右3本・ATR×0.5 / 利確 2R","n3_sw0.5_tp3":"左右3本・ATR×0.5 / 利確 3R","n3_sw1.0_trail":"左右3本・ATR×1.0 / 押し目に追従","n3_sw1.0_tp2":"左右3本・ATR×1.0 / 利確 2R","n3_sw1.0_tp3":"左右3本・ATR×1.0 / 利確 3R"}};
+const $ = id => document.getElementById(id);
+const fmt = (v, d = 1, sign = true) => v == null ? "–" : (sign && v > 0 ? "+" : "") + v.toFixed(d);
+const cls = v => v == null ? "" : v > 0 ? "pos" : v < 0 ? "neg" : "";
+const COL = { "n3_sw1.0_tp2": "var(--s-n3)", "n3_sw1.0_tp3": "var(--s-n5)", "n3_sw1.0_trail": "var(--s-base)" };
+const NAME = { "n3_sw1.0_tp2": "利確 2R", "n3_sw1.0_tp3": "利確 3R", "n3_sw1.0_trail": "押し目に追従" };
+const P = D.rows.find(r => r.pick);
+$("cmp").innerHTML = [["合計R", fmt(P.R), cls(P.R)], ["PF", P.PF.toFixed(2), ""], ["最大DD", P.dd.toFixed(1) + "R", ""],
+  ["取引数", P.n, ""], ["前半 21-23", fmt(P.IS), cls(P.IS)], ["後半 24-25", fmt(P.OOS), cls(P.OOS)]]
+  .map(c => `<div><div class="l">${c[0]}</div><div class="v ${c[2]}">${c[1]}</div></div>`).join("");
+$("summary").innerHTML = "<tr><th>設定</th><th>取引数</th><th>勝率%</th><th>合計R</th><th>PF</th><th>最大DD</th><th>前半R</th><th>後半R</th><th>プラスのペア</th><th>買いR</th><th>売りR</th></tr>" +
+  D.rows.map(r => `<tr class="${r.pick ? "pick" : ""}"><td>${r.pick ? "◆ " : ""}${r.label}</td><td class="cell">${r.n}</td><td class="cell">${r.win.toFixed(1)}</td><td class="cell ${cls(r.R)}">${fmt(r.R)}</td><td class="cell">${r.PF.toFixed(2)}</td><td class="cell">${r.dd.toFixed(1)}</td><td class="cell ${cls(r.IS)}">${fmt(r.IS)}</td><td class="cell ${cls(r.OOS)}">${fmt(r.OOS)}</td><td class="cell">${r.plus} / 6</td><td class="cell ${cls(r.L)}">${fmt(r.L)}</td><td class="cell ${cls(r.S)}">${fmt(r.S)}</td></tr>`).join("");
+function grid(id, data, cols) {
+  const keys = D.rows.map(r => r.k);
+  const max = Math.max(1, ...keys.flatMap(k => cols.map(c => Math.abs(data[k][c] ?? 0))));
+  $(id).innerHTML = `<tr><th>設定</th>${cols.map(c => `<th>${c}</th>`).join("")}</tr>` + keys.map(k =>
+    `<tr class="${k === D.pick ? "pick" : ""}"><td>${D.labels[k]}</td>${cols.map(c => { const v = data[k][c];
+      return `<td class="cell ${cls(v)} ${v == null ? "" : v >= max * .4 ? "hp" : v <= -max * .4 ? "hn" : ""}">${fmt(v)}</td>`; }).join("")}</tr>`).join("");
+}
+grid("yearly", D.yearly, ["2021", "2022", "2023", "2024", "2025"]);
+grid("pairs", D.pairs, ["AUDUSD", "EURUSD", "GBPUSD", "SP500", "USDCHF", "USDJPY"]);
+$("charts").innerHTML = Object.entries(D.pickPairs).map(([p, v]) =>
+  `<a href="dow_trade_chart_${p}_${D.pick}.html"><b>${p}</b><span class="${cls(v[0])}">${fmt(v[0])}R</span><span class="muted">${v[1]} トレード</span></a>`).join("");
+(function eq() {
+  const W = 640, H = 280, L = 40, R = 64, T = 10, B = 26;
+  const keys = ["n3_sw1.0_trail", "n3_sw1.0_tp3", "n3_sw1.0_tp2"];
+  const t0 = Date.parse("2021-01-01"), t1 = Date.parse("2026-01-01");
+  const all = keys.flatMap(k => D.curves[k].r);
+  const step = 5, lo = Math.floor(Math.min(0, ...all) / step) * step, hi = Math.ceil(Math.max(0, ...all) / step) * step;
+  const x = d => L + (W - L - R) * (Date.parse(d) - t0) / (t1 - t0), y = v => T + (H - T - B) * (hi - v) / (hi - lo);
+  let g = "";
+  for (let v = lo; v <= hi; v += step) g += `<line class="${v === 0 ? "zero" : "grid"}" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${v > 0 ? "+" : ""}${v}</text>`;
+  for (let yr = 2021; yr <= 2025; yr++) { const xx = x(yr + "-01-01"); if (yr > 2021) g += `<line class="grid" x1="${xx}" x2="${xx}" y1="${T}" y2="${H - B}"/>`; g += `<text x="${xx + 4}" y="${H - 8}">${yr}</text>`; }
+  const ends = [];
+  for (const k of keys) { const c = D.curves[k]; const pts = [[x("2021-01-01"), y(0)]];
+    c.t.forEach((d, i) => { pts.push([x(d), pts[pts.length - 1][1]]); pts.push([x(d), y(c.r[i])]); });
+    g += `<path class="ln" stroke="${COL[k]}" d="${pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join("")}"/>`;
+    const lv = c.r[c.r.length - 1]; ends.push({ k, v: lv, cx: x(c.t[c.t.length - 1]), yy: y(lv) }); }
+  ends.sort((a, b) => a.yy - b.yy); for (let i = 1; i < ends.length; i++) if (ends[i].yy - ends[i - 1].yy < 14) ends[i].yy = ends[i - 1].yy + 14;
+  for (const e of ends) g += `<circle cx="${e.cx}" cy="${y(e.v)}" r="4" fill="${COL[e.k]}" stroke="var(--surface)" stroke-width="2"/><text x="${W - R + 8}" y="${e.yy + 4}" style="fill:var(--fg)">${fmt(e.v)}</text>`;
+  g += `<line class="xh" id="xh" x1="0" x2="0" y1="${T}" y2="${H - B}" visibility="hidden"/>`;
+  $("eq").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="決済ルール別の累積R">${g}<rect id="hit" x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}" fill="transparent"/></svg><div class="tip" id="tip" hidden></div>`;
+  $("eqlegend").innerHTML = ["n3_sw1.0_tp2", "n3_sw1.0_tp3", "n3_sw1.0_trail"].map(k => `<span><i style="background:${COL[k]}"></i>${NAME[k]}</span>`).join("");
+  const svg = $("eq").querySelector("svg"), tip = $("tip"), xh = $("xh");
+  const valAt = (k, ms) => { const c = D.curves[k]; let v = 0; for (let i = 0; i < c.t.length && Date.parse(c.t[i]) <= ms; i++) v = c.r[i]; return v; };
+  const move = ev => { const r = svg.getBoundingClientRect(); const px = Math.max(L, Math.min(W - R, (ev.clientX - r.left) * W / r.width));
+    const ms = t0 + (px - L) / (W - L - R) * (t1 - t0); xh.setAttribute("x1", px); xh.setAttribute("x2", px); xh.setAttribute("visibility", "visible");
+    tip.hidden = false; tip.innerHTML = new Date(ms).toISOString().slice(0, 10) + "<br>" + ["n3_sw1.0_tp2", "n3_sw1.0_tp3", "n3_sw1.0_trail"].map(k => `<span style="color:${COL[k]}">●</span> ${NAME[k]} ${fmt(valAt(k, ms))}R`).join("<br>");
+    const left = px / W * r.width; tip.style.top = "14px"; tip.style.left = (left > r.width / 2 ? left - tip.offsetWidth - 10 : left + 10) + "px"; };
+  $("hit").addEventListener("pointermove", move); $("hit").addEventListener("pointerdown", move);
+  $("hit").addEventListener("pointerleave", () => { tip.hidden = true; xh.setAttribute("visibility", "hidden"); });
+})();
+</script>
