@@ -92,6 +92,14 @@ td.hp { background: var(--pos-bg); } td.hn { background: var(--neg-bg); }
 .def p, .def li { font-size: .86rem; }
 .def ul { margin: 0; padding-left: 1.1em; display: grid; gap: 4px; }
 .def code { font-family: var(--f-num); font-size: .78rem; background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; }
+.rulebox { display: grid; gap: 10px; }
+.rcard { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; min-width: 0; }
+.rcard h3 { margin: 0 0 8px; font-size: .95rem; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.rcard h3 small { font-weight: 400; font-size: .74rem; color: var(--muted); }
+.rcard ol, .rcard ul { margin: 0; padding-left: 1.3em; display: grid; gap: 6px; font-size: .88rem; }
+.rcard li b { font-weight: 700; }
+.rcard .k { font-family: var(--f-num); font-size: .82rem; background: var(--accent-soft); color: var(--fg); padding: 0 5px; border-radius: 4px; white-space: nowrap; }
+.rcard p.eg { margin-top: 10px; font-size: .8rem; color: var(--muted); border-top: 1px dashed var(--line); padding-top: 8px; }
 ul.notes { margin: 0; padding-left: 1.2em; display: grid; gap: 8px; font-size: .88rem; }
 footer { font-size: .75rem; color: var(--muted); line-height: 1.7; }
 footer code { font-family: var(--f-num); font-size: .72rem; word-break: break-all; }
@@ -102,6 +110,11 @@ footer code { font-family: var(--f-num); font-size: .72rem; word-break: break-al
     <h1>ブレイクアウト・トレンドフォロー 6ペア</h1>
     <p class="sub" id="sub"></p>
   </header>
+
+  <section>
+    <h2>売買ルール</h2>
+    <div class="rulebox" id="rules"></div>
+  </section>
 
   <section class="verdict">
     <span class="tag">初期値の結果（仕様書どおり）</span>
@@ -169,11 +182,6 @@ footer code { font-family: var(--f-num); font-size: .72rem; word-break: break-al
     <h2>トレード付きダウ理論チャート</h2>
     <div class="links" id="charts"></div>
     <p class="hint">エントリー ▲買い / ▼売り、決済 ●、最終ストップを表示。前後のトレードは ← → で移動。エントリーラインはチャート側のスイング計算（同値を含む）なので、この戦略のフラクタル（同値は不採用）と少し違う場合がある。</p>
-  </section>
-
-  <section>
-    <h2>売買ルールと設定</h2>
-    <div class="defs" id="rules"></div>
   </section>
 
   <section>
@@ -353,20 +361,37 @@ $("charts").innerHTML = D.charts.map((c, i) => {
 }).join("");
 
 // ---- rules ----
+const K = x => `<span class="k">${x}</span>`;
 const rules = [
-  ["エントリー", [`4時間足のフラクタル（左右 ${B.fractal_n} 本より厳密に高い/低い）。右側 ${B.fractal_n} 本の確定後に既知`,
-    "直近の確定スイングを終値で抜けた足（前の終値 ≦ 基準 < 今の終値）の次の足の始値で成行",
-    "1度抜けたスイングは使用済み（エントリーしなくても）。保有中・決済した足のシグナルは無視"]],
-  ["決済", [`初期損切り ${B.sl_atr}ATR（= 1R）。ATR(${B.atr_period}) Wilder はシグナル足の値で固定`,
-    `${B.time_bars} 本目の終値までに +${B.time_atr}ATR へ届かなければ次の始値で撤退`,
-    `+${B.be_atr}ATR で建値へ。以後は「最高値 − ${B.trail_atr}ATR」とエントリー後の直近スイングの近い方へトレイル`,
-    `最大 ${B.max_bars} 本で次の始値で決済`]],
-  ["約定", ["ストップの変更は次の足から。高値・安値で判定し、窓開けは始値で約定",
-    "同じ足で建値条件とストップの両方 → ストップが先", "1回の約定ごとにスプレッドの半分を不利側に（往復でスプレッド1回分）"]],
-  ["データ", ["GMOクリック証券の1分足（仲値）を NY 17:00 区切りの4時間足に。日本時間 → NY 時間",
-    "助走1ヶ月（エントリーなし）。SP500 は US500 CFD、つなぎ足の調整なし", `判定・約定は4時間足だけ（1分足の値動きの順番は見ない）`]],
+  ["エントリー", `4時間足・NY 17:00 区切り`, "ol", [
+    `<b>スイングハイ／ロー</b>: 4時間足の高値が<b>左右 ${B.fractal_n} 本ずつ</b>の高値より高い足をスイングハイ、安値が左右 ${B.fractal_n} 本の安値より低い足をスイングロー（フラクタル。同値は不採用）`,
+    `スイングは右側の ${B.fractal_n} 本が確定した時点（ピボットの ${B.fractal_n} 本後の足の終値）で初めて使える`,
+    `<b>買い</b>: 直近に確定したスイングハイを、4時間足の<b>終値</b>で上抜けた足（前の足の終値 ≦ スイングハイ < この足の終値）がシグナル。<b>次の足の始値で成行買い</b>`,
+    `<b>売り</b>: 直近に確定したスイングローを終値で下抜けたら、次の足の始値で成行売り`,
+    `一度抜けたスイングは使用済み（保有中などでエントリーしなかった場合も）。次のスイングが確定するまで同じ方向のシグナルは出ない`,
+    `1ペア1ポジションまで。保有中のシグナルと、決済した足のシグナルは見送り`,
+  ], `ATR は ATR(${B.atr_period})・Wilder 方式。シグナル足の確定時の値を、そのトレードの間ずっと使う。`],
+  ["決済", `買いの場合。売りは上下を逆に`, "ol", [
+    `<b>初期損切り</b>: エントリー価格 − ${K(B.sl_atr + " ATR")}。この幅が <b>1R</b>`,
+    `<b>時間切れ撤退</b>: エントリー足を1本目として <b>${B.time_bars} 本目の終値</b>までに、最高値が エントリー + ${K(B.time_atr + " ATR")} に一度も届かなければ、次の足の始値で決済`,
+    `<b>建値移動</b>: 最高値が エントリー + ${K(B.be_atr + " ATR")} に届いたら、ストップをエントリー価格へ`,
+    `<b>トレイル</b>（建値移動の後）: 「最高値 − ${K(B.trail_atr + " ATR")}」と「エントリー後に確定した直近スイングローの安値」の<b>高い方</b>へストップを上げる。下げることはない`,
+    `<b>最大保有</b>: ${B.max_bars} 本目の終値まで持ったら、次の足の始値で決済`,
+  ], `決済理由は「初期損切り / 時間切れ / 建値（建値ちょうどで決済）/ トレイル（建値より有利な位置で決済）/ 最大保有 / 期末」。`],
+  ["約定とコスト", `4時間足の値だけで判定`, "ul", [
+    `ストップの変更は足の確定後に計算し、<b>次の足から</b>有効`,
+    `ストップは足の高値・安値で判定。窓開けでストップを越えて始まったら、その足の始値で約定`,
+    `同じ足で建値移動の条件とストップの両方に届いたら、<b>ストップが先</b>とみなす（保守的）`,
+    `1回の約定ごとに平均スプレッドの半分を不利な側に乗せる（往復でスプレッド1回分）。スリッページ 0`,
+  ], ""],
+  ["データと期間", "", "ul", [
+    `GMOクリック証券の1分足の仲値を、NY 17:00 区切りの4時間足（17-21 / 21-1 / 1-5 / 5-9 / 9-13 / 13-17 時）にまとめる`,
+    `検証 ${D.meta.start.slice(0, 7)}〜${D.meta.end.slice(0, 7)}（SP500 = US500 CFD は 2024-01〜、つなぎ足の調整なし）。前の1ヶ月は助走でエントリーしない`,
+    `損益は R で評価。資金曲線は1トレード ${D.meta.risk_pct * 100}% リスクの複利`,
+  ], ""],
 ];
-$("rules").innerHTML = rules.map(([h, li]) => `<div class="def"><h3>${h}</h3><ul>${li.map(x => `<li>${x}</li>`).join("")}</ul></div>`).join("");
+$("rules").innerHTML = rules.map(([h, sub, tag, li, eg]) => `<div class="rcard"><h3>${h}${sub ? `<small>${sub}</small>` : ""}</h3>` +
+  `<${tag}>${li.map(x => `<li>${x}</li>`).join("")}</${tag}>${eg ? `<p class="eg">${eg}</p>` : ""}</div>`).join("");
 $("notes").innerHTML = [
   "前半（2021〜2023）・後半（2024〜2025）はエントリー日で分けた。実行は全期間で1回。SP500 は後半にしかない。",
   "感度分析の範囲は仕様書の例どおり。プラスになる設定が無いので、合わせ込みの心配より「この形のままでは優位性が見えない」ことの方が大きい。",
