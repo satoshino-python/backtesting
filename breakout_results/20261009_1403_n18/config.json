@@ -1,0 +1,109 @@
+{
+  "run_label": "n18",
+  "started_at": "2026-10-09T14:03:42",
+  "pairs": [
+    "AUDUSD",
+    "EURUSD",
+    "GBPUSD",
+    "USDCHF",
+    "USDJPY",
+    "SP500"
+  ],
+  "start": "2021-01-01",
+  "end": "2025-12-31",
+  "is_end": "2023-12-31",
+  "warmup_months": 1,
+  "risk_pct": 0.01,
+  "base": {
+    "fractal_n": 18,
+    "atr_period": 14,
+    "sl_atr": 1.5,
+    "time_bars": 6,
+    "time_atr": 1.0,
+    "be_atr": 1.5,
+    "trail_atr": 2.0,
+    "trail_swing": true,
+    "max_bars": 60,
+    "atr_mode": "fixed"
+  },
+  "sensitivity": {
+    "fractal_n": [
+      3,
+      5,
+      10,
+      18,
+      24
+    ],
+    "atr_period": [
+      14,
+      20
+    ],
+    "sl_atr": [
+      1.0,
+      1.25,
+      1.5,
+      1.75,
+      2.0
+    ],
+    "time_bars": [
+      4,
+      6,
+      9,
+      12
+    ],
+    "time_atr": [
+      0.5,
+      0.75,
+      1.0,
+      1.25,
+      1.5
+    ],
+    "be_atr": [
+      1.0,
+      1.25,
+      1.5,
+      1.75,
+      2.0
+    ],
+    "trail_atr": [
+      1.5,
+      2.0,
+      2.5,
+      3.0
+    ],
+    "trail_swing": [
+      true,
+      false
+    ],
+    "max_bars": [
+      30,
+      60,
+      90
+    ],
+    "atr_mode": [
+      "fixed",
+      "update"
+    ]
+  },
+  "cost_mults": [
+    1.0,
+    2.0
+  ],
+  "spread_price": {
+    "AUDUSD": 8.850423580885686e-05,
+    "EURUSD": 5.2644993710593343e-05,
+    "GBPUSD": 0.00013248597074911315,
+    "USDCHF": 0.00019268593314047668,
+    "USDJPY": 0.003585300369043933,
+    "SP500": 0.2988613038614918
+  },
+  "spread_relative": {
+    "AUDUSD": 0.00012956603667451383,
+    "EURUSD": 4.759614527389122e-05,
+    "GBPUSD": 0.00010264602985485637,
+    "USDCHF": 0.00021508815791450604,
+    "USDJPY": 2.6246641060853804e-05,
+    "SP500": 5.1075233980947866e-05
+  },
+  "slippage": {}
+}

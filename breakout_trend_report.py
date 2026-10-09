@@ -2,7 +2,7 @@
 breakout_trend_run.py の結果フォルダから、スマホで読めるレポート（report.html）を作る。
 見た目は filter_results/trend_filter_report.html と同じ。テンプレートは breakout_trend_report_template.html。
 
-使い方: python breakout_trend_report.py breakout_results/<日時>_<ラベル>
+使い方: python breakout_trend_report.py breakout_results/<日時>_<ラベル> [比較する結果フォルダ ...]
 """
 import json
 import sys
@@ -44,7 +44,7 @@ def hist(values, lo, hi, step):
     return dict(lo=lo, step=step, counts=counts.tolist())
 
 
-def main(run_dir):
+def main(run_dir, extra_runs=()):
     run_dir = Path(run_dir)
     rep = json.loads((run_dir / "report_data.json").read_text(encoding="utf-8"))
     tr = pd.read_csv(run_dir / "trades_base.csv", parse_dates=["EntryTime", "ExitTime", "SignalTime"])
@@ -53,11 +53,22 @@ def main(run_dir):
     compare = {}
     for name, path in COMPARE.items():
         if path.exists():
-            s = pd.read_csv(path, encoding="utf-8-sig").set_index("通貨ペア")
-            row = s.loc["合計"]
+            c = pd.read_csv(path, encoding="utf-8-sig").set_index("通貨ペア")
+            row = c.loc["合計"]
+            rows = {("全体" if k == "合計" else k): dict(trades=r["トレード数"], expectancy_R=r["平均R"], total_R=r["合計R"],
+                                                       pf=r["プロフィットファクター"]) for k, r in c.iterrows()}
             compare[name] = dict(total_R=row["合計R"], pf=row["プロフィットファクター"], max_dd_R=row["最大DD [R]"],
-                                 trades=row["トレード数"], expectancy_R=row["平均R"], win_rate=row["勝率 [%]"],
-                                 pairs={p: s.loc[p, "合計R"] for p in pairs if p in s.index})
+                                 trades=row["トレード数"], rows=rows)
+    for d in extra_runs:   # 同じ戦略の別の実行（例: フラクタル左右3本）
+        d = Path(d)
+        rd = json.loads((d / "report_data.json").read_text(encoding="utf-8"))
+        label = f"左右{rd['base']['fractal_n']}本"
+        rows = {r["name"]: dict(trades=r["trades"], expectancy_R=r["expectancy_R"], total_R=r["total_R"], pf=r["pf"])
+                for r in rd["summary"]}
+        a = rows["全体"]
+        mdd = next(r["max_dd_R"] for r in rd["summary"] if r["name"] == "全体")
+        compare[label] = dict(total_R=a["total_R"], pf=a["pf"], max_dd_R=mdd, trades=a["trades"], rows=rows, same=True,
+                              out_dir=str(d))
 
     winners = tr[tr.R > 0]
     hyp = dict(
@@ -84,10 +95,13 @@ def main(run_dir):
     )
     html = TEMPLATE.read_text(encoding="utf-8").replace(
         "__DATA__", json.dumps(clean(data), ensure_ascii=False, separators=(",", ":")))
+    n = rep["base"]["fractal_n"]
+    if n != 3:   # 初期値（左右3本）以外の実行は、別のアーティファクトとして区別できる名前にする
+        html = html.replace("ブレイクアウト・トレンドフォロー 6ペア", f"ブレイクアウト 左右{n}本 6ペア")
     out = run_dir / "report.html"
     out.write_text(html, encoding="utf-8")
     print(f"✅ {out} ({out.stat().st_size / 1e3:.0f} KB)")
 
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    main(sys.argv[1], sys.argv[2:])

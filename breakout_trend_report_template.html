@@ -123,6 +123,12 @@ footer code { font-family: var(--f-num); font-size: .72rem; word-break: break-al
     <p class="sub" style="margin:0" id="verdict-note"></p>
   </section>
 
+  <section id="cmp-sec" hidden>
+    <h2>比較</h2>
+    <div class="scroll"><table id="cmp-tbl"></table></div>
+    <p class="hint" id="cmp-hint"></p>
+  </section>
+
   <section>
     <h2>わかったこと</h2>
     <div class="findings" id="findings"></div>
@@ -207,9 +213,9 @@ const B = D.meta.base;
 // ---- header / verdict ----
 $("sub").textContent = `4時間足（NY 17:00 区切り）/ ${D.meta.start.slice(0, 7)}〜${D.meta.end.slice(0, 7)}（SP500 は 2024〜）/ ` +
   `前半 〜${D.meta.is_end.slice(0, 7)}・後半 それ以降 / コストはデータの平均スプレッド`;
-const usdjpy = D.summary.find(r => r.name === "USDJPY");
+const plusPairs = D.summary.slice(1).filter(r => r.total_R > 0);
 $("verdict-rule").textContent = `6ペア合計 ${sg(all.total_R, 1)}R、1トレードあたり ${sg(all.expectancy_R, 3)}R。` +
-  `プラスは USDJPY（${sg(usdjpy.total_R, 1)}R）だけ`;
+  (plusPairs.length ? `プラスのペア: ${plusPairs.map(r => `${r.name}（${sg(r.total_R, 1)}R）`).join("、")}` : "プラスのペアは無し");
 const cmpNames = Object.keys(D.compare);
 const was = key => cmpNames.map(n => `${n}: ${key === "pf" ? f(D.compare[n][key]) : key === "trades" ? D.compare[n][key] : sg(D.compare[n][key], 1)}`).join("<br>");
 $("cmp").innerHTML = [
@@ -218,8 +224,22 @@ $("cmp").innerHTML = [
   ["最大DD", f(all.max_dd_R, 1) + "R", "", "max_dd_R"],
   ["取引数", all.trades, "", "trades"],
 ].map(([l, v, c, k]) => `<div><div class="l">${l}</div><div class="v ${c}">${v}</div><div class="was">${was(k)}</div></div>`).join("");
-$("verdict-note").textContent = `下の小さい数字は、同じ6ペア・同じ期間の既存のスイングブレイクアウト高速版（4時間足 前後18本・1分足で約定）。` +
+$("verdict-note").textContent = `下の小さい数字は、比較用の実行（同じ6ペア・同じ期間）。` +
   `R の定義はどちらも初期損切り幅。固定％リスク ${D.meta.risk_pct * 100}% の資金曲線では ${sg(all.return_pct, 1)}%、最大DD ${f(all.max_dd_pct, 1)}%。`;
+
+// ---- comparison ----
+if (cmpNames.length) {
+  const mine = `左右${B.fractal_n}本（この実行）`;
+  const runs = [[mine, Object.fromEntries(D.summary.map(r => [r.name, r]))], ...cmpNames.map(n => [n, D.compare[n].rows])];
+  const names = ["全体", ...D.pairs];
+  table($("cmp-tbl"), ["", ...runs.flatMap(([n]) => [`${n} 取引`, "期待値R", "合計R", "PF"])],
+    names.map(nm => [nm, ...runs.flatMap(([, rows]) => {
+      const r = rows[nm]; if (!r) return ["–", "–", "–", "–"];
+      return [r.trades, { v: sg(r.expectancy_R, 3), c: heat(r.expectancy_R) }, { v: sg(r.total_R, 1), c: heat(r.total_R) }, f(r.pf)];
+    })]), (r, i) => i === 0 ? "base" : "");
+  $("cmp-sec").hidden = false;
+  $("cmp-hint").textContent = "「左右◯本」は、このレポートと同じ売買ルールでフラクタルの左右本数だけを変えた実行。それ以外（固定SL/TP・1Hスイング追従）は既存のスイングブレイクアウト高速版（前後18本のスイングに逆指値、1分足で約定）で、売買ルールが違う。";
+}
 
 // ---- findings ----
 const rs = Object.fromEntries(D.by_reason.map(r => [r.Reason, r]));
@@ -396,7 +416,7 @@ $("notes").innerHTML = [
   "前半（2021〜2023）・後半（2024〜2025）はエントリー日で分けた。実行は全期間で1回。SP500 は後半にしかない。",
   "感度分析の範囲は仕様書の例どおり。プラスになる設定が無いので、合わせ込みの心配より「この形のままでは優位性が見えない」ことの方が大きい。",
   "ウォークフォワードで選んだ設定は、前半の期待値で1パラメータずつ選んだもの。後半で初期値より良いが、ほぼ損益ゼロ。",
-  "既存の高速版（比較の数字）とはスイングの幅（18本 vs 3本）・ATR の計算・約定の精度（1分足 vs 4時間足）が違う。取引数は約3倍。",
+  "既存の高速版（固定SL/TP・1Hスイング追従）とは、エントリー（逆指値 vs 終値ブレイクの次の始値）・決済・ATR の計算・約定の精度（1分足 vs 4時間足）が違う。",
   "4時間足だけで約定を判定しているため、同じ足でストップと有利な値動きの両方に触れた場合は常に不利側に倒している（保守的）。",
   "スワップ・CFD の価格調整額は含めない。資金曲線は全ペアを1つの口座で同時に持つ前提で、証拠金の制約は見ていない。",
 ].map(x => `<li>${x}</li>`).join("");
