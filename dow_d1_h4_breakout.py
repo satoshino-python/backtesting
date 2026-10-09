@@ -46,7 +46,7 @@ from fast_engine import run_fast
 from dow_trend import DowConfig, swing_structure
 from dow_structure_breakout import structure_signals
 from dow_daily_breakout import prepare_pair, stats, PASS_PF, PASS_PAIRS
-from pullback_count import pullback_counts
+from pullback_count import pullback_counts, pullback_waves
 
 PAIRS = ("AUDUSD", "EURUSD", "GBPUSD", "SP500", "USDCHF", "USDJPY")
 START, END = BASE_CFG.start_date, BASE_CFG.end_date
@@ -141,9 +141,14 @@ def run_pair(pair, out, make_charts_for=None, pb_range=None):
             if make_charts_for:
                 from dow_swing_chart import make_chart
                 state = dirs[d1k]
-                if pb_range:
-                    tr = tr.assign(Note=[f"エントリー時点の{'押し' if sz > 0 else '戻り'}: {int(n)}回（日足の起点より後の4H）"
-                                         for sz, n in zip(tr.Size, pb_col)])
+                waves = [None] * len(tr)
+                if d1k != "none" and len(tr):
+                    # 各トレードのエントリー時点で「どの波を数えたか」（起点の日足スイングと、数えた4時間足のスイング）
+                    entry_bars = get_signal_bar_label(pd.DatetimeIndex(tr.EntryTime), 17, 4)
+                    waves = pullback_waves(h4, d1, D1_CFG[d1k], H4_DOW,
+                                           [(b, "L" if sz > 0 else "H") for b, sz in zip(entry_bars, tr.Size)])
+                    tr = tr.assign(Note=[f"エントリー時点の{'押し' if sz > 0 else '戻り'}: {len(w['points'])}回"
+                                         if w else "" for sz, w in zip(tr.Size, waves)])
                 make_chart(df_1min, out / f"dow_trade_chart_{pair}_{cfg_name(d1k, entry, ex)}.html",
                            f"{pair} {first_day:%Y-%m-%d} ~ {last_day:%Y-%m-%d} / 日足ダウ({d1k}) × {ENTRY_TEXT[entry]} / "
                            f"{MODE_TEXT[ex]}",
@@ -151,7 +156,7 @@ def run_pair(pair, out, make_charts_for=None, pb_range=None):
                            entry_window=cfg.window, entry_atr=cfg.atr_period, price_decimals=dec,
                            filter_state=state,
                            filter_label=f"日足ダウ（左右{D1_CFG[d1k].n}本）: 切り上げ=買いだけ / 切り下げ=売りだけ",
-                           entry_lines=lines[entry])
+                           entry_lines=lines[entry], waves=waves)
     if not make_charts_for:
         (out / f"log_{pair}.txt").write_text(log.getvalue(), encoding="utf-8")
     return pair, rows

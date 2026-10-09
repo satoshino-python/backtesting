@@ -35,6 +35,7 @@ make_chart(
 - 表示内容: エントリー（▲買い / ▼売り）・決済（●）・SL/TP、背景の週足トレンド、4時間足のエントリーライン、前/次のトレード移動。
 - 方向フィルターを使った検証では `filter_state=`（1分足ごとの 1=買いだけ許可 / -1=売りだけ許可 / 0=見送り / 2=両方）と
   `filter_label=` を渡す。背景が「検証で使ったフィルター」になり、トレードの向きと背景が一致しているかを確かめられる（例: `filter_report_charts.py`）。
+- 押し・戻りの回数を条件にした検証では `waves=` に「どの波を数えたか」を渡す（`pullback_count.pullback_waves()` の結果。起点の日足スイング◆と、数えた4時間足のスイング①②③を表示。`dow_d1_h4_breakout.py` が使用）。
 - 移動平均（表示中の時間足の SMA、既定 20/50/120）を表示する。期間は `ma_periods=` とチャートの設定で変えられる。
 - 既存の取引履歴CSVからは `python dow_swing_chart.py --trades dow_results/trades_<期間>_<モード>.csv` で作れる。
 - チャートのテンプレートは `dow_swing_chart_template.html`。JavaScript の `computeDow` は `dow_trend.py` の移植なので、

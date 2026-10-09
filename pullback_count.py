@@ -59,3 +59,47 @@ def pullback_counts(h4, d1, d1_cfg: DowConfig, h4_cfg: DowConfig, session_start_
             seq = [px] + prices
             out[j, col + 2] = float(all((b > a) if up else (b < a) for a, b in zip(seq, seq[1:])))
     return pd.DataFrame(out, index=h4.index, columns=["PBLong", "PBShort", "StairLong", "StairShort"])
+
+
+def pullback_waves(h4, d1, d1_cfg: DowConfig, h4_cfg: DowConfig, queries, session_start_hour=17):
+    """
+    指定した4時間足でカウントに使った波の位置を返す（チャート表示用。pullback_counts と同じ数え方）。
+
+    queries: [(4時間足の開始時刻, "L" or "H")]。"L" = 買い（日足の安値を起点に4Hの押しを数える）、"H" = 売り
+    戻り値: queries と同じ順のリスト。各要素は dict
+      kind = "L"（買い。押しを数える）/ "H"（売り。戻りを数える）
+      anchor = 起点の日足スイング {time（その日の4時間足のうち極値を付けた足の開始時刻）, price, day（日足の日付）}
+      points = 数えた4時間足のスイング [{time, price, n}]（n = 1, 2, 3…）
+    起点が無い場合は None。
+    """
+    h, l, c = (h4[k].to_numpy(float) for k in ("High", "Low", "Close"))
+    atr = atr_wilder(h, l, c, h4_cfg.atr_period)
+    bar_day = get_trading_day_label(h4.index, session_start_hour)
+    anc = daily_anchors(d1, d1_cfg).reindex(bar_day)
+    want = {}
+    for q, (ts, side) in enumerate(queries):
+        want.setdefault(h4.index.get_loc(pd.Timestamp(ts)), []).append((q, side))
+    out = [None] * len(queries)
+    piv = []
+    for j in range(len(c)):
+        if j >= 1:
+            _update_pivots(piv, j - 1, h, l, atr, h4_cfg)
+        for q, side in want.get(j, ()):
+            kind = "L" if side == "L" else "H"
+            day, px = (anc.LDay.iloc[j], anc.LPrice.iloc[j]) if kind == "L" else (anc.HDay.iloc[j], anc.HPrice.iloc[j])
+            if pd.isna(day):
+                continue
+            same_day = np.flatnonzero(bar_day == day)
+            ext = (h4.Low if kind == "L" else h4.High).to_numpy(float)[same_day]
+            a_bar = same_day[int(np.argmin(np.abs(ext - px)))]
+            pts = []
+            for p in reversed(piv):
+                if bar_day[p["bar"]] <= day:
+                    break
+                if p["kind"] == kind:
+                    pts.append(p)
+            pts.reverse()
+            out[q] = dict(kind=kind, anchor=dict(time=h4.index[a_bar], price=float(px), day=pd.Timestamp(day)),
+                          points=[dict(time=h4.index[p["bar"]], price=float(p["price"]), n=n + 1)
+                                  for n, p in enumerate(pts)])
+    return out

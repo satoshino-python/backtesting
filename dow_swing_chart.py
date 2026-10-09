@@ -66,11 +66,18 @@ def to_bars(df_1min, tf, extra_cols=(), session_start_hour=17):
     return out, b.index
 
 
-def load_trades(trades, labels, price_decimals=5):
+def load_trades(trades, labels, price_decimals=5, waves=None):
     """
     取引履歴（backtesting.py の stats["_trades"]、またはそれを保存したCSVのパス）を、
     各時間足でのエントリー/決済の足番号を付けた dict のリストにする
+
+    waves: 取引と同じ順のリスト。各要素は None か dict(kind="L"/"H", anchor=dict(time, price, day), points=[dict(time, price, n)])。
+           チャートに「どの波を数えたか」（起点の日足スイングと、数えた4時間足のスイングの番号）を描く。time は NY の壁時計時刻
     """
+    def at(ts):  # 時刻 → 各時間足での足番号
+        return {tf: int(lab.get_indexer(bar_label(pd.DatetimeIndex([pd.Timestamp(ts).tz_localize(None)]), tf))[0])
+                for tf, lab in labels.items()}
+
     t = pd.read_csv(trades) if isinstance(trades, (str, Path)) else trades.reset_index(drop=True)
     entry = pd.DatetimeIndex(pd.to_datetime(t["EntryTime"], utc=True)).tz_convert("America/New_York")
     exit_ = pd.DatetimeIndex(pd.to_datetime(t["ExitTime"], utc=True)).tz_convert("America/New_York")
@@ -97,6 +104,13 @@ def load_trades(trades, labels, price_decimals=5):
             et=entry[k].strftime("%Y-%m-%d %H:%M"), xt=exit_[k].strftime("%Y-%m-%d %H:%M"),
             reason=reason, wk=0 if pd.isna(wk) else int(wk), idx=idx,
         ))
+        w = waves[k] if waves is not None else None
+        if w:
+            out[-1]["w"] = dict(
+                k=w["kind"], a=dict(p=w["anchor"]["price"], idx=at(w["anchor"]["time"]),
+                                    day=w["anchor"]["day"].strftime("%Y-%m-%d")),
+                p=[dict(p=q["price"], n=q["n"], idx=at(q["time"]), t=pd.Timestamp(q["time"]).strftime("%m-%d %H:%M"))
+                   for q in w["points"]])
         note = row.get("Note")                      # 任意: トレードの詳細に表示するメモ（例: 何回目の押しか）
         if isinstance(note, str) and note:
             out[-1]["note"] = note
@@ -106,7 +120,7 @@ def load_trades(trades, labels, price_decimals=5):
 def make_chart(df_1min, path, title, start=None, end=None, trades=None, weekly_trend=None,
                mode="", risk=200.0, entry_window=18, entry_atr=18, price_decimals=5,
                session_start_hour=17, signal_hours=4, filter_state=None, filter_label="",
-               ma_periods=(20, 50, 120), entry_lines=None):
+               ma_periods=(20, 50, 120), entry_lines=None, waves=None):
     """
     チャートの HTML を path に書き出す（スクリプトから呼び出す用）。
 
@@ -125,6 +139,8 @@ def make_chart(df_1min, path, title, start=None, end=None, trades=None, weekly_t
     entry_lines  : エントリーラインを自分で渡すとき（4時間足スイング以外のラインで検証した戦略用）。
                    index=1分足の時刻、列 SignalSH / SignalSL / SignalSHValid / SignalSLValid の DataFrame。
                    渡すと entry_window / entry_atr は使わない
+    waves        : トレードごとに「数えた押し・戻りの波」（load_trades の waves を参照）。pullback_count.pullback_waves() の結果に
+                   kind="L"/"H" を足したもの。渡すと起点の日足スイングと、数えた4時間足のスイングの番号を描く
     """
     extra = {}
     if trades is not None:
@@ -164,7 +180,7 @@ def make_chart(df_1min, path, title, start=None, end=None, trades=None, weekly_t
 
     tr = None
     if trades is not None:
-        tr = dict(trades=load_trades(trades, labels, price_decimals), risk=risk, mode=mode,
+        tr = dict(trades=load_trades(trades, labels, price_decimals, waves), risk=risk, mode=mode,
                   entryWindow=entry_window, filterLabel=filter_label)
         rs = np.array([t["pnl"] for t in tr["trades"]]) / risk
         print(f"ℹ️ トレード {len(rs)} 件 / 合計 {rs.sum():+.2f}R")

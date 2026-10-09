@@ -47,6 +47,7 @@
   <span id="trctl" class="keep" style="display:none; gap:6px 18px; flex-wrap:wrap; align-items:center">
     <label>背景 <select id="bg"><option value="used" selected>検証で使った週足トレンド</option><option value="tf">表示中の時間足で計算</option><option value="filter">検証で使ったフィルター</option></select></label>
     <label><input id="trd" type="checkbox" checked> トレード</label>
+    <label title="エントリー前に数えた押し・戻りの波（起点の日足スイングと、4時間足のスイングの番号）"><input id="pbw" type="checkbox" checked> <span id="pbwlab">押し・戻りのカウント</span></label>
     <label><input id="eln" type="checkbox" checked> <span id="elnlab">エントリーライン</span></label>
     <button id="prev">◀ 前のトレード</button><button id="next">次のトレード ▶</button>
   </span>
@@ -195,6 +196,7 @@ function draw() {
     for (const t of TR.trades) {
       const [ei, xi] = tradeIdx(t); if (ei < 0 || xi < i0 || ei > i1) continue;
       for (const p of [t.sl, t.tp]) if (p != null) { lo = Math.min(lo, p); hi = Math.max(hi, p); }
+      if (t.w && $("pbw").checked) { lo = Math.min(lo, t.w.a.p); hi = Math.max(hi, t.w.a.p); }
     }
   const pad = (hi - lo) * 0.06 || 0.001; lo -= pad; hi += pad;
   const X = i => M.l + (i - view.from + 0.5) * bw, Y = p => M.t + (hi - p) / (hi - lo) * ph;
@@ -336,7 +338,9 @@ function tradeText(t) {
   return `── トレード（${t.d > 0 ? "買い" : "売り"}${DATA["4H"].ut ? " / 週足 " + nm(t.wk) : ""}）──\n` +
     `エントリー ${t.et}  @ ${fmtP(t.ep)}\n決済       ${t.xt}  @ ${fmtP(t.xp)}\n` +
     `SL ${fmtP(t.sl)}  TP ${fmtP(t.tp)}  枚数 ${Math.abs(t.size).toLocaleString()}\n` +
-    `損益 ${t.pnl.toFixed(2)}（${r >= 0 ? "+" : ""}${r.toFixed(2)}R） ${t.reason}` + (t.note ? `\n${t.note}` : "");
+    `損益 ${t.pnl.toFixed(2)}（${r >= 0 ? "+" : ""}${r.toFixed(2)}R） ${t.reason}` + (t.note ? `\n${t.note}` : "") +
+    (t.w ? `\n起点 日足${t.w.k === "L" ? "安値" : "高値"} ${t.w.a.day} @ ${fmtP(t.w.a.p)}` +
+      t.w.p.map(q => `\n${t.w.k === "L" ? "押し" : "戻り"}${q.n}  ${q.t} 確定足 @ ${fmtP(q.p)}`).join("") : "");
 }
 function tradeAt(i, my, Y) {
   // カーソルの足を含むトレードのうち、エントリー価格〜決済価格が縦方向に一番近いもの
@@ -348,6 +352,35 @@ function tradeAt(i, my, Y) {
     if (dist < bd) { bd = dist; best = t; }
   }
   return bd < 40 ? best : null;
+}
+// エントリー前に数えた押し（戻り）の波: 起点の日足スイング（◆）→ 数えた4時間足のスイング（①②③）→ エントリー
+function drawWaves(t, hot, X, Y, bw) {
+  const tf = $("tf").value, w = t.w, buy = w.k === "L", name = buy ? "押し" : "戻り";
+  const a = w.a, ai = a.idx[tf], ei = tradeIdx(t)[0];
+  if (ai < 0) return;
+  const pts = [{ i: ai, p: a.p, a: true }, ...w.p.filter(q => q.idx[tf] >= 0).map(q => ({ i: q.idx[tf], p: q.p, n: q.n }))];
+  const col = hot ? "#ffd54a" : "rgba(255,213,74,.6)";
+  // 起点の水準（これを割ると波は終わり）をエントリーまで
+  ctx.setLineDash([2, 4]); ctx.lineWidth = 1; ctx.strokeStyle = "rgba(255,213,74,.35)";
+  ctx.beginPath(); ctx.moveTo(X(ai), Y(a.p)); ctx.lineTo(X(Math.max(ei, ai)), Y(a.p)); ctx.stroke();
+  // 起点 → 1回目 → 2回目 … の線
+  ctx.setLineDash([4, 3]); ctx.lineWidth = hot ? 1.8 : 1.2; ctx.strokeStyle = col;
+  ctx.beginPath(); pts.forEach((q, k) => k ? ctx.lineTo(X(q.i), Y(q.p)) : ctx.moveTo(X(q.i), Y(q.p))); ctx.stroke(); ctx.setLineDash([]);
+  const r = hot ? 9 : 7, dy = buy ? r + 6 : -(r + 6);
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  for (const q of pts) {
+    const x = X(q.i), y = Y(q.p);
+    if (q.a) {  // 起点: ◆
+      ctx.fillStyle = col; ctx.strokeStyle = "#1a1f26"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x, y - 6); ctx.lineTo(x + 6, y); ctx.lineTo(x, y + 6); ctx.lineTo(x - 6, y); ctx.closePath(); ctx.fill(); ctx.stroke();
+      if (hot) { ctx.font = "11px system-ui"; ctx.fillStyle = "#ffd54a"; ctx.fillText(`起点 日足${buy ? "安値" : "高値"} ${a.day}`, x + 4, y + (buy ? 17 : -17)); }
+    } else {  // 数えた4時間足のスイング: 丸の中に番号
+      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y + dy, r, 0, 6.3); ctx.fill();
+      ctx.strokeStyle = col; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + dy - (buy ? r : -r)); ctx.stroke();
+      ctx.fillStyle = "#1a1f26"; ctx.font = `bold ${hot ? 12 : 10}px system-ui`; ctx.fillText(q.n, x, y + dy + 0.5);
+    }
+  }
+  ctx.textAlign = "left";
 }
 function drawTrades(i0, i1, X, Y, bw) {
   // エントリーライン（4時間足 Swing High/Low。1本前の判定足までの確定情報＝バックテストと同じ値）
@@ -363,9 +396,10 @@ function drawTrades(i0, i1, X, Y, bw) {
   }
   if (!$("trd").checked) return;
   const s = Math.max(5, Math.min(9, bw * 0.7 + 3));
-  for (const t of TR.trades) {
+  for (const [k, t] of TR.trades.entries()) {
     const [ei, xi] = tradeIdx(t);
     if (ei < 0 || xi < i0 - 1 || ei > i1 + 1) continue;
+    if (t.w && $("pbw").checked) drawWaves(t, k === cur, X, Y, bw);
     const win = t.pnl > 0, col = win ? "#2bd17e" : "#ff5a52";
     const xe = X(ei), xx = X(xi), ye = Y(t.ep), yx = Y(t.xp);
     // SL / TP（エントリーから決済まで）
@@ -396,7 +430,10 @@ function gotoTrade(step) {
   } else cur = Math.max(0, Math.min(TR.trades.length - 1, cur + step));
   const [ei, xi] = tradeIdx(TR.trades[cur]);
   const span = Math.max(60, Math.min(400, (xi - ei) * 4 + 40));
-  const c = (ei + xi) / 2; view = { from: c - span / 2, to: c + span / 2 }; mouse = null; draw();
+  const c = (ei + xi) / 2; view = { from: c - span / 2, to: c + span / 2 };
+  const w = TR.trades[cur].w, ai = w ? w.a.idx[$("tf").value] : -1;
+  if (w && $("pbw").checked && ai >= 0 && ai < view.from + 6) view.from = ai - 8;  // 数えた波の起点が見えるように
+  mouse = null; draw();
 }
 
 /* ---------- 操作 ---------- */
@@ -438,7 +475,8 @@ if (TR) {
   $("trctl").style.display = "inline-flex";
   if (!DATA["4H"].ut) { $("bg").value = "tf"; $("bg").options[0].disabled = true; }  // 週足トレンドを使わない戦略
   if (DATA["4H"].fs) $("bg").value = "filter"; else $("bg").options[2].disabled = true;  // 方向フィルターを使った検証
-  for (const id of ["trd", "eln", "bg"]) $(id).addEventListener("change", draw);
+  if (!TR.trades.some(t => t.w)) { $("pbw").checked = false; $("pbw").disabled = true; $("pbwlab").style.opacity = .4; }
+  for (const id of ["trd", "eln", "bg", "pbw"]) $(id).addEventListener("change", draw);
   $("prev").onclick = () => gotoTrade(-1); $("next").onclick = () => gotoTrade(1);
   window.addEventListener("keydown", e => { if (e.key === "ArrowRight") gotoTrade(1); else if (e.key === "ArrowLeft") gotoTrade(-1); });
 }
