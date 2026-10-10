@@ -1,0 +1,114 @@
+📂 データ読み込み中: /home/user/backtesting/histData/EURCHF
+ℹ️ 年月 202012 ～ 202601 の ZIP のみ読み込みます（61 / 72 個）。
+ℹ️ ZIP「EURCHF_202012.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202101.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202102.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202103.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202104.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202105.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202106.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202107.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202108.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202109.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202110.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202111.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202112.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202201.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202202.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202203.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202204.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202205.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202206.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202207.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202208.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202209.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202210.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202211.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202212.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202301.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202302.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202303.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202304.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202305.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202306.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202307.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202308.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202309.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202310.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202311.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202312.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202401.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202402.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202403.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202404.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202405.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202406.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202407.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202408.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202409.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202410.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202411.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202412.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202501.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202502.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202503.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202504.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202505.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202506.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202507.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202508.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202509.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202510.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202511.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURCHF_202512.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ 合計 61 個のZIP、1324 個のCSVファイルを結合しました。
+✅ データ読み込み完了（MID, America/New_York）: 2020-11-30 17:01:00-05:00 ～ 2025-12-31 16:59:00-05:00 (1,890,038 行)
+ℹ️ 平均相対スプレッド: 0.02004% (commission換算: 0.01002%)
+✅ 4時間足へのリサンプル完了（区切りの起点: NY時間 17:00）: 2020-11-30 17:00 ～ 2025-12-31 13:00 (7,929 本)
+Start                                              2021-01-03 17:01:00-05:00
+End                                                2025-12-31 16:59:00-05:00
+Duration                                                  1822 days 23:58:00
+Exposure Time [%]                                                  12.687533
+Equity Final [$]                                                 10165.53727
+Equity Peak [$]                                                  13275.67401
+Commissions [$]                                                   1954.64045
+Return [%]                                                          1.655373
+Buy & Hold Return [%]                                             -13.904302
+Return (Ann.) [%]                                                   0.265229
+Volatility (Ann.) [%]                                              11.152949
+CAGR [%]                                                            0.329491
+Sharpe Ratio                                                        0.023781
+Sortino Ratio                                                       0.035646
+Calmar Ratio                                                        0.008971
+Alpha [%]                                                           0.134675
+Beta                                                               -0.109369
+Max. Drawdown [%]                                                 -29.564274
+Avg. Drawdown [%]                                                  -0.652944
+Max. Drawdown Duration                                     626 days 14:35:00
+Avg. Drawdown Duration                                       7 days 08:12:00
+# Trades                                                                 123
+Win Rate [%]                                                       40.650407
+Best Trade [%]                                                      0.898897
+Worst Trade [%]                                                    -0.714784
+Avg. Trade [%]                                                      0.005274
+Max. Trade Duration                                          9 days 17:12:00
+Avg. Trade Duration                                          1 days 18:45:00
+Profit Factor                                                       1.034372
+Expectancy [%]                                                         0.006
+SQN                                                                   0.0566
+Kelly Criterion                                                     0.004224
+Avg. Win [$]                                                      318.611966
+Avg. Loss [$]                                                     -215.95974
+Payoff Ratio                                                         1.47533
+Max. Consecutive Losses                                                    8
+_strategy                             SwingBreakoutStrategy1Min(fast_engine)
+_equity_curve                                              Equity  Drawdo...
+_trades                           Size  EntryBar  ExitBar  ...           ...
+dtype: object
+✅ 4時間足へのリサンプル完了（区切りの起点: NY時間 17:00）: 2020-11-30 17:00 ～ 2025-12-31 13:00 (7,929 本)
+1H: 30,993 本
+4H: 7,794 本
+D1: 1,301 本
+W1: 261 本
+ℹ️ トレード 123 件 / 合計 +0.83R
+✅ fast_results/20261010_1330_fixed_sl1.5_tp2.5/dow_trade_chart_EURCHF_20210104-20251231_fixed.html (2.7 MB)

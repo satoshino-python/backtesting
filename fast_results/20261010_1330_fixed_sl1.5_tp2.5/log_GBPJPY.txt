@@ -1,0 +1,114 @@
+📂 データ読み込み中: /home/user/backtesting/histData/GBPJPY
+ℹ️ 年月 202012 ～ 202601 の ZIP のみ読み込みます（61 / 72 個）。
+ℹ️ ZIP「GBPJPY_202012.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202101.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202102.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202103.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202104.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202105.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202106.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202107.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202108.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202109.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202110.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202111.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202112.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202201.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202202.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202203.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202204.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202205.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202206.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202207.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202208.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202209.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202210.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202211.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202212.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202301.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202302.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202303.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202304.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202305.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202306.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202307.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202308.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202309.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202310.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202311.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202312.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202401.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202402.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202403.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202404.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202405.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202406.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202407.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202408.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202409.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202410.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202411.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202412.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202501.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202502.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202503.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202504.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202505.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202506.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202507.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202508.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202509.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202510.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202511.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPJPY_202512.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ 合計 61 個のZIP、1324 個のCSVファイルを結合しました。
+✅ データ読み込み完了（MID, America/New_York）: 2020-11-30 17:01:00-05:00 ～ 2025-12-31 16:59:00-05:00 (1,889,797 行)
+ℹ️ 平均相対スプレッド: 0.00765% (commission換算: 0.00382%)
+✅ 4時間足へのリサンプル完了（区切りの起点: NY時間 17:00）: 2020-11-30 17:00 ～ 2025-12-31 13:00 (7,929 本)
+Start                                              2021-01-03 17:01:00-05:00
+End                                                2025-12-31 16:59:00-05:00
+Duration                                                  1822 days 23:58:00
+Exposure Time [%]                                                  11.081055
+Equity Final [$]                                                   14898.848
+Equity Peak [$]                                                     16776.32
+Commissions [$]                                                      471.294
+Return [%]                                                          48.98848
+Buy & Hold Return [%]                                              49.758454
+Return (Ann.) [%]                                                   6.643651
+Volatility (Ann.) [%]                                               9.558559
+CAGR [%]                                                            8.315922
+Sharpe Ratio                                                        0.695047
+Sortino Ratio                                                       1.263703
+Calmar Ratio                                                        0.464636
+Alpha [%]                                                          47.336549
+Beta                                                                0.033199
+Max. Drawdown [%]                                                 -14.298613
+Avg. Drawdown [%]                                                  -0.323244
+Max. Drawdown Duration                                     923 days 10:59:00
+Avg. Drawdown Duration                                       2 days 19:06:00
+# Trades                                                                 130
+Win Rate [%]                                                       45.384615
+Best Trade [%]                                                      1.745266
+Worst Trade [%]                                                    -1.022225
+Avg. Trade [%]                                                      0.083432
+Max. Trade Duration                                          9 days 00:47:00
+Avg. Trade Duration                                          1 days 12:42:00
+Profit Factor                                                       1.331247
+Expectancy [%]                                                      0.085506
+SQN                                                                 1.616935
+Kelly Criterion                                                     0.114892
+Avg. Win [$]                                                      327.989898
+Avg. Loss [$]                                                    -203.557127
+Payoff Ratio                                                        1.611292
+Max. Consecutive Losses                                                    9
+_strategy                             SwingBreakoutStrategy1Min(fast_engine)
+_equity_curve                                            Equity  Drawdown...
+_trades                         Size  EntryBar  ExitBar  ...             ...
+dtype: object
+✅ 4時間足へのリサンプル完了（区切りの起点: NY時間 17:00）: 2020-11-30 17:00 ～ 2025-12-31 13:00 (7,929 本)
+1H: 30,991 本
+4H: 7,794 本
+D1: 1,301 本
+W1: 261 本
+ℹ️ トレード 130 件 / 合計 +24.49R
+✅ fast_results/20261010_1330_fixed_sl1.5_tp2.5/dow_trade_chart_GBPJPY_20210104-20251231_fixed.html (2.7 MB)

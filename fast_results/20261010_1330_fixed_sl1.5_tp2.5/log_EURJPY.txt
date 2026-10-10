@@ -1,0 +1,114 @@
+📂 データ読み込み中: /home/user/backtesting/histData/EURJPY
+ℹ️ 年月 202012 ～ 202601 の ZIP のみ読み込みます（61 / 72 個）。
+ℹ️ ZIP「EURJPY_202012.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202101.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202102.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202103.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202104.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202105.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202106.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202107.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202108.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202109.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202110.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202111.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202112.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202201.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202202.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202203.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202204.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202205.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202206.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202207.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202208.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202209.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202210.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202211.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202212.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202301.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202302.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202303.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202304.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202305.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202306.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202307.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202308.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202309.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202310.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202311.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202312.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202401.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202402.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202403.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202404.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202405.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202406.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202407.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202408.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202409.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202410.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202411.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202412.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202501.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202502.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202503.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202504.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202505.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202506.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202507.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202508.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202509.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202510.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202511.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURJPY_202512.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ 合計 61 個のZIP、1324 個のCSVファイルを結合しました。
+✅ データ読み込み完了（MID, America/New_York）: 2020-11-30 17:01:00-05:00 ～ 2025-12-31 16:59:00-05:00 (1,889,236 行)
+ℹ️ 平均相対スプレッド: 0.00500% (commission換算: 0.00250%)
+✅ 4時間足へのリサンプル完了（区切りの起点: NY時間 17:00）: 2020-11-30 17:00 ～ 2025-12-31 13:00 (7,929 本)
+Start                                              2021-01-03 17:01:00-05:00
+End                                                2025-12-31 16:59:00-05:00
+Duration                                                  1822 days 23:58:00
+Exposure Time [%]                                                  11.106049
+Equity Final [$]                                                     9146.62
+Equity Peak [$]                                                    11742.849
+Commissions [$]                                                       311.45
+Return [%]                                                           -8.5338
+Buy & Hold Return [%]                                              45.677849
+Return (Ann.) [%]                                                  -1.428784
+Volatility (Ann.) [%]                                              11.244736
+CAGR [%]                                                            -1.77132
+Sharpe Ratio                                                       -0.127062
+Sortino Ratio                                                      -0.190139
+Calmar Ratio                                                       -0.051551
+Alpha [%]                                                         -11.494269
+Beta                                                                0.064812
+Max. Drawdown [%]                                                 -27.716051
+Avg. Drawdown [%]                                                  -0.563494
+Max. Drawdown Duration                                     965 days 08:27:00
+Avg. Drawdown Duration                                      10 days 21:12:00
+# Trades                                                                 124
+Win Rate [%]                                                       37.096774
+Best Trade [%]                                                      1.321857
+Worst Trade [%]                                                    -0.951296
+Avg. Trade [%]                                                     -0.048882
+Max. Trade Duration                                          9 days 05:56:00
+Avg. Trade Duration                                          1 days 14:43:00
+Profit Factor                                                       0.840418
+Expectancy [%]                                                     -0.047174
+SQN                                                                -0.298393
+Kelly Criterion                                                    -0.021165
+Avg. Win [$]                                                        325.1675
+Avg. Loss [$]                                                    -202.706218
+Payoff Ratio                                                        1.604132
+Max. Consecutive Losses                                                    9
+_strategy                             SwingBreakoutStrategy1Min(fast_engine)
+_equity_curve                                           Equity  DrawdownP...
+_trades                         Size  EntryBar  ExitBar  ...             ...
+dtype: object
+✅ 4時間足へのリサンプル完了（区切りの起点: NY時間 17:00）: 2020-11-30 17:00 ～ 2025-12-31 13:00 (7,929 本)
+1H: 30,991 本
+4H: 7,794 本
+D1: 1,301 本
+W1: 261 本
+ℹ️ トレード 124 件 / 合計 -4.27R
+✅ fast_results/20261010_1330_fixed_sl1.5_tp2.5/dow_trade_chart_EURJPY_20210104-20251231_fixed.html (2.7 MB)
