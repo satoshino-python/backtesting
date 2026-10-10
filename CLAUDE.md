@@ -12,6 +12,7 @@ FX（GMOクリック証券の1分足）のスイングブレイクアウト戦�
 - `fast_engine.py` は `SwingBreakoutStrategy1Min`（固定SL/TP）と `SwingBreakoutTrail1Min`（1時間足トレーリング）の売買ルールを
   backtesting.py なしで再現した高速版（約100倍速い）。複数ペアは `main_4H_fixedSL_fast_multi.py` で並列に検証できる。
   戦略のルールを変えたら `fast_engine.py` も合わせて直し、`compare_fast_engine.py` で backtesting.py との一致を確かめる。
+- `cwh_fx/` はカップウィズハンドル戦略（backtesting.py を使わない独自のイベント駆動エンジン）。`python cwh_fx/run_backtest.py`、テストは `python -m pytest cwh_fx/tests`。詳細は [cwh_fx/README.md](cwh_fx/README.md)。
 
 ## 検証結果のチャート（毎回作る）
 トレードを伴う検証では、backtesting.py 標準のチャートに加えて、**トレード付きのダウ理論チャート**を必ず出力する。

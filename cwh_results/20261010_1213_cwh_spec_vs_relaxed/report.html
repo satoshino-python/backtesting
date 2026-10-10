@@ -1,0 +1,296 @@
+<title>カップウィズハンドル FX 5ペア</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: one phone-width column — headline numbers, curve, tables, diagnosis, validation, charts, rules, caveats. Same tokens as the トレンドフィルター検証 report. */
+:root {
+  --bg: #f3f5f7; --surface: #ffffff; --line: #dde2e8; --fg: #17202b; --muted: #5e6b7a;
+  --accent: #2a5bd7; --accent-soft: #e3eafb; --s2: #b8650a; --s3: #7d8a99;
+  --pos: #18865a; --neg: #c8413a; --pos-bg: rgba(24,134,90,.14); --neg-bg: rgba(200,65,58,.14);
+  --f-head: "Zen Kaku Gothic New", "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+  --f-num: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f141a; --surface: #171e26; --line: #2a333e; --fg: #e3e8ee; --muted: #93a0ae;
+  --accent: #79a2ff; --accent-soft: #1d2a45; --s2: #e9a04a; --s3: #8c99a8;
+  --pos: #3ccb8b; --neg: #f0726a; --pos-bg: rgba(60,203,139,.16); --neg-bg: rgba(240,114,106,.16);
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0f141a; --surface: #171e26; --line: #2a333e; --fg: #e3e8ee; --muted: #93a0ae;
+  --accent: #79a2ff; --accent-soft: #1d2a45; --s2: #e9a04a; --s3: #8c99a8;
+  --pos: #3ccb8b; --neg: #f0726a; --pos-bg: rgba(60,203,139,.16); --neg-bg: rgba(240,114,106,.16);
+  color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.6 var(--f-head); -webkit-text-size-adjust: 100%; }
+.wrap { max-width: 860px; margin: 0 auto; padding: 20px 16px 48px; display: grid; gap: 28px; }
+.wrap > * { min-width: 0; }
+h1 { font-size: 1.45rem; line-height: 1.3; margin: 0; font-weight: 700; text-wrap: balance; }
+h2 { font-size: 1.05rem; margin: 0 0 10px; font-weight: 700; text-wrap: balance; }
+h3 { text-wrap: balance; }
+p { margin: 0; }
+.sub { color: var(--muted); font-size: .85rem; margin-top: 6px; }
+.num { font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+.pos { color: var(--pos); } .neg { color: var(--neg); }
+.muted { color: var(--muted); }
+.verdict { background: var(--surface); border: 1.5px solid var(--accent); border-radius: 14px; padding: 16px; display: grid; gap: 14px; }
+.verdict .tag { font-size: .72rem; color: var(--accent); letter-spacing: .06em; font-weight: 500; }
+.verdict .rule { font-size: 1.08rem; font-weight: 700; line-height: 1.5; text-wrap: balance; }
+.findings { display: grid; gap: 10px; }
+.find { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 4px; }
+.find h3 { margin: 0; font-size: .95rem; display: flex; gap: 8px; align-items: baseline; }
+.find .pill, .pill { font-size: .68rem; font-weight: 500; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
+.pill.good { background: var(--pos-bg); color: var(--pos); }
+.pill.bad { background: var(--neg-bg); color: var(--neg); }
+.pill.mid { background: var(--accent-soft); color: var(--accent); }
+.find p { font-size: .88rem; color: var(--muted); }
+.find p b { color: var(--fg); font-weight: 500; }
+.scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: .8rem; }
+th, td { padding: 7px 9px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+th { font-weight: 500; color: var(--muted); font-size: .72rem; background: var(--surface); }
+th:first-child, td:first-child { text-align: left; position: sticky; left: 0; background: var(--surface); font-weight: 500; }
+td:first-child { white-space: normal; min-width: 130px; max-width: 200px; font-size: .78rem; line-height: 1.4; }
+td.l, th.l { text-align: left; }
+tr:last-child td { border-bottom: 0; }
+tr.base td { background: var(--accent-soft); }
+td.cell { font-family: var(--f-num); font-variant-numeric: tabular-nums; }
+td.hp { background: var(--pos-bg); } td.hn { background: var(--neg-bg); }
+td.zero { color: var(--muted); }
+.hint { font-size: .8rem; color: var(--muted); margin-top: 8px; }
+.defs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.def { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; min-width: 0; }
+.def h3 { margin: 0 0 6px; font-size: .9rem; }
+.def p { font-size: .86rem; }
+.def code, .hint code, li code { font-family: var(--f-num); font-size: .78rem; background: var(--accent-soft); padding: 1px 5px; border-radius: 4px; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: .76rem; color: var(--muted); margin-bottom: 8px; }
+.legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 5px; }
+.plot { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 8px 4px; position: relative; }
+.plot svg { width: 100%; height: auto; display: block; }
+.plot svg text { font-family: var(--f-num); font-size: 10px; fill: var(--muted); }
+.plot .grid { stroke: var(--line); stroke-width: 1; }
+.plot .zero { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.tip { position: absolute; pointer-events: none; background: var(--fg); color: var(--bg); font: 12px/1.45 var(--f-num); padding: 6px 8px; border-radius: 6px; white-space: pre; transform: translate(-50%, -110%); }
+.links { display: grid; gap: 8px; }
+.links a { display: flex; justify-content: space-between; gap: 10px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; color: var(--fg); text-decoration: none; }
+.links a:hover, .links a:focus-visible { border-color: var(--accent); outline: none; }
+.links a span { color: var(--muted); font-size: .78rem; font-family: var(--f-num); }
+.hbar { display: grid; grid-template-columns: minmax(0, 8.5rem) 1fr 3.2rem; gap: 8px; align-items: center; font-size: .78rem; }
+.hbar .track { height: 10px; background: var(--accent-soft); border-radius: 3px; overflow: hidden; }
+.hbar .track b { display: block; height: 100%; background: var(--accent); border-radius: 0 3px 3px 0; }
+.hbars { display: grid; gap: 5px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+ul.notes { margin: 0; padding-left: 1.2em; display: grid; gap: 8px; font-size: .88rem; }
+footer { font-size: .75rem; color: var(--muted); line-height: 1.7; }
+footer code { font-family: var(--f-num); font-size: .72rem; word-break: break-all; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<div class="wrap">
+  <header>
+    <h1>カップウィズハンドル FX 5ペア</h1>
+    <p class="sub">ATRベースの仕様書どおりに実装 / AUDUSD, EURUSD, GBPUSD, USDCHF, USDJPY / 取引日 2020-01-01 〜 2025-12-31 / GMOクリック証券の1分足（BID）から足を作成 / 実行 2026-10-10 12:13</p>
+  </header>
+
+  <section class="verdict">
+    <span class="tag">結論</span>
+    <p class="rule">仕様書の初期値（日足）では、5ペア・6年でシグナルが1件も出なかった</p>
+    <div class="scroll"><table><thead><tr><th>設定</th><th>取引数</th><th>合計R</th><th>PF</th><th>最大DD(R)</th><th>最大DD(資産)</th><th>勝率</th><th>平均R</th></tr></thead><tbody><tr class="base"><td class="">A 仕様どおり（日足）</td><td class="cell">0</td><td class="cell zero">+0.00</td><td class="cell">–</td><td class="cell">0.00</td><td class="cell">0.0%</td><td class="cell">–</td><td class="cell zero">–</td></tr><tr><td class="">B 日足・ATR収縮なし</td><td class="cell">5</td><td class="cell hn">-2.19</td><td class="cell">0.27</td><td class="cell">2.31</td><td class="cell">1.6%</td><td class="cell">20.0%</td><td class="cell hn">-0.437</td></tr><tr><td class="">C 4時間足・ATR収縮なし</td><td class="cell">20</td><td class="cell hp">+2.69</td><td class="cell">1.32</td><td class="cell">4.74</td><td class="cell">2.7%</td><td class="cell">50.0%</td><td class="cell hp">+0.134</td></tr></tbody></table></div>
+    <p class="sub" style="margin:0">ほぼ全部を落としているのは「ハンドル中の ATR14 平均 &lt; 0.8×ATR50」。これを外しても日足では5件。4時間足にすると20件約定して +2.7R だが、ランダムエントリーとの差は偶然の範囲（p≈0.24）。B と C はデータを見た後に緩めた参考値。</p>
+  </section>
+
+  <section><h2>わかったこと</h2><div class='findings'><div class="find"><h3><span class="pill bad">原因</span>ATR収縮の条件がほぼ満たせない</h3><p>他の条件を全部満たした形が日足で7件あったが、<b>すべてハンドル中の ATR14 平均が 0.8×ATR50 以上</b>で落ちた。ATR14 はワイルダー平滑で反応が遅く、5〜25本のハンドルの平均には右縁までの上昇の値動きが残る。合成データでも、カップの右側から値幅を縮めないと通らなかった。</p></div><div class="find"><h3><span class="pill mid">日足</span>収縮を外しても5件・全部トレーリング決済</h3><p>B（日足・ATR収縮なし）はシグナル7件・約定5件・合計 −2.19R。どれも 2R に届く前にチャンデリア（高値 − 3×ATR14）を終値で割って決済した。件数が少なすぎて良し悪しは判断できない。</p></div><div class="find"><h3><span class="pill mid">4時間足</span>20件で +2.7R、コストや±20%では崩れない</h3><p>C（4時間足・ATR収縮なし）は勝率50%・PF 1.32・最大DD 4.7R。スプレッド2倍でも +2.6R、主要パラメータ±20%の6通りはすべてプラス。ただし<b>同じ回数のランダムエントリーでも24%の確率で平均Rがこれを上回り</b>、パターンの優位性は示せていない。</p></div><div class="find"><h3><span class="pill bad">見送り</span>4時間足ではシグナルの半分を見送り</h3><p>38件中18件を見送った。始値がピボットから 1×ATR14 超離れていた（追いかけ）が8件、損切り幅が 3×ATR14 を超えたのが8件。4時間足では深いハンドルの安値までの距離が ATR14 に比べて広くなりやすい。</p></div></div></section>
+
+  <section>
+    <h2>損益曲線（決済順の累積R）</h2>
+    <div class="legend"><span><i style="background:var(--s2)"></i>B 日足・ATR収縮なし（5件）</span><span><i style="background:var(--accent)"></i>C 4時間足・ATR収縮なし（20件）</span><span>A 仕様どおり（日足）: 取引なし</span></div><div class="plot" id="curve"><svg viewBox="0 0 400 230" role="img" aria-label="累積R"><line class="grid" x1="28" x2="392" y1="210.0" y2="210.0"/><text x="22" y="213.0" text-anchor="end">-4</text><line class="grid" x1="28" x2="392" y1="159.5" y2="159.5"/><text x="22" y="162.5" text-anchor="end">-2</text><line class="grid" x1="28" x2="392" y1="109.0" y2="109.0"/><text x="22" y="112.0" text-anchor="end">+0</text><line class="grid" x1="28" x2="392" y1="58.5" y2="58.5"/><text x="22" y="61.5" text-anchor="end">+2</text><line class="grid" x1="28" x2="392" y1="8.0" y2="8.0"/><text x="22" y="11.0" text-anchor="end">+4</text><line class="zero" x1="28" x2="392" y1="109.0" y2="109.0"/><text x="88.7" y="224" text-anchor="middle">2021</text><text x="149.3" y="224" text-anchor="middle">2022</text><text x="210.0" y="224" text-anchor="middle">2023</text><text x="270.7" y="224" text-anchor="middle">2024</text><text x="331.5" y="224" text-anchor="middle">2025</text><path d="M28.0,109.0 H91.5 V126.0 H143.8 V105.8 H184.1 V129.8 H232.3 V148.4 H232.9 V164.2 H392.0" fill="none" stroke="var(--s2)" stroke-width="2" stroke-linejoin="round"/><path d="M28.0,109.0 H38.0 V73.3 H49.6 V99.0 H54.4 V60.6 H83.3 V86.5 H105.8 V112.0 H110.4 V137.6 H119.4 V152.4 H119.9 V177.9 H164.1 V165.1 H182.1 V129.0 H196.7 V154.5 H207.3 V180.2 H252.7 V165.6 H265.3 V132.8 H265.5 V94.5 H270.2 V72.2 H303.7 V76.3 H344.0 V64.5 H361.9 V76.0 H362.6 V41.2 H392.0" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round"/><circle cx="91.5" cy="126.0" r="3.5" fill="var(--s2)" stroke="var(--surface)" stroke-width="2" data-tip="B 日足・ATR収縮なし
+EURUSD 買い 2020-12-17→2021-01-18
+トレーリング  -0.67R  累計 -0.67R"/><circle cx="91.5" cy="126.0" r="11" fill="transparent" data-tip="B 日足・ATR収縮なし
+EURUSD 買い 2020-12-17→2021-01-18
+トレーリング  -0.67R  累計 -0.67R"/><circle cx="143.8" cy="105.8" r="3.5" fill="var(--s2)" stroke="var(--surface)" stroke-width="2" data-tip="B 日足・ATR収縮なし
+USDJPY 買い 2021-10-11→2021-11-29
+トレーリング  +0.80R  累計 +0.13R"/><circle cx="143.8" cy="105.8" r="11" fill="transparent" data-tip="B 日足・ATR収縮なし
+USDJPY 買い 2021-10-11→2021-11-29
+トレーリング  +0.80R  累計 +0.13R"/><circle cx="184.1" cy="129.8" r="3.5" fill="var(--s2)" stroke="var(--surface)" stroke-width="2" data-tip="B 日足・ATR収縮なし
+USDJPY 買い 2022-07-12→2022-07-29
+トレーリング  -0.95R  累計 -0.82R"/><circle cx="184.1" cy="129.8" r="11" fill="transparent" data-tip="B 日足・ATR収縮なし
+USDJPY 買い 2022-07-12→2022-07-29
+トレーリング  -0.95R  累計 -0.82R"/><circle cx="232.3" cy="148.4" r="3.5" fill="var(--s2)" stroke="var(--surface)" stroke-width="2" data-tip="B 日足・ATR収縮なし
+EURUSD 買い 2023-04-13→2023-05-15
+トレーリング  -0.74R  累計 -1.56R"/><circle cx="232.3" cy="148.4" r="11" fill="transparent" data-tip="B 日足・ATR収縮なし
+EURUSD 買い 2023-04-13→2023-05-15
+トレーリング  -0.74R  累計 -1.56R"/><circle cx="232.9" cy="164.2" r="3.5" fill="var(--s2)" stroke="var(--surface)" stroke-width="2" data-tip="B 日足・ATR収縮なし
+GBPUSD 買い 2023-05-01→2023-05-19
+トレーリング  -0.63R  累計 -2.19R"/><circle cx="232.9" cy="164.2" r="11" fill="transparent" data-tip="B 日足・ATR収縮なし
+GBPUSD 買い 2023-05-01→2023-05-19
+トレーリング  -0.63R  累計 -2.19R"/><circle cx="38.0" cy="73.3" r="3.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2" data-tip="C 4時間足・ATR収縮なし
+AUDUSD 売り 2020-02-26→2020-03-02
+トレーリング  +1.42R  累計 +1.42R"/><circle cx="38.0" cy="73.3" r="11" fill="transparent" data-tip="C 4時間足・ATR収縮なし
+AUDUSD 売り 2020-02-26→2020-03-02
+トレーリング  +1.42R  累計 +1.42R"/><circle cx="49.6" cy="99.0" r="3.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2" data-tip="C 4時間足・ATR収縮なし
+AUDUSD 買い 2020-05-11→2020-05-11
+損切り  -1.02R  累計 +0.40R"/><circle cx="49.6" cy="99.0" r="11" fill="transparent" data-tip="C 4時間足・ATR収縮なし
+AUDUSD 買い 2020-05-11→2020-05-11
+損切り  -1.02R  累計 +0.40R"/><circle cx="54.4" cy="60.6" r="3.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2" data-tip="C 4時間足・ATR収縮なし
+EURUSD 買い 2020-06-02→2020-06-09
+トレーリング  +1.52R  累計 +1.92R"/><circle cx="54.4" cy="60.6" r="11" fill="transparent" data-tip="C 4時間足・ATR収縮なし
+EURUSD 買い 2020-06-02→2020-06-09
+トレーリング  +1.52R  累計 +1.92R"/><circle cx="83.3" cy="86.5" r="3.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2" data-tip="C 4時間足・ATR収縮なし
+AUDUSD 買い 2020-11-27→2020-11-30
+損切り  -1.03R  累計 +0.89R"/><circle cx="83.3" cy="86.5" r="11" fill="transparent" data-tip="C 4時間足・ATR収縮なし
+AUDUSD 買い 2020-11-27→2020-11-30
+損切り  -1.03R  累計 +0.89R"/><circle cx="105.8" cy="112.0" r="3.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2" data-tip="C 4時間足・ATR収縮なし
+GBPUSD 売り 2021-04-09→2021-04-14
+損切り  -1.01R  累計 -0.12R"/><circle cx="105.8" cy="112.0" r="11" fill="transparent" data-tip="C 4時間足・ATR収縮なし
+GBPUSD 売り 2021-04-09→2021-04-14
+損切り  -1.01R  累計 -0.12R"/><circle cx="110.4" cy="137.6" r="3.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2" data-tip="C 4時間足・ATR収縮なし
+GBPUSD 買い 2021-05-11→2021-05-12
+損切り  -1.02R  累計 -1.13R"/><circle cx="110.4" cy="137.6" r="11" fill="transparent" data-tip="C 4時間足・ATR収縮なし
+GBPUSD 買い 2021-05-11→2021-05-12
+損切り  -1.02R  累計 -1.13R"/><circle cx="119.4" cy="152.4" r="3.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2" data-tip="C 4時間足・ATR収縮なし
+GBPUSD 売り 2021-06-30→2021-07-05
+トレーリング  -0.58R  累計 -1.72R"/><circle cx="119.4" cy="152.4" r="11" fill="transparent" data-tip="C 4時間足・ATR収縮なし
+GBPUSD 売り 2021-06-30→2021-07-05
+トレーリング  -0.58R  累計 -1.72R"/><circle cx="119.9" cy="177.9" r="3.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2" data-tip="C 4時間足・ATR収縮なし
+EURUSD 売り 2021-07-07→2021-07-08
+損切り  -1.01R  累計 -2.73R"/><circle cx="119.9" cy="177.9" r="11" fill="transparent" data-tip="C 4時間足・ATR収縮なし
+EURUSD 売り 2021-07-07→2021-07-08
+損切り  -1.01R  累計 -2.73R"/><circle cx="164.1" cy="165.1" r="3.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2" data-tip="C 4時間足・ATR収縮なし
+AUDUSD 買い 2022-03-22→2022-03-31
+タイムストップ  +0.51R  累計 -2.22R"/><circle cx="164.1" cy="165.1" r="11" fill="transparent" data-tip="C 4時間足・ATR収縮なし
+AUDUSD 買い 2022-03-22→2022-03-31
+タイムストップ  +0.51R  累計 -2.22R"/><circle cx="182.1" cy="129.0" r="3.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2" data-tip="C 4時間足・ATR収縮なし
+EURUSD 売り 2022-07-07→2022-07-17
+トレーリング  +1.43R  累計 -0.79R"/><circle cx="182.1" cy="129.0" r="11" fill="transparent" data-tip="C 4時間足・ATR収縮なし
+EURUSD 売り 2022-07-07→2022-07-17
+トレーリング  +1.43R  累計 -0.79R"/><circle cx="196.7" cy="154.5" r="3.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2" data-tip="C 4時間足・ATR収縮なし
+AUDUSD 売り 2022-10-13→2022-10-13
+損切り  -1.01R  累計 -1.80R"/><circle cx="196.7" cy="154.5" r="11" fill="transparent" data-tip="C 4時間足・ATR収縮なし
+AUDUSD 売り 2022-10-13→2022-10-13
+損切り  -1.01R  累計 -1.80R"/><circle cx="207.3" cy="180.2" r="3.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2" data-tip="C 4時間足・ATR収縮なし
+EURUSD 買い 2022-12-14→2022-12-16
+損切り  -1.02R  累計 -2.82R"/><circle cx="207.3" cy="180.2" r="11" fill="transparent" data-tip="C 4時間足・ATR収縮なし
+EURUSD 買い 2022-12-14→2022-12-16
+損切り  -1.02R  累計 -2.82R"/><circle cx="252.7" cy="165.6" r="3.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2" data-tip="C 4時間足・ATR収縮なし
+GBPUSD 売り 2023-09-06→2023-09-15
+タイムストップ  +0.58R  累計 -2.24R"/><circle cx="252.7" cy="165.6" r="11" fill="transparent" data-tip="C 4時間足・ATR収縮なし
+GBPUSD 売り 2023-09-06→2023-09-15
+タイムストップ  +0.58R  累計 -2.24R"/><circle cx="265.3" cy="132.8" r="3.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2" data-tip="C 4時間足・ATR収縮なし
+GBPUSD 買い 2023-11-24→2023-11-30
+トレーリング  +1.30R  累計 -0.94R"/><circle cx="265.3" cy="132.8" r="11" fill="transparent" data-tip="C 4時間足・ATR収縮なし
+GBPUSD 買い 2023-11-24→2023-11-30
+トレーリング  +1.30R  累計 -0.94R"/><circle cx="265.5" cy="94.5" r="3.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2" data-tip="C 4時間足・ATR収縮なし
+USDCHF 売り 2023-11-24→2023-12-01
+トレーリング  +1.52R  累計 +0.57R"/><circle cx="265.5" cy="94.5" r="11" fill="transparent" data-tip="C 4時間足・ATR収縮なし
+USDCHF 売り 2023-11-24→2023-12-01
+トレーリング  +1.52R  累計 +0.57R"/><circle cx="270.2" cy="72.2" r="3.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2" data-tip="C 4時間足・ATR収縮なし
+AUDUSD 買い 2023-12-19→2023-12-29
+トレーリング  +0.88R  累計 +1.46R"/><circle cx="270.2" cy="72.2" r="11" fill="transparent" data-tip="C 4時間足・ATR収縮なし
+AUDUSD 買い 2023-12-19→2023-12-29
+トレーリング  +0.88R  累計 +1.46R"/><circle cx="303.7" cy="76.3" r="3.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2" data-tip="C 4時間足・ATR収縮なし
+EURUSD 買い 2024-07-12→2024-07-18
+トレーリング  -0.16R  累計 +1.30R"/><circle cx="303.7" cy="76.3" r="11" fill="transparent" data-tip="C 4時間足・ATR収縮なし
+EURUSD 買い 2024-07-12→2024-07-18
+トレーリング  -0.16R  累計 +1.30R"/><circle cx="344.0" cy="64.5" r="3.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2" data-tip="C 4時間足・ATR収縮なし
+GBPUSD 買い 2025-03-07→2025-03-17
+タイムストップ  +0.46R  累計 +1.76R"/><circle cx="344.0" cy="64.5" r="11" fill="transparent" data-tip="C 4時間足・ATR収縮なし
+GBPUSD 買い 2025-03-07→2025-03-17
+タイムストップ  +0.46R  累計 +1.76R"/><circle cx="361.9" cy="76.0" r="3.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2" data-tip="C 4時間足・ATR収縮なし
+USDCHF 売り 2025-06-30→2025-07-03
+トレーリング  -0.45R  累計 +1.31R"/><circle cx="361.9" cy="76.0" r="11" fill="transparent" data-tip="C 4時間足・ATR収縮なし
+USDCHF 売り 2025-06-30→2025-07-03
+トレーリング  -0.45R  累計 +1.31R"/><circle cx="362.6" cy="41.2" r="3.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="2" data-tip="C 4時間足・ATR収縮なし
+EURUSD 買い 2025-06-25→2025-07-07
+トレーリング  +1.38R  累計 +2.69R"/><circle cx="362.6" cy="41.2" r="11" fill="transparent" data-tip="C 4時間足・ATR収縮なし
+EURUSD 買い 2025-06-25→2025-07-07
+トレーリング  +1.38R  累計 +2.69R"/></svg><div class="tip" id="tip" hidden></div></div>
+    <p class="hint">1R = その取引の初期リスク（約定価格〜初期損切り × 枚数）。部分利確とスワップ・コストを含む。点に触れると取引の内容を表示。</p>
+  </section>
+
+  <section>
+    <h2>年別の合計R</h2>
+    <div class="scroll"><table><thead><tr><th>決済した年</th><th>A 仕様どおり（日足）</th><th>B 日足・ATR収縮なし</th><th>C 4時間足・ATR収縮なし</th></tr></thead><tbody><tr><td class="">2020</td><td class="cell zero">0件</td><td class="cell zero">0件</td><td class="cell hp">+0.89</td></tr><tr><td class="">2021</td><td class="cell zero">0件</td><td class="cell hp">+0.13</td><td class="cell hn">-3.62</td></tr><tr><td class="">2022</td><td class="cell zero">0件</td><td class="cell hn">-0.95</td><td class="cell hn">-0.09</td></tr><tr><td class="">2023</td><td class="cell zero">0件</td><td class="cell hn">-1.36</td><td class="cell hp">+4.28</td></tr><tr><td class="">2024</td><td class="cell zero">0件</td><td class="cell zero">0件</td><td class="cell hn">-0.16</td></tr><tr><td class="">2025</td><td class="cell zero">0件</td><td class="cell zero">0件</td><td class="cell hp">+1.39</td></tr></tbody></table></div>
+  </section>
+
+  <section>
+    <h2>ペア別の合計R</h2>
+    <div class="scroll"><table><thead><tr><th>ペア</th><th>A 仕様どおり（日足） R</th><th>件数</th><th>B 日足・ATR収縮なし R</th><th>件数</th><th>C 4時間足・ATR収縮なし R</th><th>件数</th></tr></thead><tbody><tr><td class="">AUDUSD</td><td class="cell zero">0件</td><td class="cell">0</td><td class="cell zero">0件</td><td class="cell">0</td><td class="cell hn">-0.25</td><td class="cell">6</td></tr><tr><td class="">EURUSD</td><td class="cell zero">0件</td><td class="cell">0</td><td class="cell hn">-1.41</td><td class="cell">2</td><td class="cell hp">+2.14</td><td class="cell">6</td></tr><tr><td class="">GBPUSD</td><td class="cell zero">0件</td><td class="cell">0</td><td class="cell hn">-0.63</td><td class="cell">1</td><td class="cell hn">-0.26</td><td class="cell">6</td></tr><tr><td class="">USDCHF</td><td class="cell zero">0件</td><td class="cell">0</td><td class="cell zero">0件</td><td class="cell">0</td><td class="cell hp">+1.06</td><td class="cell">2</td></tr><tr><td class="">USDJPY</td><td class="cell zero">0件</td><td class="cell">0</td><td class="cell hn">-0.15</td><td class="cell">2</td><td class="cell zero">0件</td><td class="cell">0</td></tr></tbody></table></div>
+  </section>
+
+  <section>
+    <h2>成績一覧</h2>
+    <div class="scroll"><table><thead><tr><th>設定</th><th>シグナル</th><th>約定</th><th>見送り</th><th>買い/売り</th><th>年率</th><th>シャープ</th><th>ソルティノ</th><th>最大連敗</th><th>平均勝ち</th><th>平均負け</th><th>保有(中央値)</th><th>最終資産</th></tr></thead><tbody><tr class="base"><td class="">A 仕様どおり（日足）</td><td class="cell">0</td><td class="cell">0</td><td class="cell">0</td><td class="cell">0/0</td><td class="cell">+0.0%</td><td class="cell">–</td><td class="cell">–</td><td class="cell">0</td><td class="cell">–</td><td class="cell">–</td><td class="cell">–</td><td class="cell">10,000,000</td></tr><tr><td class="">B 日足・ATR収縮なし</td><td class="cell">7</td><td class="cell">5</td><td class="cell">2</td><td class="cell">5/0</td><td class="cell">-0.2%</td><td class="cell">-0.29</td><td class="cell">-0.37</td><td class="cell">3</td><td class="cell">+0.80</td><td class="cell">-0.75</td><td class="cell">21本</td><td class="cell">9,895,368</td></tr><tr><td class="">C 4時間足・ATR収縮なし</td><td class="cell">38</td><td class="cell">20</td><td class="cell">18</td><td class="cell">11/9</td><td class="cell">+0.2%</td><td class="cell">0.08</td><td class="cell">0.12</td><td class="cell">5</td><td class="cell">+1.10</td><td class="cell">-0.83</td><td class="cell">20本</td><td class="cell">10,130,423</td></tr></tbody></table></div>
+    <p class="hint">年率・シャープ・ソルティノは日々の資産（含み損益込み、JPY、初期 10,000,000、1回のリスク 0.5%）から計算。最大DD(R) は決済順の累積Rの最大下落幅。</p>
+  </section>
+
+  <section>
+    <h2>取引が少ない理由</h2>
+    <h3 style="font-size:.9rem;margin:0 0 8px">条件を1つだけ外したときのシグナル数</h3>
+    <div class="scroll"><table><thead><tr><th>外した条件</th><th>A 仕様どおり（日足）</th><th>B 日足・ATR収縮なし</th><th>C 4時間足・ATR収縮なし</th></tr></thead><tbody><tr class="base"><td class="">（すべての条件）</td><td class="cell">0</td><td class="cell">7</td><td class="cell">38</td></tr><tr><td class="">トレンド（SMA200）</td><td class="cell">0</td><td class="cell">9</td><td class="cell">44</td></tr><tr><td class="">事前上昇 ≥6ATR</td><td class="cell">0</td><td class="cell">12</td><td class="cell">55</td></tr><tr><td class="">カップ長 30〜150</td><td class="cell">0</td><td class="cell">10</td><td class="cell">45</td></tr><tr><td class="">左縁が最高値</td><td class="cell">0</td><td class="cell">8</td><td class="cell">46</td></tr><tr><td class="">深さ 3〜10ATR</td><td class="cell">0</td><td class="cell">7</td><td class="cell">38</td></tr><tr><td class="">底の位置 0.25〜0.75</td><td class="cell">0</td><td class="cell">9</td><td class="cell">49</td></tr><tr><td class="">丸み ≥0.20</td><td class="cell">0</td><td class="cell">8</td><td class="cell">62</td></tr><tr><td class="">右縁 −1ATR</td><td class="cell">0</td><td class="cell">8</td><td class="cell">41</td></tr><tr><td class="">押し幅 0.5〜2.5ATR</td><td class="cell">0</td><td class="cell">8</td><td class="cell">43</td></tr><tr><td class="">押し ≤ 深さ×0.5</td><td class="cell">0</td><td class="cell">7</td><td class="cell">43</td></tr><tr><td class="">ATR収縮 &lt;0.8</td><td class="cell">7</td><td class="cell">7</td><td class="cell">38</td></tr><tr><td class="">ハンドル長 5〜25</td><td class="cell">0</td><td class="cell">11</td><td class="cell">144</td></tr><tr><td class="">失効 10本</td><td class="cell">0</td><td class="cell">7</td><td class="cell">39</td></tr></tbody></table></div>
+    <p class="hint">青い行がすべての条件を満たしたシグナル数（ポジション上限などで見送る前）。行ごとに、その条件だけを必ず通るようにして数え直した。</p>
+    <h3 style="font-size:.9rem;margin:16px 0 8px">どこで落ちたか（A 仕様どおり（日足）、全ペアの足数）</h3>
+    <div class="scroll"><table><thead><tr><th>いちばん先まで進んだ候補が落ちた条件</th><th>買い（足数）</th><th>売り（足数）</th></tr></thead><tbody><tr><td class="">トレンド</td><td class="cell">4,911</td><td class="cell">5,356</td></tr><tr><td class="">事前上昇</td><td class="cell">47</td><td class="cell">14</td></tr><tr><td class="">ハンドル長</td><td class="cell">1,537</td><td class="cell">1,250</td></tr><tr><td class="">カップ長</td><td class="cell">67</td><td class="cell">54</td></tr><tr><td class="">左縁が最高値</td><td class="cell">48</td><td class="cell">118</td></tr><tr><td class="">深さ</td><td class="cell">201</td><td class="cell">121</td></tr><tr><td class="">底の位置</td><td class="cell">318</td><td class="cell">226</td></tr><tr><td class="">丸み</td><td class="cell">292</td><td class="cell">187</td></tr><tr><td class="">右縁(下限)</td><td class="cell">121</td><td class="cell">42</td></tr><tr><td class="">押し幅</td><td class="cell">192</td><td class="cell">401</td></tr><tr><td class="">押し/深さ</td><td class="cell">5</td><td class="cell">15</td></tr><tr><td class="">ハンドル位置</td><td class="cell">8</td><td class="cell">0</td></tr><tr><td class="">ATR収縮</td><td class="cell">63</td><td class="cell">26</td></tr><tr><td class="">成立</td><td class="cell">0</td><td class="cell">0</td></tr></tbody></table></div>
+    <p class="hint">足ごとに、左縁の候補のうち一番先の条件まで進んだものが、どの条件で落ちたかを数えた（判定の順は表の上から）。買い 7,810 本・売り 7,810 本。</p>
+  </section>
+
+  <section>
+    <h2>見送ったシグナル</h2>
+    <div class="scroll"><table><thead><tr><th>設定</th><th>見送りの理由</th><th>件数</th></tr></thead><tbody><tr><td class="">B 日足・ATR収縮なし</td><td class="l">損切り幅が 1〜3×ATR14 の範囲外</td><td class="cell">1</td></tr><tr><td class="">B 日足・ATR収縮なし</td><td class="l">追いかけ（ピボットから離れすぎ）</td><td class="cell">1</td></tr><tr><td class="">C 4時間足・ATR収縮なし</td><td class="l">追いかけ（ピボットから離れすぎ）</td><td class="cell">8</td></tr><tr><td class="">C 4時間足・ATR収縮なし</td><td class="l">損切り幅が 1〜3×ATR14 の範囲外</td><td class="cell">8</td></tr><tr><td class="">C 4時間足・ATR収縮なし</td><td class="l">同じペアを保有中</td><td class="cell">2</td></tr></tbody></table></div>
+  </section>
+
+  <section>
+    <h2>取引一覧</h2>
+    <h3 style='font-size:.9rem;margin:14px 0 8px'>B 日足・ATR収縮なし</h3><div class="scroll"><table><thead><tr><th>ペア</th><th>エントリー</th><th>決済</th><th>決済理由</th><th>R</th><th>保有</th><th>深さATR</th><th>カップ/ハンドル本数</th><th>損切りATR14</th><th>ロット</th></tr></thead><tbody><tr><td class="">EURUSD 買い</td><td class="cell">2020-12-17 00:00</td><td class="cell">2021-01-18 00:00</td><td class="l">トレーリング</td><td class="cell hn">-0.67</td><td class="cell">21本</td><td class="cell">3.5</td><td class="cell">61/7</td><td class="cell">2.36</td><td class="cell">0.28</td></tr><tr><td class="">USDJPY 買い</td><td class="cell">2021-10-11 00:00</td><td class="cell">2021-11-29 00:00</td><td class="l">トレーリング</td><td class="cell hp">+0.80</td><td class="cell">35本</td><td class="cell">5.2</td><td class="cell">64/5</td><td class="cell">2.93</td><td class="cell">0.29</td></tr><tr><td class="">USDJPY 買い</td><td class="cell">2022-07-12 00:00</td><td class="cell">2022-07-29 00:00</td><td class="l">トレーリング</td><td class="cell hn">-0.95</td><td class="cell">13本</td><td class="cell">5.0</td><td class="cell">37/7</td><td class="cell">2.52</td><td class="cell">0.14</td></tr><tr><td class="">EURUSD 買い</td><td class="cell">2023-04-13 00:00</td><td class="cell">2023-05-15 00:00</td><td class="l">トレーリング</td><td class="cell hn">-0.74</td><td class="cell">22本</td><td class="cell">5.1</td><td class="cell">43/5</td><td class="cell">2.31</td><td class="cell">0.18</td></tr><tr><td class="">GBPUSD 買い</td><td class="cell">2023-05-01 00:00</td><td class="cell">2023-05-19 00:00</td><td class="l">トレーリング</td><td class="cell hn">-0.63</td><td class="cell">14本</td><td class="cell">4.3</td><td class="cell">59/9</td><td class="cell">2.65</td><td class="cell">0.14</td></tr></tbody></table></div><h3 style='font-size:.9rem;margin:14px 0 8px'>C 4時間足・ATR収縮なし</h3><div class="scroll"><table><thead><tr><th>ペア</th><th>エントリー</th><th>決済</th><th>決済理由</th><th>R</th><th>保有</th><th>深さATR</th><th>カップ/ハンドル本数</th><th>損切りATR14</th><th>ロット</th></tr></thead><tbody><tr><td class="">AUDUSD 売り</td><td class="cell">2020-02-26 05:00</td><td class="cell">2020-03-02 01:00</td><td class="l">トレーリング</td><td class="cell hp">+1.42</td><td class="cell">17本</td><td class="cell">4.5</td><td class="cell">62/13</td><td class="cell">2.92</td><td class="cell">0.78</td></tr><tr><td class="">AUDUSD 買い</td><td class="cell">2020-05-11 01:00</td><td class="cell">2020-05-11 05:00</td><td class="l">損切り</td><td class="cell hn">-1.02</td><td class="cell">1本</td><td class="cell">5.3</td><td class="cell">35/5</td><td class="cell">2.04</td><td class="cell">0.70</td></tr><tr><td class="">EURUSD 買い</td><td class="cell">2020-06-02 05:00</td><td class="cell">2020-06-09 05:00</td><td class="l">トレーリング</td><td class="cell hp">+1.52</td><td class="cell">30本</td><td class="cell">4.6</td><td class="cell">41/5</td><td class="cell">2.76</td><td class="cell">0.53</td></tr><tr><td class="">AUDUSD 買い</td><td class="cell">2020-11-27 01:00</td><td class="cell">2020-11-30 13:00</td><td class="l">損切り</td><td class="cell hn">-1.03</td><td class="cell">9本</td><td class="cell">3.4</td><td class="cell">76/5</td><td class="cell">1.77</td><td class="cell">1.17</td></tr><tr><td class="">GBPUSD 売り</td><td class="cell">2021-04-09 05:00</td><td class="cell">2021-04-14 01:00</td><td class="l">損切り</td><td class="cell hn">-1.01</td><td class="cell">17本</td><td class="cell">4.3</td><td class="cell">30/5</td><td class="cell">2.11</td><td class="cell">0.56</td></tr><tr><td class="">GBPUSD 買い</td><td class="cell">2021-05-11 13:00</td><td class="cell">2021-05-12 05:00</td><td class="l">損切り</td><td class="cell hn">-1.02</td><td class="cell">4本</td><td class="cell">4.9</td><td class="cell">44/6</td><td class="cell">2.03</td><td class="cell">0.55</td></tr><tr><td class="">GBPUSD 売り</td><td class="cell">2021-06-30 13:00</td><td class="cell">2021-07-05 05:00</td><td class="l">トレーリング</td><td class="cell hn">-0.58</td><td class="cell">16本</td><td class="cell">6.0</td><td class="cell">38/6</td><td class="cell">2.64</td><td class="cell">0.49</td></tr><tr><td class="">EURUSD 売り</td><td class="cell">2021-07-07 13:00</td><td class="cell">2021-07-08 05:00</td><td class="l">損切り</td><td class="cell hn">-1.01</td><td class="cell">4本</td><td class="cell">3.7</td><td class="cell">61/5</td><td class="cell">2.12</td><td class="cell">0.94</td></tr><tr><td class="">AUDUSD 買い</td><td class="cell">2022-03-22 09:00</td><td class="cell">2022-03-31 01:00</td><td class="l">タイムストップ</td><td class="cell hp">+0.51</td><td class="cell">40本</td><td class="cell">6.4</td><td class="cell">37/7</td><td class="cell">2.66</td><td class="cell">0.50</td></tr><tr><td class="">EURUSD 売り</td><td class="cell">2022-07-07 13:00</td><td class="cell">2022-07-17 17:00</td><td class="l">トレーリング</td><td class="cell hp">+1.43</td><td class="cell">37本</td><td class="cell">3.2</td><td class="cell">56/5</td><td class="cell">2.19</td><td class="cell">0.42</td></tr><tr><td class="">AUDUSD 売り</td><td class="cell">2022-10-13 09:00</td><td class="cell">2022-10-13 21:00</td><td class="l">損切り</td><td class="cell hn">-1.01</td><td class="cell">3本</td><td class="cell">5.0</td><td class="cell">61/5</td><td class="cell">2.56</td><td class="cell">0.28</td></tr><tr><td class="">EURUSD 買い</td><td class="cell">2022-12-14 17:00</td><td class="cell">2022-12-16 13:00</td><td class="l">損切り</td><td class="cell hn">-1.02</td><td class="cell">11本</td><td class="cell">3.1</td><td class="cell">37/6</td><td class="cell">2.15</td><td class="cell">0.39</td></tr><tr><td class="">GBPUSD 売り</td><td class="cell">2023-09-06 13:00</td><td class="cell">2023-09-15 05:00</td><td class="l">タイムストップ</td><td class="cell hp">+0.58</td><td class="cell">40本</td><td class="cell">5.1</td><td class="cell">40/7</td><td class="cell">2.87</td><td class="cell">0.32</td></tr><tr><td class="">GBPUSD 買い</td><td class="cell">2023-11-24 09:00</td><td class="cell">2023-11-30 09:00</td><td class="l">トレーリング</td><td class="cell hp">+1.30</td><td class="cell">24本</td><td class="cell">3.7</td><td class="cell">39/6</td><td class="cell">2.30</td><td class="cell">0.47</td></tr><tr><td class="">USDCHF 売り</td><td class="cell">2023-11-24 13:00</td><td class="cell">2023-12-01 09:00</td><td class="l">トレーリング</td><td class="cell hp">+1.52</td><td class="cell">29本</td><td class="cell">3.8</td><td class="cell">78/7</td><td class="cell">2.35</td><td class="cell">0.65</td></tr><tr><td class="">AUDUSD 買い</td><td class="cell">2023-12-19 09:00</td><td class="cell">2023-12-29 05:00</td><td class="l">トレーリング</td><td class="cell hp">+0.88</td><td class="cell">43本</td><td class="cell">6.5</td><td class="cell">62/6</td><td class="cell">2.45</td><td class="cell">0.51</td></tr><tr><td class="">EURUSD 買い</td><td class="cell">2024-07-12 13:00</td><td class="cell">2024-07-18 17:00</td><td class="l">トレーリング</td><td class="cell hn">-0.16</td><td class="cell">25本</td><td class="cell">8.5</td><td class="cell">125/6</td><td class="cell">2.97</td><td class="cell">0.58</td></tr><tr><td class="">GBPUSD 買い</td><td class="cell">2025-03-07 05:00</td><td class="cell">2025-03-17 21:00</td><td class="l">タイムストップ</td><td class="cell hp">+0.46</td><td class="cell">40本</td><td class="cell">4.5</td><td class="cell">34/5</td><td class="cell">2.51</td><td class="cell">0.36</td></tr><tr><td class="">EURUSD 買い</td><td class="cell">2025-06-25 17:00</td><td class="cell">2025-07-07 05:00</td><td class="l">トレーリング</td><td class="cell hp">+1.38</td><td class="cell">45本</td><td class="cell">4.7</td><td class="cell">36/6</td><td class="cell">2.41</td><td class="cell">0.40</td></tr><tr><td class="">USDCHF 売り</td><td class="cell">2025-06-30 13:00</td><td class="cell">2025-07-03 09:00</td><td class="l">トレーリング</td><td class="cell hn">-0.45</td><td class="cell">17本</td><td class="cell">5.7</td><td class="cell">64/5</td><td class="cell">2.94</td><td class="cell">0.35</td></tr></tbody></table></div>
+  </section>
+
+  <section>
+    <h2>検証（仕様12章）: C 4時間足・ATR収縮なし</h2>
+    <p class="hint" style="margin:0 0 10px">取引数が少ないため、どの数字も偶然で大きく動く。傾向を見る程度にとどめる。</p>
+    <h3 style="font-size:.9rem;margin:0 0 8px">コスト感度（12.3）</h3><div class="scroll"><table><thead><tr><th></th><th>取引数</th><th>合計R</th><th>平均R</th><th>勝率</th><th>PF</th><th>最大DD(R)</th></tr></thead><tbody><tr class="base"><td class="">基準</td><td class="cell">20</td><td class="cell hp">+2.69</td><td class="cell hp">+0.134</td><td class="cell">50.0%</td><td class="cell">1.32</td><td class="cell">4.74</td></tr><tr><td class="">スプレッド2倍</td><td class="cell">20</td><td class="cell hp">+2.56</td><td class="cell hp">+0.128</td><td class="cell">50.0%</td><td class="cell">1.31</td><td class="cell">4.77</td></tr><tr><td class="">スプレッド2倍＋スリッページ2倍</td><td class="cell">19</td><td class="cell hp">+1.88</td><td class="cell hp">+0.099</td><td class="cell">52.6%</td><td class="cell">1.23</td><td class="cell">4.89</td></tr></tbody></table></div>
+    <h3 style="font-size:.9rem;margin:16px 0 8px">パラメータ感度 ±20%（12.4）</h3><div class="scroll"><table><thead><tr><th></th><th>取引数</th><th>合計R</th><th>平均R</th><th>勝率</th><th>PF</th><th>最大DD(R)</th></tr></thead><tbody><tr class="base"><td class="">基準</td><td class="cell">20</td><td class="cell hp">+2.69</td><td class="cell hp">+0.134</td><td class="cell">50.0%</td><td class="cell">1.32</td><td class="cell">4.74</td></tr><tr><td class="">深さの範囲 ×0.8</td><td class="cell">19</td><td class="cell hp">+2.84</td><td class="cell hp">+0.150</td><td class="cell">52.6%</td><td class="cell">1.35</td><td class="cell">4.74</td></tr><tr><td class="">深さの範囲 ×1.2</td><td class="cell">18</td><td class="cell hp">+4.73</td><td class="cell hp">+0.263</td><td class="cell">55.6%</td><td class="cell">1.75</td><td class="cell">3.62</td></tr><tr><td class="">trail_atr_mult ×0.8</td><td class="cell">20</td><td class="cell hp">+2.28</td><td class="cell hp">+0.114</td><td class="cell">45.0%</td><td class="cell">1.29</td><td class="cell">5.84</td></tr><tr><td class="">trail_atr_mult ×1.2</td><td class="cell">20</td><td class="cell hp">+1.80</td><td class="cell hp">+0.090</td><td class="cell">50.0%</td><td class="cell">1.21</td><td class="cell">5.01</td></tr><tr><td class="">ハンドル長 ×0.8</td><td class="cell">27</td><td class="cell hp">+2.77</td><td class="cell hp">+0.103</td><td class="cell">44.4%</td><td class="cell">1.22</td><td class="cell">8.12</td></tr><tr><td class="">ハンドル長 ×1.2</td><td class="cell">11</td><td class="cell hp">+4.79</td><td class="cell hp">+0.436</td><td class="cell">63.6%</td><td class="cell">2.72</td><td class="cell">2.11</td></tr></tbody></table></div>
+    <p class="hint">深さの範囲は下限・上限を同じ倍率で、ハンドル長は 5〜25本 の両端を同じ倍率で動かした。</p>
+    <h3 style="font-size:.9rem;margin:16px 0 8px">ウォークフォワード 学習3年 → 検証1年（12.5）</h3><div class="scroll"><table><thead><tr><th>学習 → 検証</th><th>学習期間で選んだ設定</th><th>学習 件数</th><th>学習 R</th><th>検証 件数</th><th>検証 R</th><th>初期値 件数</th><th>初期値 R</th></tr></thead><tbody><tr><td class="">2020〜2022 → 2023</td><td class="l">depth×1.2 trail×0.8 handle×1.2</td><td class="cell">4</td><td class="cell hp">+1.07</td><td class="cell">4</td><td class="cell hp">+3.79</td><td class="cell">4</td><td class="cell hp">+4.30</td></tr><tr><td class="">2021〜2023 → 2024</td><td class="l">depth×1.2 trail×1.0 handle×0.8</td><td class="cell">16</td><td class="cell hp">+3.25</td><td class="cell">1</td><td class="cell hn">-0.16</td><td class="cell">1</td><td class="cell hn">-0.16</td></tr><tr><td class="">2022〜2024 → 2025</td><td class="l">depth×1.2 trail×1.0 handle×0.8</td><td class="cell">11</td><td class="cell hp">+8.54</td><td class="cell">3</td><td class="cell hp">+1.39</td><td class="cell">3</td><td class="cell hp">+1.39</td></tr></tbody></table></div>
+    <p class="hint">深さ・trail_atr_mult・ハンドル長をそれぞれ ×0.8 / 1.0 / 1.2 の27通りから、学習期間の合計Rが最大のものを選んで次の1年に使った。検証期間を合わせた成績: 8件 / +5.02R。</p>
+    <h3 style="font-size:.9rem;margin:16px 0 8px">銘柄分割（12.7）</h3><div class="scroll"><table><thead><tr><th>選んだペア</th><th>選んだ設定</th><th>件数</th><th>R</th><th>確かめたペア</th><th>件数</th><th>R</th><th>初期値 件数</th><th>初期値 R</th></tr></thead><tbody><tr><td class="">EURUSD, GBPUSD, AUDUSD</td><td class="l">depth×1.2 trail×1.0 handle×0.8</td><td class="cell">18</td><td class="cell hp">+4.72</td><td class="l">USDCHF, USDJPY</td><td class="cell">6</td><td class="cell hp">+1.15</td><td class="cell">2</td><td class="cell hp">+1.07</td></tr></tbody></table></div>
+    <h3 style="font-size:.9rem;margin:16px 0 8px">ランダムエントリーとの比較（12.6）</h3><div class="scroll"><table><thead><tr><th>比較の相手</th><th>取引数</th><th>実際の平均R</th><th>ランダムの平均R</th><th>ランダムの5〜95%</th><th>ランダムが上回る割合</th></tr></thead><tbody><tr><td class="">完全なランダム</td><td class="cell">20</td><td class="cell hp">+0.134</td><td class="cell hn">-0.043</td><td class="cell">-0.448 〜 +0.416</td><td class="cell">0.24</td></tr><tr><td class="">SMA200 の向きに合わせたランダム</td><td class="cell">20</td><td class="cell hp">+0.134</td><td class="cell hn">-0.011</td><td class="cell">-0.438 〜 +0.480</td><td class="cell">0.30</td></tr></tbody></table></div>
+    <p class="hint">同じ回数・同じ決済ルール（2Rで半分利確→建値、3×ATR14 のチャンデリア、40本のタイムストップ）・同じ損切り幅の分布で 1000 回くり返した。「ランダムが上回る割合」が小さいほど、パターンに意味がある。</p>
+  </section>
+  <section>
+    <h2>トレード付きのダウ理論チャート</h2>
+    <div class="links"><a href="dow_trade_chart_EURUSD_d1_nocontr.html"><b>EURUSD ・ B 日足・ATR収縮なし</b><span>2件 / 3.2MB</span></a><a href="dow_trade_chart_GBPUSD_d1_nocontr.html"><b>GBPUSD ・ B 日足・ATR収縮なし</b><span>1件 / 3.2MB</span></a><a href="dow_trade_chart_USDJPY_d1_nocontr.html"><b>USDJPY ・ B 日足・ATR収縮なし</b><span>2件 / 3.2MB</span></a><a href="dow_trade_chart_AUDUSD_h4_nocontr.html"><b>AUDUSD ・ C 4時間足・ATR収縮なし</b><span>6件 / 3.2MB</span></a><a href="dow_trade_chart_EURUSD_h4_nocontr.html"><b>EURUSD ・ C 4時間足・ATR収縮なし</b><span>6件 / 3.2MB</span></a><a href="dow_trade_chart_GBPUSD_h4_nocontr.html"><b>GBPUSD ・ C 4時間足・ATR収縮なし</b><span>6件 / 3.2MB</span></a><a href="dow_trade_chart_USDCHF_h4_nocontr.html"><b>USDCHF ・ C 4時間足・ATR収縮なし</b><span>2件 / 3.2MB</span></a></div><p class="hint">開くとダウ理論チャート（1H/4H/D1/W1）にエントリー▲▼・決済●・損切り/部分利確のラインを表示する。背景は表示中の時間足で計算したダウ理論のトレンド。エントリーラインの代わりに、左縁の候補になるスイング（左右5本）を、移動平均は SMA50/200 を表示している。</p>
+  </section>
+
+  <section>
+    <h2>売買ルール</h2>
+    <div class="defs">
+      <div class="def"><h3>トレンド</h3><p>終値 &gt; SMA200 かつ SMA200 が20本前より上（売りは反対）。</p></div>
+      <div class="def"><h3>左縁とカップ</h3><p>左右5本で最高値のスイングハイが左縁。その前60本の安値から <code>6×ATR50</code> 以上の上昇。左縁から右縁まで30〜150本、深さ <code>3〜10×ATR50</code>、底は期間の25〜75%の位置、底から <code>1.5×ATR50</code> 以内の安値の足が20%以上、右縁は左縁高値 <code>−1×ATR50</code> 以上まで回復。</p></div>
+      <div class="def"><h3>ハンドル</h3><p>右縁の翌足から5〜25本。押しは <code>0.5〜2.5×ATR50</code> かつ深さの半分以下、カップの上半分。ハンドル中の ATR14 の平均 &lt; <code>0.8×ATR50</code>。</p></div>
+      <div class="def"><h3>エントリー</h3><p>終値が右縁高値 + <code>0.1×ATR14</code> を超えたら、次の足の始値で成行。ハンドル完成から10本でブレイクしなければ失効、終値がハンドル安値を割ったら破棄。始値がピボットから <code>1×ATR14</code> 超離れていたら見送り。</p></div>
+      <div class="def"><h3>決済</h3><p>初期損切り = ハンドル安値 − <code>0.5×ATR14</code>（幅が <code>1〜3×ATR14</code> でなければ見送り）。+2Rで半分を利確し、残りの損切りを建値へ。チャンデリア（エントリー後の高値 − <code>3×ATR14</code>）を終値で割ったら次の始値で決済。40本で+1R未満なら次の始値で決済。</p></div>
+      <div class="def"><h3>資金管理とコスト</h3><p>口座 JPY、1回のリスクは資産の 0.5%（0.01ロット単位で切り捨て、レバレッジ10倍まで）。同時保有は最大3、同じ通貨を含むのは最大2。スプレッド（pips）: AUDUSD 0.9、EURUSD 0.5、GBPUSD 1.3、USDCHF 2.0、USDJPY 0.4。スリッページ 成行0.5 / 逆指値1.0pips。スワップは未設定（0）。</p></div>
+    </div>
+    <ul class="notes" style="margin-top:12px"><li><b>A 仕様どおり（日足）</b>: 変更なし（config.yaml の初期値）</li><li><b>B 日足・ATR収縮なし</b>: <code>handle_atr_contraction=99</code></li><li><b>C 4時間足・ATR収縮なし</b>: <code>bar_hours=4</code>, <code>handle_atr_contraction=99</code></li></ul>
+  </section>
+
+  <section><h2>注意点</h2><ul class='notes'><li>B と C は、A の結果（0件）と「条件を1つ外したとき」の表を見てから選んだ緩和で、仕様書の検証ではない。C の 4時間足では本数で決めた期間（SMA200・カップ30〜150本・タイムストップ40本など）の意味も日足と変わる（SMA200 ≒ 33日）。</li><li>ウォークフォワードと銘柄分割は、学習期間の件数が4〜18件しかなく、選ばれた設定（深さ×1.2 など）は偶然に左右される。検証期間を合わせても8件・+5.0R。</li><li>スワップは表が空のため全取引で 0。4時間足の保有は中央値で約20本（3〜4日）なので影響は小さいが、日足で長く持つ場合は結果が変わる。</li><li>データは 2020-01〜2025-12 の5ペアだけ（クロス円などは無い）。日足は SMA200 の助走に約10か月使うため、A と B の実質的な検証期間は 2020-11 以降。</li><li>損切りと部分利確は足の高値・安値で判定し、同じ足で両方に届いたら損切りを優先した（仕様どおり、1分足の順番は見ていない）。</li><li>仕様にない部分の決め方: 右縁は仕様4.3の文面どおり下限だけ、左縁から底までに左縁より高い足が無いこと、ハンドル完成 = 初めて全条件を満たした足、チャンデリアのラインは下げない、同じペアは1ポジションまで、エクスポージャーの数え方は通貨ごと。</li></ul></section>
+
+  <footer>
+    コード: <code>cwh_fx/</code>（<code>src/pattern.py</code> 検出、<code>src/signals.py</code> シグナル、<code>src/backtest.py</code> イベント駆動バックテスト、<code>src/validation.py</code> 12章の検証、<code>run_backtest.py</code> 実行）。テスト: <code>python -m pytest cwh_fx/tests</code>。
+    結果: <code>cwh_results/20261010_1213_cwh_spec_vs_relaxed</code>
+  </footer>
+</div>
+<script>
+(() => {
+  const plot = document.getElementById("curve"), tip = document.getElementById("tip");
+  if (!plot) return;
+  const show = (e) => {
+    const t = e.target.closest("[data-tip]");
+    if (!t) { tip.hidden = true; return; }
+    const r = plot.getBoundingClientRect(), c = t.getBoundingClientRect();
+    tip.textContent = t.dataset.tip; tip.hidden = false;
+    const x = Math.min(Math.max(c.left + c.width / 2 - r.left, 110), r.width - 110);
+    tip.style.left = x + "px"; tip.style.top = (c.top - r.top) + "px";
+  };
+  plot.addEventListener("pointermove", show);
+  plot.addEventListener("pointerdown", show);
+  plot.addEventListener("pointerleave", () => tip.hidden = true);
+})();
+</script>

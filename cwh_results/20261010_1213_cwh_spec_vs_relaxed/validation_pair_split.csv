@@ -1,0 +1,2 @@
+﻿,train_pairs,test_pairs,pick,train_trades,train_r,test_trades,test_r,base_test_trades,base_test_r
+0,"EURUSD, GBPUSD, AUDUSD","USDCHF, USDJPY",depth×1.2 trail×1.0 handle×0.8,18,4.717590845498025,6,1.1473374584590406,2,1.0697486378115262

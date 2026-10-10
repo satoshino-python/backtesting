@@ -1,0 +1,92 @@
+{
+ "base": {
+  "pairs": null,
+  "bar_hours": 24,
+  "start_date": "2020-01-01",
+  "end_date": "2025-12-31",
+  "directions": [
+   1,
+   -1
+  ],
+  "atr_short": 14,
+  "atr_long": 50,
+  "sma_trend": 200,
+  "sma_slope_lookback": 20,
+  "swing_window": 5,
+  "prior_uptrend_min_atr": 6.0,
+  "prior_uptrend_lookback": 60,
+  "cup_len_min": 30,
+  "cup_len_max": 150,
+  "cup_depth_min_atr": 3.0,
+  "cup_depth_max_atr": 10.0,
+  "cup_round_band_atr": 1.5,
+  "cup_round_min_ratio": 0.2,
+  "cup_low_pos_min": 0.25,
+  "cup_low_pos_max": 0.75,
+  "right_rim_tolerance_atr": 1.0,
+  "right_rim_mode": "min",
+  "left_rim_highest": true,
+  "handle_len_min": 5,
+  "handle_len_max": 25,
+  "handle_pullback_min_atr": 0.5,
+  "handle_pullback_max_atr": 2.5,
+  "handle_pullback_max_ratio": 0.5,
+  "handle_atr_contraction": 0.8,
+  "breakout_buffer_atr": 0.1,
+  "max_chase_atr": 1.0,
+  "signal_expiry_bars": 10,
+  "stop_buffer_atr": 0.5,
+  "stop_min_atr": 1.0,
+  "stop_max_atr": 3.0,
+  "tp1_r": 2.0,
+  "tp1_ratio": 0.5,
+  "trail_atr_mult": 3.0,
+  "trail_ratchet": true,
+  "time_stop_bars": 40,
+  "time_stop_min_r": 1.0,
+  "account_currency": "JPY",
+  "initial_equity": 10000000,
+  "risk_per_trade": 0.005,
+  "lot_units": 100000,
+  "min_lot": 0.01,
+  "max_leverage": 10.0,
+  "max_positions": 3,
+  "max_exposure_per_currency": 2,
+  "one_position_per_pair": true,
+  "priority": "shallow",
+  "spread_pips": {
+   "USDJPY": 0.4,
+   "EURUSD": 0.5,
+   "GBPUSD": 1.3,
+   "AUDUSD": 0.9,
+   "USDCHF": 2.0
+  },
+  "spread_mult": 1.0,
+  "slippage_pips": 0.5,
+  "stop_slippage_pips": 1.0,
+  "swap_pips_per_day": {}
+ },
+ "variants": [
+  [
+   "spec",
+   "A 仕様どおり（日足）",
+   {}
+  ],
+  [
+   "d1_nocontr",
+   "B 日足・ATR収縮なし",
+   {
+    "handle_atr_contraction": 99
+   }
+  ],
+  [
+   "h4_nocontr",
+   "C 4時間足・ATR収縮なし",
+   {
+    "bar_hours": 4,
+    "handle_atr_contraction": 99
+   }
+  ]
+ ],
+ "validate": "h4_nocontr"
+}

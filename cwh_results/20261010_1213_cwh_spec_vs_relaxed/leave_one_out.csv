@@ -1,0 +1,43 @@
+﻿key,relaxed,signals
+spec,（すべての条件）,0
+spec,トレンド（SMA200）,0
+spec,事前上昇 ≥6ATR,0
+spec,カップ長 30〜150,0
+spec,左縁が最高値,0
+spec,深さ 3〜10ATR,0
+spec,底の位置 0.25〜0.75,0
+spec,丸み ≥0.20,0
+spec,右縁 −1ATR,0
+spec,押し幅 0.5〜2.5ATR,0
+spec,押し ≤ 深さ×0.5,0
+spec,ATR収縮 <0.8,7
+spec,ハンドル長 5〜25,0
+spec,失効 10本,0
+d1_nocontr,（すべての条件）,7
+d1_nocontr,トレンド（SMA200）,9
+d1_nocontr,事前上昇 ≥6ATR,12
+d1_nocontr,カップ長 30〜150,10
+d1_nocontr,左縁が最高値,8
+d1_nocontr,深さ 3〜10ATR,7
+d1_nocontr,底の位置 0.25〜0.75,9
+d1_nocontr,丸み ≥0.20,8
+d1_nocontr,右縁 −1ATR,8
+d1_nocontr,押し幅 0.5〜2.5ATR,8
+d1_nocontr,押し ≤ 深さ×0.5,7
+d1_nocontr,ATR収縮 <0.8,7
+d1_nocontr,ハンドル長 5〜25,11
+d1_nocontr,失効 10本,7
+h4_nocontr,（すべての条件）,38
+h4_nocontr,トレンド（SMA200）,44
+h4_nocontr,事前上昇 ≥6ATR,55
+h4_nocontr,カップ長 30〜150,45
+h4_nocontr,左縁が最高値,46
+h4_nocontr,深さ 3〜10ATR,38
+h4_nocontr,底の位置 0.25〜0.75,49
+h4_nocontr,丸み ≥0.20,62
+h4_nocontr,右縁 −1ATR,41
+h4_nocontr,押し幅 0.5〜2.5ATR,43
+h4_nocontr,押し ≤ 深さ×0.5,43
+h4_nocontr,ATR収縮 <0.8,38
+h4_nocontr,ハンドル長 5〜25,144
+h4_nocontr,失効 10本,39
