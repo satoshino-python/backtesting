@@ -12,6 +12,7 @@
 """
 import contextlib
 import io
+import os
 import json
 import shutil
 import time
@@ -38,12 +39,12 @@ DATA_ROOT = Path("histData")
 PAIRS = ("AUDJPY", "AUDUSD", "EURAUD", "EURCHF", "EURGBP", "EURJPY", "EURUSD", "GBPAUD",
          "GBPCHF", "GBPJPY", "GBPUSD", "NZDJPY", "NZDUSD", "USDCHF", "USDJPY")
 MA_PERIODS = (20, 75, 200)
-ER_PERIOD = 20
+ER_PERIOD = int(os.environ.get("ER_PERIOD", 20))   # 環境変数 ER_PERIOD で上書きできる（既定 20）
 ER_THRESHOLD = 0.3
 WARMUP_MONTHS = 12            # 200日MAの助走（日足200本 ≒ 10か月）
 IS_END = pd.Timestamp("2023-12-31")
 RESULTS_ROOT = Path("trend_results")
-RUN_LABEL = "daily_ma_er_breakout18"
+RUN_LABEL = "daily_ma_er_breakout18" if ER_PERIOD == 20 else f"daily_ma_er{ER_PERIOD}_breakout18"
 WORKERS = 4
 
 # 検証する設定。name: (フィルター使用, ブレイク本数, ER閾値, SL倍率, TP倍率)。先頭が添付ルールそのもの、2番目が比較用（フィルターなし）
@@ -148,11 +149,11 @@ def run_pair(pair, cfg, out_dir, make_charts):
             first_day, last_day = get_trading_day_label(df_1min.index[in_period], cfg.session_start_hour)[[0, -1]]
             chart_path = out_dir / f"dow_trade_chart_{pair}.html"
             make_chart(df_1min, chart_path,
-                       f"{pair} {first_day:%Y-%m-%d} ~ {last_day:%Y-%m-%d} / 日足MA20>75>200+ER(20)≥0.3 → 4H 18本ブレイク SL1.0/TP1.5 ATR",
+                       f"{pair} {first_day:%Y-%m-%d} ~ {last_day:%Y-%m-%d} / 日足MA20>75>200+ER({ER_PERIOD})≥0.3 → 4H 18本ブレイク SL1.0/TP1.5 ATR",
                        first_day, last_day, trades=spec_stats["_trades"], weekly_trend=None, mode="fixed",
                        risk=risk, entry_window=cfg.window, entry_atr=14, price_decimals=cfg.price_decimals,
                        session_start_hour=cfg.session_start_hour, signal_hours=4,
-                       filter_state=spec_state, filter_label="日足 MA20/75/200 並び + ER(20)≥0.3（前日確定）",
+                       filter_state=spec_state, filter_label=f"日足 MA20/75/200 並び + ER({ER_PERIOD})≥0.3（前日確定）",
                        daily_ma=MA_PERIODS, daily_er=(ER_PERIOD, ER_THRESHOLD))
     (out_dir / f"log_{pair}.txt").write_text(log.getvalue(), encoding="utf-8")
     on = pd.DataFrame([r.attrs["on"] for r in rows])

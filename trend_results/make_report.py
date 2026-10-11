@@ -6,6 +6,8 @@ d = Path(sys.argv[1])
 t = pd.read_csv(d / "trades_all.csv")
 t["ExitTime"] = pd.to_datetime(t.ExitTime, utc=True); t["EntryTime"] = pd.to_datetime(t.EntryTime, utc=True)
 t["Year"] = t.EntryTime.dt.tz_convert("America/New_York").dt.year
+import json
+ERP = json.loads((d / "config.json").read_text(encoding="utf-8"))["er_period"]
 on = pd.read_csv(d / "filter_on_share.csv").query("Variant=='spec'").FilterOnPct.mean()
 
 def st(g):
@@ -73,6 +75,34 @@ for k, nm in names.items():
     g = t[t.Variant == k]; a = st(g); i = st(g[g.Year <= 2023]); o = st(g[g.Year >= 2024])
     srow.append(f'<tr{" class=hl" if k=="spec" else ""}><td>{nm}</td><td class="num">{a["n"]}</td><td class="num {cls(a["R"])}">{f(a["R"],1,1)}</td>'
                 f'<td class="num">{a["PF"]:.2f}</td><td class="num">{a["DD"]:.0f}</td><td class="num {cls(i["R"])}">{f(i["R"],0,1)}</td><td class="num {cls(o["R"])}">{f(o["R"],0,1)}</td></tr>')
+per_pair_yr = S["n"] / 15 / 5
+jpy_txt = f"{jpy:+.0f}R（全体 {S['R']:+.0f}R）"
+if OOS["R"] > 5: oos_txt = f"2024〜2025年も {OOS['R']:+.1f}R とプラスを保ちました。"
+elif OOS["R"] >= -5: oos_txt = f"2024〜2025年（検証の後半）は {OOS['R']:+.1f}R でほぼ横ばいでした。"
+else: oos_txt = f"2024〜2025年（検証の後半）は {OOS['R']:+.1f}R とマイナスでした。"
+side_txt = f"買い {sd['L']['n']}回 {sd['L']['R']:+.0f}R、売り {sd['S']['n']}回 {sd['S']['R']:+.0f}R"
+vs = {k: st(t[t.Variant == k]) for k in names}
+er_r = [vs[k]["R"] for k in ("er0.25", "er0.35", "er0.4")] + [S["R"]]
+brk = {k: vs[k]["R"] for k in ("brk12", "brk24", "brk30")}; brk["brk18"] = S["R"]
+bbest = max(brk, key=brk.get); bworst = min(brk, key=brk.get)
+nm_b = lambda k: k.replace("brk", "") + "本"
+tpsl = [k for k in names if k.startswith("sl")]
+npos_tpsl = sum(1 for k in tpsl if vs[k]["R"] > 0)
+sens_txt = (f"ER閾値 0.25〜0.4 の合計Rは {min(er_r):+.0f}〜{max(er_r):+.0f}R で、{'すべてプラス' if min(er_r) > 0 else 'マイナスのものがあります'}。"
+            f"ブレイク本数は {nm_b(bbest)} が最良（{brk[bbest]:+.0f}R）、{nm_b(bworst)} が最弱（{brk[bworst]:+.0f}R）。"
+            f"SL/TP を変えた6通りのうちプラスは {npos_tpsl} 通り。全期間を見て並べた表なので、最良値を選ぶと合わせ込みになります。")
+# ER期間の比較（同じ検証の他のER期間の実行があれば並べる）
+cmp_rows = []
+for cj in sorted(d.parent.glob("*/config.json")):
+    import json as _j
+    ep = _j.loads(cj.read_text(encoding="utf-8"))["er_period"]
+    tt = pd.read_csv(cj.parent / "trades_all.csv"); tt["ExitTime"] = pd.to_datetime(tt.ExitTime, utc=True)
+    tt["EntryTime"] = pd.to_datetime(tt.EntryTime, utc=True)
+    tt["Year"] = tt.EntryTime.dt.tz_convert("America/New_York").dt.year
+    g = tt[tt.Variant == "spec"]; a = st(g); i = st(g[g.Year <= 2023]); o = st(g[g.Year >= 2024])
+    cmp_rows.append(f'<tr{" class=hl" if cj.parent == d else ""}><td>ER({ep})</td><td class="num">{a["n"]}</td><td class="num {cls(a["R"])}">{f(a["R"],1,1)}</td><td class="num">{a["PF"]:.2f}</td><td class="num">{a["DD"]:.0f}</td><td class="num {cls(i["R"])}">{f(i["R"],0,1)}</td><td class="num {cls(o["R"])}">{f(o["R"],0,1)}</td></tr>')
+cmp_html = (f'<section><h2>ER期間の比較（他の設定は同じ）</h2>{tbl(["ER期間","取引数","合計R","PF","最大DD","〜2023","2024〜"], cmp_rows)}</section>'
+            if len(cmp_rows) > 1 else "")
 links = " ".join(f'<button type="button" class="chip" data-chart="{p}">{p}</button>' for p in sorted(pst))
 
 SCRIPT = r"""
@@ -92,7 +122,7 @@ SCRIPT = r"""
 </script>
 """
 
-doc = f"""<title>トレンドブレイクアウト検証</title>
+doc = f"""<title>トレンドブレイクアウト検証 ER{ERP}</title>
 <style>
 :root {{ --bg:#f3f5f7; --surface:#fff; --line:#dde2e8; --fg:#17202b; --muted:#5e6b7a; --accent:#2a5bd7; --accent-soft:#e3eafb;
   --pos:#18865a; --neg:#c8413a; --gray:#8a95a3; --hl:#eef3ff;
@@ -124,11 +154,11 @@ ul {{ margin:0; padding-left:1.2em; }} li {{ margin-bottom:4px; }}
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
 <div class="wrap">
-<header><h1>トレンドブレイクアウト検証 15ペア</h1>
-<p class="sub">日足MA20/75/200 + ER(20)≥0.3 で方向を絞り、4時間足18本ブレイクで入る。SL ATR×1.0 / TP ATR×1.5。2021-01〜2025-12、GMOクリック1分足執行。</p></header>
+<header><h1>トレンドブレイクアウト検証 ER({ERP}) 15ペア</h1>
+<p class="sub">日足MA20/75/200 + ER({ERP})≥0.3 で方向を絞り、4時間足18本ブレイクで入る。SL ATR×1.0 / TP ATR×1.5。2021-01〜2025-12、GMOクリック1分足執行。</p></header>
 
-<section class="verdict"><p><b>結果: 合計 {S['R']:+.0f}R（PF {S['PF']:.2f}）で、フィルターなしの {N['R']:+.0f}R より大きく改善。ただし直近2年は横ばい。</b></p>
-<p class="muted">フィルターが効いた期間は全体の約{on:.0f}%と短く、1ペア年約19回しか入りません。損益の大半は円クロスと買い側で、2024〜2025年（検証の後半）は {OOS['R']:+.1f}R でした。</p></section>
+<section class="verdict"><p><b>結果: 合計 {S['R']:+.0f}R（PF {S['PF']:.2f}）。フィルターなしの {N['R']:+.0f}R より改善しています。</b></p>
+<p class="muted">フィルターが効いた期間は全体の約{on:.0f}%で、1ペア年約{per_pair_yr:.0f}回入ります。{oos_txt}{side_txt}。</p></section>
 
 <section><div class="kpis">
 <div class="k"><small>合計R（添付ルール）</small><b class="{cls(S['R'])}">{S['R']:+.1f}</b><span>フィルターなし {N['R']:+.1f}</span></div>
@@ -146,24 +176,26 @@ f'<tr><td>添付ルール 2021〜2023</td><td class="num">{IS["n"]}</td><td clas
 f'<tr><td>添付ルール 2024〜2025</td><td class="num">{OOS["n"]}</td><td class="num {cls(OOS["R"])}">{OOS["R"]:+.1f}</td><td class="num">{OOS["PF"]:.2f}</td><td class="num">{OOS["win"]:.1f}%</td></tr>',
 f'<tr><td>フィルターなし 2021〜2023</td><td class="num">{NIS["n"]}</td><td class="num {cls(NIS["R"])}">{NIS["R"]:+.1f}</td><td class="num">{NIS["PF"]:.2f}</td><td class="num">{NIS["win"]:.1f}%</td></tr>',
 f'<tr><td>フィルターなし 2024〜2025</td><td class="num">{NOOS["n"]}</td><td class="num {cls(NOOS["R"])}">{NOOS["R"]:+.1f}</td><td class="num">{NOOS["PF"]:.2f}</td><td class="num">{NOOS["win"]:.1f}%</td></tr>'])}
-<p class="sub" style="margin-top:8px">パラメータはルール通りで固定し、途中で選び直していません。前半の成績は、ルールを前半で選んだものではありません。後半の弱さが相場の変化か偶然かは、この結果だけでは分かりません。</p></section>
+<p class="sub" style="margin-top:8px">パラメータはルール通りで固定し、途中で選び直していません。パラメータは前半で選んだものではなく、ルールの指定どおりです。前半と後半の差が相場の変化か偶然かは、この結果だけでは分かりません。</p></section>
 
 <section><h2>年別（合計R）</h2>
 {tbl(["年","取引数","合計R","勝率","なし取引数","なし合計R"], yr)}</section>
 
 <section><h2>通貨ペア別（添付ルール）</h2>
 {tbl(["ペア","取引数","合計R","勝率","PF","最大DD","なし合計R"], prow)}
-<p class="sub" style="margin-top:8px">プラスは{npos}/15ペア。円クロス・円ペアの合計は {jpy:+.0f}R で、全体の大半を占めます。買い {sd['L']['n']}回 {sd['L']['R']:+.0f}R、売り {sd['S']['n']}回 {sd['S']['R']:+.0f}R。ペア名からトレード付きチャートを開けます。</p></section>
+<p class="sub" style="margin-top:8px">プラスは{npos}/15ペア。円ペア・円クロスの合計は {jpy_txt}。{side_txt}。ペア名を押すとトレード付きチャートを表示します。</p></section>
 
-<section id="viewer"><h2>トレード付きチャート</h2><p class="muted">ペアを選ぶと、このページの中に表示します（約3MBを読み込みます）。エントリー▲▼・決済●・SL/TP、背景は「検証で使ったフィルター」（買いだけ/売りだけ/見送り）。日足MA20/75/200（黄・青・橙、前日確定）は価格が近いときに表示され、下のパネルに日足ER(20)としきい値0.3を表示します。</p><div>{links}</div>
+<section id="viewer"><h2>トレード付きチャート</h2><p class="muted">ペアを選ぶと、このページの中に表示します（約3MBを読み込みます）。エントリー▲▼・決済●・SL/TP、背景は「検証で使ったフィルター」（買いだけ/売りだけ/見送り）。日足MA20/75/200（黄・青・橙、前日確定）は価格が近いときに表示され、下のパネルに日足ER({ERP})としきい値0.3を表示します。</p><div>{links}</div>
 <p id="cmsg" class="sub" role="status"></p><iframe id="cframe" title="トレード付きダウ理論チャート" sandbox="allow-scripts" hidden></iframe></section>
 
 <section><h2>パラメータ感度（一度に1つだけ変更）</h2>
 {tbl(["設定","取引数","合計R","PF","最大DD","〜2023","2024〜"], srow)}
-<p class="sub" style="margin-top:8px">ER閾値は0.25〜0.4のどれもプラス（+54〜+103R）で、閾値を上げるほど取引数が減ります。1取引あたりは0.04〜0.07Rで大きな差はありません。ブレイク本数は24本が最良、12本は弱い。TP/SL比は 1:1 だとほぼ ±0。TP3.0 までプラスなので、1.5固定が最適というわけではありません。全期間を見て並べた表なので、最良値を選ぶのは合わせ込みになります。</p></section>
+<p class="sub" style="margin-top:8px">{sens_txt}</p></section>
+
+{cmp_html}
 
 <section class="card"><h2>売買ルール・設定</h2><ul>
-<li>日足（NY17:00区切り）: 20/75/200 単純MAの並びと ER(20)=|C−C[−20]|/Σ|ΔC| ≥ 0.3。前日確定の日足だけを使用。</li>
+<li>日足（NY17:00区切り）: 20/75/200 単純MAの並びと ER({ERP})=|C−C[−{ERP}]|/Σ|ΔC| ≥ 0.3。前日確定の日足だけを使用。</li>
 <li>エントリー: 方向が許可されたとき、確定済み直近18本の4時間足の最高値/最安値への逆指値。判定中の足は含めない。</li>
 <li>決済: 4時間足 ATR(14)（ワイルダー平滑）×1.0 で SL、×1.5 で TP。変更なし。保有中にフィルターが外れても保持。同じ1分足で両方に届けば SL 優先。</li>
 <li>枚数: 1R=200（初期資金10,000の2%、複利なし）÷ SL幅。同一ペア同時保有1。ペアは別口座として扱う。</li>
@@ -172,7 +204,7 @@ f'<tr><td>フィルターなし 2024〜2025</td><td class="num">{NOOS["n"]}</td>
 <section class="card"><h2>読むときの注意</h2><ul>
 <li>スワップは未考慮です。日足の上昇/下降トレンドに乗る保有は数日に及ぶので、キャリーの有利/不利が結果に出ます。円クロスの買いが強い点は、円安トレンドの影響を受けている可能性があります。</li>
 <li>損益は決済通貨のまま200固定でRに換算しており、口座通貨建てへの換算は行っていません。R倍数としては影響しません。</li>
-<li>フィルターONは全体の約{on:.0f}%の期間で、取引は年に1ペア約19回と少ない。ペアごとの差（−20R〜+42R）は偶然の幅が大きいと見るべきです。</li>
+<li>フィルターONは全体の約{on:.0f}%の期間で、取引は年に1ペア約{per_pair_yr:.0f}回です。ペアごとの差（{min(a["R"] for a in pst.values()):+.0f}R〜{max(a["R"] for a in pst.values()):+.0f}R）は偶然の幅が大きいと見るべきです。</li>
 <li>チャートのエントリーラインはスイングの高値/安値で、今回の「直近18本の最高値/最安値」とは異なります。エントリー位置はトレードの▲▼で確認してください。ATRはワイルダー平滑で、既存の検証（EMA span）とは計算が異なります。</li>
 <li>フィルターなしの比較は、同じ逆指値の仕組みで両方向を置きます。反対側の逆指値が残って既存ポジションの決済になる挙動（STRATEGIES.md 3章の注意）を含みます。</li>
 <li>200MAの助走に2020年のデータを使い、取引は2021年以降です。2020年相場は含みません。</li>
