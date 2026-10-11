@@ -103,7 +103,8 @@ def load_trades(trades, labels, price_decimals=5):
 def make_chart(df_1min, path, title, start=None, end=None, trades=None, weekly_trend=None,
                mode="", risk=200.0, entry_window=18, entry_atr=18, price_decimals=5,
                session_start_hour=17, signal_hours=4, filter_state=None, filter_label="",
-               ma_periods=(20, 50, 120), daily_ma=None, daily_er=None):
+               ma_periods=(20, 50, 120), daily_ma=None, daily_er=None, live_daily=False,
+               entry_signals=None, timeframes=TIMEFRAMES):
     """
     チャートの HTML を path に書き出す（スクリプトから呼び出す用）。
 
@@ -119,13 +120,19 @@ def make_chart(df_1min, path, title, start=None, end=None, trades=None, weekly_t
     filter_label : フィルターの説明（凡例と詳細に表示）
     ma_periods   : 移動平均（表示中の時間足の終値の単純移動平均）の期間。チャートの設定で変えられる。() で既定オフ
     daily_ma     : 日足の単純移動平均の期間のタプル（例 (20, 75, 200)）。どの時間足でも、前日に確定した日足の値を階段状に重ねる
+    live_daily   : True なら、日足の終値をページに埋め込み、ER の期間・しきい値をスライダーで動かせる（日足MA・ERもページ側で計算）。
+                   daily_ma / daily_er を既定値（スライダーの初期値）として渡す。トレードには「MAの並びだけで入った全取引」などを渡すと、
+                   フィルターを通る取引と除外される取引が分かる
+    entry_signals: エントリーラインに使うシグナル（compute_signals と同じ列の DataFrame）。None なら Swing High/Low
+    timeframes   : 埋め込む時間足（("4H", "D1", "W1") にするとファイルが小さくなる）
     daily_er     : (期間, しきい値)（例 (20, 0.3)）。日足の Efficiency Ratio（前日確定）を価格チャートの下に別パネルで表示
     entry_window / entry_atr / signal_hours : エントリー側 Swing High/Low ラインの設定（1H/4H に表示）
     """
     extra = {}
     if trades is not None:
-        signals = compute_signals(resample_to_signal_bars(df_1min, session_start_hour, signal_hours),
-                                  window=entry_window, atr_period=entry_atr, price_decimals=price_decimals)
+        signals = entry_signals if entry_signals is not None else compute_signals(
+            resample_to_signal_bars(df_1min, session_start_hour, signal_hours),
+            window=entry_window, atr_period=entry_atr, price_decimals=price_decimals)
         df_1min = map_signals_to_1min(df_1min, signals, session_start_hour, signal_hours)
         extra = {"SignalSH": "esh", "SignalSL": "esl", "SignalSHValid": "eshv", "SignalSLValid": "eslv"}
         if weekly_trend is not None:
@@ -140,8 +147,12 @@ def make_chart(df_1min, path, title, start=None, end=None, trades=None, weekly_t
             df_1min["FilterState"] = fs.to_numpy(dtype=float)
             extra["FilterState"] = "fs"
 
-    daily_cfg = None
-    if daily_ma or daily_er:
+    daily_cfg, dlive = None, None
+    if live_daily:
+        d1 = resample_to_signal_bars(df_1min, session_start_hour, 24)
+        dlive = dict(t=to_seconds(d1.index), c=[round(float(x), 6) for x in d1["Close"]], ma=[int(p) for p in daily_ma])
+        daily_cfg = dict(ma=dlive["ma"], er=int(daily_er[0]), th=float(daily_er[1]))
+    elif daily_ma or daily_er:
         # 日足（NY17:00区切り・24時間足）の指標を、前日に確定した値として1分足に付ける（検証のフィルターと同じ手順）
         df_1min = df_1min.copy()
         d1 = resample_to_signal_bars(df_1min, session_start_hour, 24)
@@ -168,7 +179,7 @@ def make_chart(df_1min, path, title, start=None, end=None, trades=None, weekly_t
     df = df_1min[mask]
 
     data, labels = {}, {}
-    for tf in TIMEFRAMES:
+    for tf in timeframes:
         cols = {k: v for k, v in extra.items()
                 if tf in ("1H", "4H") or k in ("UsedTrend", "FilterState") or k.startswith("DMA") or k == "DER"}
         data[tf], labels[tf] = to_bars(df, tf, cols, session_start_hour)
@@ -187,6 +198,7 @@ def make_chart(df_1min, path, title, start=None, end=None, trades=None, weekly_t
             .replace("__TITLE__", title)
             .replace("__MA__", ",".join(str(int(p)) for p in ma_periods))
             .replace("__DAILY__", json.dumps(daily_cfg))
+            .replace("__DLIVE__", json.dumps(dlive, separators=(",", ":")))
             .replace("__TRADES__", json.dumps(tr, ensure_ascii=False, separators=(",", ":")))
             .replace("__DATA__", json.dumps(data, separators=(",", ":"))))
     path.write_text(html, encoding="utf-8")
