@@ -103,7 +103,7 @@ def load_trades(trades, labels, price_decimals=5):
 def make_chart(df_1min, path, title, start=None, end=None, trades=None, weekly_trend=None,
                mode="", risk=200.0, entry_window=18, entry_atr=18, price_decimals=5,
                session_start_hour=17, signal_hours=4, filter_state=None, filter_label="",
-               ma_periods=(20, 50, 120)):
+               ma_periods=(20, 50, 120), daily_ma=None, daily_er=None):
     """
     チャートの HTML を path に書き出す（スクリプトから呼び出す用）。
 
@@ -118,6 +118,8 @@ def make_chart(df_1min, path, title, start=None, end=None, trades=None, weekly_t
                    各足の値は足の最初の1分足の値（1H/4H では足の中で一定）
     filter_label : フィルターの説明（凡例と詳細に表示）
     ma_periods   : 移動平均（表示中の時間足の終値の単純移動平均）の期間。チャートの設定で変えられる。() で既定オフ
+    daily_ma     : 日足の単純移動平均の期間のタプル（例 (20, 75, 200)）。どの時間足でも、前日に確定した日足の値を階段状に重ねる
+    daily_er     : (期間, しきい値)（例 (20, 0.3)）。日足の Efficiency Ratio（前日確定）を価格チャートの下に別パネルで表示
     entry_window / entry_atr / signal_hours : エントリー側 Swing High/Low ラインの設定（1H/4H に表示）
     """
     extra = {}
@@ -138,6 +140,25 @@ def make_chart(df_1min, path, title, start=None, end=None, trades=None, weekly_t
             df_1min["FilterState"] = fs.to_numpy(dtype=float)
             extra["FilterState"] = "fs"
 
+    daily_cfg = None
+    if daily_ma or daily_er:
+        # 日足（NY17:00区切り・24時間足）の指標を、前日に確定した値として1分足に付ける（検証のフィルターと同じ手順）
+        df_1min = df_1min.copy()
+        d1 = resample_to_signal_bars(df_1min, session_start_hour, 24)
+        ind = pd.DataFrame(index=d1.index)
+        for k, p in enumerate(daily_ma or ()):
+            ind[f"DMA{k}"] = d1["Close"].rolling(int(p)).mean()
+            extra[f"DMA{k}"] = f"dm{k}"
+        if daily_er:
+            n = int(daily_er[0])
+            ind["DER"] = (d1["Close"] - d1["Close"].shift(n)).abs() / d1["Close"].diff().abs().rolling(n).sum()
+            extra["DER"] = "der"
+        mapped = ind.shift(1).reindex(get_signal_bar_label(df_1min.index, session_start_hour, 24))
+        for c in ind.columns:
+            df_1min[c] = mapped[c].to_numpy()
+        daily_cfg = dict(ma=[int(p) for p in (daily_ma or ())], er=int(daily_er[0]) if daily_er else 0,
+                         th=float(daily_er[1]) if daily_er else 0)
+
     day = get_trading_day_label(df_1min.index, session_start_hour)
     mask = np.ones(len(df_1min), dtype=bool)
     if start is not None:
@@ -148,7 +169,8 @@ def make_chart(df_1min, path, title, start=None, end=None, trades=None, weekly_t
 
     data, labels = {}, {}
     for tf in TIMEFRAMES:
-        cols = {k: v for k, v in extra.items() if tf in ("1H", "4H") or k in ("UsedTrend", "FilterState")}
+        cols = {k: v for k, v in extra.items()
+                if tf in ("1H", "4H") or k in ("UsedTrend", "FilterState") or k.startswith("DMA") or k == "DER"}
         data[tf], labels[tf] = to_bars(df, tf, cols, session_start_hour)
         print(f"{tf}: {len(data[tf]['t']):,} 本")
 
@@ -164,6 +186,7 @@ def make_chart(df_1min, path, title, start=None, end=None, trades=None, weekly_t
     html = (TEMPLATE.read_text(encoding="utf-8")
             .replace("__TITLE__", title)
             .replace("__MA__", ",".join(str(int(p)) for p in ma_periods))
+            .replace("__DAILY__", json.dumps(daily_cfg))
             .replace("__TRADES__", json.dumps(tr, ensure_ascii=False, separators=(",", ":")))
             .replace("__DATA__", json.dumps(data, separators=(",", ":"))))
     path.write_text(html, encoding="utf-8")

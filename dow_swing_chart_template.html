@@ -42,6 +42,8 @@
   <label><input id="zig" type="checkbox" checked> スイング線</label>
   <label><input id="conf" type="checkbox"> 確定位置(n本後)を表示</label>
   <label class="keep" title="表示中の時間足の終値の単純移動平均。期間はカンマ区切り"><input id="smaon" type="checkbox" checked> 移動平均 <input id="maper" type="text" value="__MA__" size="9" style="background:#242b34;color:var(--fg);border:1px solid #38414d;border-radius:4px;padding:2px 5px;font:inherit"></label>
+  <label class="keep" id="dmal" title="日足の単純移動平均（前日に確定した値。検証のフィルターと同じ値）" style="display:none"><input id="dma" type="checkbox" checked> 日足MA</label>
+  <label class="keep" id="derl" title="日足の Efficiency Ratio（前日に確定した値）" style="display:none"><input id="der" type="checkbox" checked> 日足ER</label>
   <label>ジャンプ <input id="jump" type="date" min="2021-01-01" max="2025-12-31"></label>
   <button id="reset">全期間</button>
   <span id="trctl" class="keep" style="display:none; gap:6px 18px; flex-wrap:wrap; align-items:center">
@@ -55,8 +57,11 @@
 <div id="wrap"><canvas id="cv"></canvas><div id="info"></div></div>
 <script>
 const DATA = __DATA__;
+const DAILY = __DAILY__;  // null: 日足の MA / ER を表示しない。{ma:[20,75,200], er:20, th:0.3, label:"..."}
 const TR = __TRADES__;  // null: トレード表示なし（dow_swing_chart.py --trades で埋め込む）
 const UP = 1, RANGE = 0, DOWN = -1;
+const DMA_COLORS = ["#f2c14e", "#4aa8f2", "#e56bd0"];
+const ER_H = 104;  // 日足ER のパネルに確保する高さ
 const MA_COLORS = ["#ececec", "#3fd0c9", "#ff8c42", "#c77dff", "#9be15d"];
 const FS_NAME = { 1: "買いだけ許可", "-1": "売りだけ許可", 0: "どちらも見送り", 2: "両方許可" };
 
@@ -187,7 +192,7 @@ function draw() {
   if (!d || !res || !W) return;
   clampView();
   ctx.clearRect(0, 0, W, H);
-  const pw = W - M.l - M.r, ph = H - M.t - M.b, span = view.to - view.from, bw = pw / span;
+  const pw = W - M.l - M.r, ph = H - M.t - M.b - (erOn() ? ER_H : 0), span = view.to - view.from, bw = pw / span;
   const i0 = Math.max(0, Math.floor(view.from)), i1 = Math.min(d.t.length - 1, Math.ceil(view.to));
   let lo = Infinity, hi = -Infinity;
   for (let i = i0; i <= i1; i++) { if (d.l[i] < lo) lo = d.l[i]; if (d.h[i] > hi) hi = d.h[i]; }
@@ -251,6 +256,19 @@ function draw() {
       ctx.stroke(); ctx.globalAlpha = 1;
     });
   }
+  // 日足の移動平均（前日確定。足の中では一定なので階段状）
+  if (DAILY && $("dma").checked) {
+    DAILY.ma.forEach((p, k) => {
+      const a = d["dm" + k]; if (!a) return;
+      ctx.strokeStyle = DMA_COLORS[k]; ctx.lineWidth = 1.9; ctx.globalAlpha = .95; ctx.beginPath();
+      let on = false;
+      for (let i = Math.max(0, i0 - 1); i <= Math.min(d.t.length - 1, i1 + 1); i++) {
+        const v = a[i]; if (v == null) { on = false; continue; }
+        if (!on) { ctx.moveTo(X(i), Y(v)); on = true; } else ctx.lineTo(X(i), Y(v));
+      }
+      ctx.stroke(); ctx.globalAlpha = 1;
+    });
+  }
   // スイング線とマーカー
   const P = res.piv;
   if ($("zig").checked) {
@@ -276,6 +294,7 @@ function draw() {
   }
   if (TR) drawTrades(i0, i1, X, Y, bw);
   ctx.restore();
+  if (erOn()) drawER(i0, i1, X, bw, pw, M.t + ph + 30, M.t + ph + M.b + ER_H - 6);
   // クロスヘア
   if (mouse && mouse.x > M.l && mouse.x < M.l + pw && mouse.y > M.t && mouse.y < M.t + ph) {
     ctx.strokeStyle = "rgba(255,255,255,.3)"; ctx.setLineDash([4, 4]);
@@ -290,6 +309,8 @@ function draw() {
       let txt = `${fmtT(d.t[i], intraday)}  (NY時間, #${i})\nO ${d.o[i].toFixed(dec)}  H ${d.h[i].toFixed(dec)}\nL ${d.l[i].toFixed(dec)}  C ${d.c[i].toFixed(dec)}\nトレンド判定（この時間足）: ${nm(res.trend[i])}`;
       if (TR && d.ut) txt += `\n週足トレンド（検証で使用）: ${nm(d.ut[i] ?? 0)}`;
       if (TR && d.fs) txt += `\nフィルター: ${d.fs[i] == null ? "-" : FS_NAME[d.fs[i]]}`;
+      if (DAILY && $("dma").checked) { const ms = DAILY.ma.map((p, k) => d["dm" + k] && d["dm" + k][i] != null ? `日足MA${p} ${d["dm" + k][i].toFixed(dec)}` : null).filter(Boolean); if (ms.length) txt += "\n" + ms.join("  "); }
+      if (erOn() && d.der[i] != null) txt += `\n日足ER(${DAILY.er}) ${d.der[i].toFixed(2)}${d.der[i] >= DAILY.th ? "（≥" + DAILY.th + "）" : "（<" + DAILY.th + "）"}`;
       if ($("smaon").checked) { const ms = maLines().filter(m => m.a[i] != null).map(m => `SMA${m.p} ${m.a[i].toFixed(dec)}`); if (ms.length) txt += "\n" + ms.join("  "); }
       if (TR && d.esh && $("eln").checked)
         txt += `\nエントリーライン 買い ${fmtP(d.esh[i])}${d.eshv[i] ? "" : "（無効）"} / 売り ${fmtP(d.esl[i])}${d.eslv[i] ? "" : "（無効）"}`;
@@ -306,6 +327,7 @@ function draw() {
       ? `背景（フィルター${TR.filterLabel ? "：" + TR.filterLabel : ""}）: <span class="sw" style="background:rgba(43,182,115,.5)"></span>買いだけ許可　<span class="sw" style="background:rgba(229,83,75,.5)"></span>売りだけ許可　背景なし=見送り`
       : `背景（${bgMode() === "used" ? "検証で使った週足トレンド" : "この時間足のダウ理論"}）: <span class="sw" style="background:rgba(43,182,115,.5)"></span>上昇　<span class="sw" style="background:rgba(229,83,75,.5)"></span>下降　背景なし=レンジ`) +
     ($("smaon").checked ? "<br>" + maLines().map((m, k) => `<span class="sw" style="background:${MA_COLORS[k]}"></span>SMA${m.p}`).join("　") + `（${$("tf").value}足）` : "") +
+    (DAILY && $("dma").checked ? "<br>" + DAILY.ma.map((p, k) => `<span class="sw" style="background:${DMA_COLORS[k]}"></span>日足MA${p}`).join("　") + "（前日確定）" : "") +
     (TR ? `<br><span class="sw" style="background:#b18cff"></span>▲買い / <span class="sw" style="background:#ff6fd1"></span>▼売り エントリー　● 決済（緑=勝ち / 赤=負け）　点線=SL・TP　<span class="sw" style="background:#c9a227"></span>買いライン　<span class="sw" style="background:#5b8fd9"></span>売りライン（薄い=無効）` : "");
   placeInfo(mouse ? [mouse.x, mouse.y] : (TR && cur >= 0 ? (() => { const t = TR.trades[cur], [ei, xi] = tradeIdx(t); return [X((ei + xi) / 2), Y(t.ep)]; })() : null));
 }
@@ -315,6 +337,32 @@ function placeInfo(f) {
   if (!f) { s.left = "10px"; s.top = "8px"; return; }
   if (f[0] < W / 2) s.right = (M.r + 8) + "px"; else s.left = "10px";
   if (f[1] < H / 2) s.bottom = (M.b + 8) + "px"; else s.top = "8px";
+}
+
+/* ---------- 日足ER のパネル ---------- */
+function erOn() { return !!(DAILY && DAILY.er && $("der").checked && d && d.der); }
+function drawER(i0, i1, X, bw, pw, y0, y1) {
+  const hh = y1 - y0, Ye = v => y1 - Math.max(0, Math.min(1, v)) * hh, th = DAILY.th;
+  ctx.fillStyle = "rgba(255,255,255,.035)"; ctx.fillRect(M.l, y0, pw, hh);
+  ctx.font = "11px system-ui"; ctx.textAlign = "left"; ctx.textBaseline = "middle"; ctx.lineWidth = 1;
+  for (const v of [0, 0.5, 1]) {
+    const y = Math.round(Ye(v)) + .5; ctx.strokeStyle = "#262d36"; ctx.beginPath(); ctx.moveTo(M.l, y); ctx.lineTo(M.l + pw, y); ctx.stroke();
+    ctx.fillStyle = "#8b95a1"; ctx.fillText(v.toFixed(1), M.l + pw + 6, y);
+  }
+  ctx.save(); ctx.beginPath(); ctx.rect(M.l, y0, pw, hh); ctx.clip();
+  ctx.fillStyle = "rgba(43,182,115,.28)";
+  for (let i = i0; i <= i1; i++) { const v = d.der[i]; if (v != null && v >= th) ctx.fillRect(X(i) - bw / 2, Ye(v), bw + .5, Ye(th) - Ye(v)); }
+  ctx.strokeStyle = "#f2c14e"; ctx.lineWidth = 1.6; ctx.beginPath();
+  let on = false;
+  for (let i = Math.max(0, i0 - 1); i <= Math.min(d.t.length - 1, i1 + 1); i++) {
+    const v = d.der[i]; if (v == null) { on = false; continue; }
+    if (!on) { ctx.moveTo(X(i), Ye(v)); on = true; } else ctx.lineTo(X(i), Ye(v));
+  }
+  ctx.stroke(); ctx.restore();
+  ctx.strokeStyle = "#e5534b"; ctx.setLineDash([5, 4]); ctx.lineWidth = 1; ctx.beginPath();
+  ctx.moveTo(M.l, Math.round(Ye(th)) + .5); ctx.lineTo(M.l + pw, Math.round(Ye(th)) + .5); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = "#e5534b"; ctx.fillText(th.toFixed(2), M.l + pw + 6, Ye(th));
+  ctx.fillStyle = "#d7dce2"; ctx.textBaseline = "top"; ctx.fillText(`日足 Efficiency Ratio(${DAILY.er})  前日確定　緑=しきい値以上`, M.l + 6, y0 + 3);
 }
 
 /* ---------- トレード表示（TR があるときだけ） ---------- */
@@ -431,8 +479,9 @@ cv.addEventListener("touchmove", e => {
 let timer = null;
 for (const id of ["n", "ap", "ma", "tf"]) $(id).addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(recompute, 30); });
 for (const id of ["wick"]) $(id).addEventListener("change", recompute);
-for (const id of ["shade", "zig", "conf", "smaon"]) $(id).addEventListener("change", draw);
+for (const id of ["shade", "zig", "conf", "smaon", "dma", "der"]) $(id).addEventListener("change", draw);
 $("maper").addEventListener("change", draw);
+if (DAILY) { if (DAILY.ma) $("dmal").style.display = "flex"; if (DAILY.er) $("derl").style.display = "flex"; }
 $("reset").onclick = resetView;
 if (TR) {
   $("trctl").style.display = "inline-flex";

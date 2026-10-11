@@ -155,7 +155,7 @@ f'<tr><td>フィルターなし 2024〜2025</td><td class="num">{NOOS["n"]}</td>
 {tbl(["ペア","取引数","合計R","勝率","PF","最大DD","なし合計R"], prow)}
 <p class="sub" style="margin-top:8px">プラスは{npos}/15ペア。円クロス・円ペアの合計は {jpy:+.0f}R で、全体の大半を占めます。買い {sd['L']['n']}回 {sd['L']['R']:+.0f}R、売り {sd['S']['n']}回 {sd['S']['R']:+.0f}R。ペア名からトレード付きチャートを開けます。</p></section>
 
-<section id="viewer"><h2>トレード付きチャート</h2><p class="muted">ペアを選ぶと、このページの中に表示します（約3MBを読み込みます）。エントリー▲▼・決済●・SL/TP、背景は「検証で使ったフィルター」（買いだけ/売りだけ/見送り）。</p><div>{links}</div>
+<section id="viewer"><h2>トレード付きチャート</h2><p class="muted">ペアを選ぶと、このページの中に表示します（約3MBを読み込みます）。エントリー▲▼・決済●・SL/TP、背景は「検証で使ったフィルター」（買いだけ/売りだけ/見送り）。日足MA20/75/200（黄・青・橙、前日確定）は価格が近いときに表示され、下のパネルに日足ER(20)としきい値0.3を表示します。</p><div>{links}</div>
 <p id="cmsg" class="sub" role="status"></p><iframe id="cframe" title="トレード付きダウ理論チャート" sandbox="allow-scripts" hidden></iframe></section>
 
 <section><h2>パラメータ感度（一度に1つだけ変更）</h2>

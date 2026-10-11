@@ -152,7 +152,8 @@ def run_pair(pair, cfg, out_dir, make_charts):
                        first_day, last_day, trades=spec_stats["_trades"], weekly_trend=None, mode="fixed",
                        risk=risk, entry_window=cfg.window, entry_atr=14, price_decimals=cfg.price_decimals,
                        session_start_hour=cfg.session_start_hour, signal_hours=4,
-                       filter_state=spec_state, filter_label="日足 MA20/75/200 並び + ER(20)≥0.3（前日確定）")
+                       filter_state=spec_state, filter_label="日足 MA20/75/200 並び + ER(20)≥0.3（前日確定）",
+                       daily_ma=MA_PERIODS, daily_er=(ER_PERIOD, ER_THRESHOLD))
     (out_dir / f"log_{pair}.txt").write_text(log.getvalue(), encoding="utf-8")
     on = pd.DataFrame([r.attrs["on"] for r in rows])
     return dict(pair=pair, trades=pd.concat(rows, ignore_index=True), on=on, chart=chart_path,
