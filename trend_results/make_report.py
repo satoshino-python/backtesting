@@ -57,7 +57,7 @@ prow = []
 pst = {p: st(g) for p, g in spec.groupby("Pair")}
 for p in sorted(pst, key=lambda k: -pst[k]["R"]):
     a = pst[p]; b = st(nof[nof.Pair == p])
-    prow.append(f'<tr><td><a href="dow_trade_chart_{p}.html" target="_blank">{p}</a></td><td class="num">{a["n"]}</td><td class="num {cls(a["R"])}">{f(a["R"],1,1)}</td>'
+    prow.append(f'<tr><td><a href="#viewer" data-chart="{p}">{p}</a></td><td class="num">{a["n"]}</td><td class="num {cls(a["R"])}">{f(a["R"],1,1)}</td>'
                 f'<td class="num">{a["win"]:.0f}%</td><td class="num">{a["PF"]:.2f}</td><td class="num">{a["DD"]:.1f}</td><td class="num {cls(b["R"])}">{f(b["R"],0,1)}</td></tr>')
 npos = sum(1 for a in pst.values() if a["R"] > 0)
 jpy = sum(a["R"] for p, a in pst.items() if p.endswith("JPY"))
@@ -73,7 +73,24 @@ for k, nm in names.items():
     g = t[t.Variant == k]; a = st(g); i = st(g[g.Year <= 2023]); o = st(g[g.Year >= 2024])
     srow.append(f'<tr{" class=hl" if k=="spec" else ""}><td>{nm}</td><td class="num">{a["n"]}</td><td class="num {cls(a["R"])}">{f(a["R"],1,1)}</td>'
                 f'<td class="num">{a["PF"]:.2f}</td><td class="num">{a["DD"]:.0f}</td><td class="num {cls(i["R"])}">{f(i["R"],0,1)}</td><td class="num {cls(o["R"])}">{f(o["R"],0,1)}</td></tr>')
-links = " ".join(f'<a class="chip" href="dow_trade_chart_{p}.html" target="_blank">{p}</a>' for p in sorted(pst))
+links = " ".join(f'<button type="button" class="chip" data-chart="{p}">{p}</button>' for p in sorted(pst))
+
+SCRIPT = r"""
+<script>
+(function(){
+  var frame=document.getElementById("cframe"), msg=document.getElementById("cmsg"), cache={};
+  function show(p){
+    document.querySelectorAll("button.chip").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.chart===p));});
+    msg.textContent=p+" を読み込み中…";
+    var done=function(t){cache[p]=t;frame.srcdoc=t;frame.hidden=false;msg.textContent=p+"（検証で使ったフィルターを背景に表示）";};
+    if(cache[p]){done(cache[p]);return;}
+    fetch("dow_trade_chart_"+p+".html").then(function(r){if(!r.ok)throw new Error(r.status);return r.text();}).then(done)
+      .catch(function(e){msg.textContent=p+" を読み込めませんでした（"+e.message+"）。";});
+  }
+  document.addEventListener("click",function(e){var t=e.target.closest("[data-chart]");if(t){show(t.dataset.chart);}});
+})();
+</script>
+"""
 
 doc = f"""<title>トレンドブレイクアウト検証</title>
 <style>
@@ -98,7 +115,7 @@ p {{ margin:0 0 8px; }} .sub,.muted {{ color:var(--muted); }} .sub {{ font-size:
 table {{ border-collapse:collapse; width:100%; font-size:.85rem; white-space:nowrap; }}
 th,td {{ padding:7px 10px; border-bottom:1px solid var(--line); text-align:left; }} th {{ color:var(--muted); font-weight:500; font-size:.76rem; }}
 td.num,th:not(:first-child) {{ text-align:right; }} tr:last-child td {{ border-bottom:0; }} tr.hl td {{ background:var(--hl); }}
-a {{ color:var(--accent); }} .chip {{ display:inline-block; padding:5px 11px; margin:0 6px 6px 0; border:1px solid var(--line); border-radius:99px; background:var(--surface); text-decoration:none; font:.82rem var(--f-num); }}
+a {{ color:var(--accent); }} button.chip {{ cursor:pointer; color:var(--fg); }} button.chip[aria-pressed=true] {{ background:var(--accent-soft); border-color:var(--accent); }} #cframe {{ width:100%; height:80vh; min-height:420px; border:1px solid var(--line); border-radius:12px; background:#fff; margin-top:8px; }} .chip {{ display:inline-block; padding:5px 11px; margin:0 6px 6px 0; border:1px solid var(--line); border-radius:99px; background:var(--surface); text-decoration:none; font:.82rem var(--f-num); }}
 svg {{ width:100%; height:auto; display:block; }} .gl {{ stroke:var(--line); stroke-width:1; }} .gl.z {{ stroke:var(--gray); }}
 .ax {{ fill:var(--muted); font:11px var(--f-num); }} .ln {{ fill:none; stroke-width:2; stroke-linejoin:round; }}
 .ln.s {{ stroke:var(--accent); }} .ln.n {{ stroke:var(--gray); stroke-dasharray:4 3; }} .lb {{ font:600 12px var(--f-head); }} .lb.s {{ fill:var(--accent); }} .lb.n {{ fill:var(--muted); }}
@@ -138,7 +155,8 @@ f'<tr><td>フィルターなし 2024〜2025</td><td class="num">{NOOS["n"]}</td>
 {tbl(["ペア","取引数","合計R","勝率","PF","最大DD","なし合計R"], prow)}
 <p class="sub" style="margin-top:8px">プラスは{npos}/15ペア。円クロス・円ペアの合計は {jpy:+.0f}R で、全体の大半を占めます。買い {sd['L']['n']}回 {sd['L']['R']:+.0f}R、売り {sd['S']['n']}回 {sd['S']['R']:+.0f}R。ペア名からトレード付きチャートを開けます。</p></section>
 
-<section><h2>トレード付きチャート</h2><p class="muted">エントリー▲▼・決済●・SL/TP、背景は「検証で使ったフィルター」（買いだけ/売りだけ/見送り）。</p><div>{links}</div></section>
+<section id="viewer"><h2>トレード付きチャート</h2><p class="muted">ペアを選ぶと、このページの中に表示します（約3MBを読み込みます）。エントリー▲▼・決済●・SL/TP、背景は「検証で使ったフィルター」（買いだけ/売りだけ/見送り）。</p><div>{links}</div>
+<p id="cmsg" class="sub" role="status"></p><iframe id="cframe" title="トレード付きダウ理論チャート" sandbox="allow-scripts" hidden></iframe></section>
 
 <section><h2>パラメータ感度（一度に1つだけ変更）</h2>
 {tbl(["設定","取引数","合計R","PF","最大DD","〜2023","2024〜"], srow)}
@@ -160,5 +178,5 @@ f'<tr><td>フィルターなし 2024〜2025</td><td class="num">{NOOS["n"]}</td>
 <li>200MAの助走に2020年のデータを使い、取引は2021年以降です。2020年相場は含みません。</li>
 <li>指標・コードは <code>main_4H_trend_breakout_fast.py</code>、結果は <code>trend_results/{d.name}/</code>。fast_engine は backtesting.py と一致確認済みですが、今回の入力（ブレイクアウト線）での再照合は行っていません。</li></ul></section>
 </div>"""
-(d / "report.html").write_text(doc, encoding="utf-8")
+(d / "report.html").write_text(doc + SCRIPT, encoding="utf-8")
 print("ok", len(doc))
