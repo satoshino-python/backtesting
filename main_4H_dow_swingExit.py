@@ -18,6 +18,9 @@
   - min_weekly_adx: 週足 ADX(14) がこれ以上
   - min_h4_er     : 4時間足の効率比（直近 er_period 本の値動き ÷ 各足の値動きの合計。取引方向を正とする）がこれ以上
 
+【検証エンジン】ENGINE = "fast"（既定）は fast_engine.run_fast(exit_mode="dow_swing")、"backtesting" は backtesting.py。
+  結果は同じ（compare_fast_engine.py exit_mode=dow_swing で確認できる）。fast は backtesting.py 標準のチャートを出さない。
+
 結果は result_root/<日時>_<run_label>/ に保存する（前の結果を上書きしない）。
 """
 import json
@@ -32,6 +35,7 @@ import pandas as pd
 from backtesting import Backtest, Strategy
 
 from dow_swing_chart import make_chart
+from fast_engine import run_fast
 from dow_trend import DowConfig, compute_dow_trend
 from main_4H_fixedSL import (
     Config,
@@ -75,6 +79,7 @@ CFG = SwingExitConfig(
     risk_pct=0.02,
 )
 OPEN_CHART = True
+ENGINE = "fast"                      # "fast": fast_engine（約100倍速い） / "backtesting": backtesting.py
 
 
 def compute_exit_swings(df_1min, window=6, session_start_hour=17, signal_hours=4):
@@ -211,6 +216,37 @@ class SwingBreakoutDowSwingExit1Min(Strategy):
             self.place_entry(False, round(current_sl, self.price_decimals))
 
 
+def dow_allow_columns(df, cfg):
+    """
+    SwingBreakoutDowSwingExit1Min.allowed() と同じ判定を、1分足ごとの AllowLong / AllowShort 列にして付ける
+    （fast_engine はこの列が False のバーでその方向の注文を置かない）
+    """
+    trend = df["DowTrend"].to_numpy(float)
+    if cfg.dow_mode is None:
+        long_ok = np.ones(len(df), dtype=bool)
+        short_ok = long_ok.copy()
+    elif cfg.dow_mode == "strict":
+        long_ok, short_ok = trend == 1, trend == -1
+    else:  # "no_counter"
+        long_ok, short_ok = trend != -1, trend != 1
+    # quality_ok(): 「値 < 下限」なら不可（NaN は比較が False になり、backtesting.py と同じく可になる）
+    with np.errstate(invalid="ignore"):
+        if cfg.min_trend_age is not None:
+            ng = df["TrendAge"].to_numpy(float) < cfg.min_trend_age
+            long_ok, short_ok = long_ok & ~ng, short_ok & ~ng
+        if cfg.min_weekly_adx is not None:
+            ng = df["WeeklyADX"].to_numpy(float) < cfg.min_weekly_adx
+            long_ok, short_ok = long_ok & ~ng, short_ok & ~ng
+        if cfg.min_h4_er is not None:
+            er = df["H4ER"].to_numpy(float)
+            long_ok &= ~(er < cfg.min_h4_er)
+            short_ok &= ~(-er < cfg.min_h4_er)
+    out = df.copy()
+    out["AllowLong"] = long_ok
+    out["AllowShort"] = short_ok
+    return out
+
+
 def prepare(cfg):
     """データを読み込み、検証期間の1分足（シグナル・決済スイング・週足トレンド・質の列付き）を作る"""
     df_1min, avg_relative_spread = load_gmo_click_1min_data(
@@ -241,7 +277,16 @@ def prepare(cfg):
     return df_1min, df, commission_func, weekly_trend
 
 
-def run_backtest(df, cfg, commission_func):
+def run_backtest(df, cfg, commission_func, engine=None):
+    """検証を実行して (bt, stats) を返す。engine="fast" のとき bt は None（backtesting.py のチャートは作れない）"""
+    engine = engine or ENGINE
+    if engine == "fast":
+        stats = run_fast(dow_allow_columns(df, cfg), cash=cfg.cash, commission=commission_func,
+                         margin=cfg.margin, price_decimals=cfg.price_decimals, risk_pct=cfg.risk_pct,
+                         exit_mode="dow_swing")
+        return None, add_extra_stats(stats)
+    if engine != "backtesting":
+        raise ValueError(f'engine は "fast" か "backtesting" です: {engine}')
     bt = Backtest(df, SwingBreakoutDowSwingExit1Min, cash=cfg.cash, commission=commission_func,
                   margin=cfg.margin, exclusive_orders=False)
     stats = add_extra_stats(bt.run(
@@ -263,7 +308,7 @@ def main(cfg=CFG):
     labels = {1: "上昇", 0: "レンジ", -1: "下降"}
     used_in_period.map(labels).rename("trend").to_csv(out_dir / f"weekly_trend_{period}.csv", encoding="utf-8-sig")
 
-    print(f"\n================ バックテスト実行中（{symbol} {period} dow={cfg.dow_mode}） ================")
+    print(f"\n================ バックテスト実行中（{symbol} {period} dow={cfg.dow_mode} / {ENGINE}） ================")
     bt, stats = run_backtest(df, cfg, commission_func)
     print(stats)
     trades = stats["_trades"]
@@ -284,11 +329,14 @@ def main(cfg=CFG):
         entry_window=cfg.window, entry_atr=cfg.atr_period, price_decimals=cfg.price_decimals,
         session_start_hour=cfg.session_start_hour, signal_hours=cfg.signal_hours,
     )
-    html_path = out_dir / f"chart_{period}.html"
-    bt.plot(filename=str(html_path), open_browser=False, resample=f"{cfg.signal_hours}h", plot_volume=False)
+    charts = [trade_html]
+    if bt is not None:  # backtesting.py 標準のチャートは ENGINE="backtesting" のときだけ
+        html_path = out_dir / f"chart_{period}.html"
+        bt.plot(filename=str(html_path), open_browser=False, resample=f"{cfg.signal_hours}h", plot_volume=False)
+        charts.append(html_path)
     print(f"💾 結果を {out_dir}/ に保存しました")
     if OPEN_CHART:
-        for p in (trade_html, html_path):
+        for p in charts:
             try:
                 webbrowser.open("file://" + os.path.abspath(p), new=2)
             except Exception:

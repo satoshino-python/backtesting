@@ -13,7 +13,7 @@
 | `main_4H_fixedSL_multi.py` | 全通貨ペアを一括検証し、R倍数で合算。1時間足スイングのトレーリングストップも選べる | 4時間足 | 固定SL/TP または トレーリング | 損失額固定 |
 | `main_4H_fixedSL_dow.py` | 週足ダウ理論のトレンド方向にだけエントリーするフィルター版 | 4時間足＋週足 | 固定SL/TP＋建値ストップ | 損失額固定 |
 | `main_4H_fixedSL_fast_multi.py` | `main_4H_fixedSL_multi.py` の高速版。`fast_engine.py` で全ペアを並列に検証 | 4時間足 | 固定SL/TP または トレーリング | 損失額固定 |
-| `fast_engine.py` | 1分足執行版の戦略（固定SL/TP・1時間足トレーリング）を backtesting.py なしで約100倍速く検証するエンジン | 4時間足 | 固定SL/TP または トレーリング | 損失額固定 |
+| `fast_engine.py` | 1分足執行版の戦略（固定SL/TP・1時間足トレーリング・週足ダウ＋4Hスイング決済）を backtesting.py なしで約100倍速く検証するエンジン | 4時間足 | 固定SL/TP または トレーリング | 損失額固定 |
 | `compare_fast_engine.py` | `fast_engine.py` と backtesting.py の結果が一致するかを確かめる | – | – | – |
 | `dow_trend.py` | ダウ理論のトレンド判定ライブラリ（単体では売買しない） | 任意 | – | – |
 | `main_4H_dow_swingExit.py` | 週足ダウ理論フィルター＋4時間足スイングのトレーリングストップ決済。トレンドの質フィルターも選べる | 4時間足＋週足 | 4Hスイングへのトレーリング | 損失額固定 |
@@ -29,7 +29,7 @@
 `main_4H_fixedSL_multi.py` と `main_4H_fixedSL_dow.py` は、`main_4H_fixedSL.py` の関数と Strategy を import して使っている。
 **`main_4H_fixedSL.py` を変更すると、この2つの結果も変わる。**
 `fast_engine.py` は `SwingBreakoutStrategy1Min`・`move_sl_to_breakeven()`（`main_4H_fixedSL.py`）と
-`SwingBreakoutTrail1Min`（`main_4H_fixedSL_multi.py`）の売買ルールを自前で再現しているため、
+`SwingBreakoutTrail1Min`（`main_4H_fixedSL_multi.py`）・`SwingBreakoutDowSwingExit1Min`（`main_4H_dow_swingExit.py`）の売買ルールを自前で再現しているため、
 **これらのルールを変えたら `fast_engine.py` も合わせて直し、`compare_fast_engine.py` で一致を確かめる。**
 
 ## 金利調整額（CFD の保有コスト）
@@ -236,14 +236,18 @@ python dow_swing_chart.py --trades dow_results/trades_20210101-20251231_strict.c
 - 枚数: 当初SLまでの距離で 1R（初期資金 × `risk_pct`）になる枚数。
 - トレンドの質フィルター（`None` で無効）: `min_trend_age`（週足判定が同じ向きで続いている週数）、`min_weekly_adx`（週足ADX(14)）、
   `min_h4_er`（4時間足の効率比 `er_period`=18 本。取引方向を正とする）。週足の値は前週末、4時間足は1本前の足で確定したものを使う。
-- 出力: `dow_results/<日時>_<run_label>/`（取引履歴、成績、日次資産、使った週足トレンド、設定、トレード付きダウ理論チャート、backtesting.py のチャート）。
+- エンジン: `ENGINE = "fast"`（既定）は `fast_engine.run_fast(exit_mode="dow_swing")`。週足ダウと質のフィルターは
+  `dow_allow_columns()` で `AllowLong` / `AllowShort` 列にして渡す。`"backtesting"` にすると backtesting.py で実行する（結果は同じ）。
+  `run_backtest(df, cfg, commission_func, engine=None)` は `(bt, stats)` を返し、fast のとき `bt` は `None`。
+- 出力: `dow_results/<日時>_<run_label>/`（取引履歴、成績、日次資産、使った週足トレンド、設定、トレード付きダウ理論チャート。
+  backtesting.py のチャートは `ENGINE="backtesting"` のときだけ）。
 - 期末に保有中のトレードは取引履歴に入らないが、資産（収益率）には含み損益として入る。
 
 ### 4.11 `trend_quality_study.py`（トレンドの質フィルターの比較）
 - `PAIRS` の各ペアで、`GRID`（継続週数 × 週足ADX × 4H効率比）の全組み合わせを実行し、R倍数で合算する。ペアごとに別プロセスで並列実行（`WORKERS`）。
 - `IN_SAMPLE`（既定 2021-2023）で条件を選び、`OUT_OF_SAMPLE`（2024-2025）で確かめる。全期間で1回実行し、エントリー日で分けて集計する。
 - 出力: `quality_results/<日時>_<RUN_LABEL>/`（`summary.csv`: 組み合わせ別の IS/OOS/全期間の成績とペア別R、`trades_all.csv`、`config.json`、`code/`）。
-- 1組み合わせ・1ペアあたり約35秒（5年分）。
+- `main_4H_dow_swingExit.run_backtest()` を使うため、既定で fast_engine で実行する（1組み合わせ・1ペア5年分で約1秒。backtesting.py では約35秒）。
 
 ### 4.12 `fast_engine.py` / `main_4H_fixedSL_fast_multi.py` / `compare_fast_engine.py`（高速版）
 - `fast_engine.run_fast(df, cash=, commission=, margin=, sl_atr_multiplier=, price_decimals=, risk_pct=, ...)` は backtesting.py と同じ stats を返す
@@ -251,6 +255,10 @@ python dow_swing_chart.py --trades dow_results/trades_20210101-20251231_strict.c
   - `exit_mode="fixed"`（既定）: `tp_atr_multiplier=`・`breakeven_trigger_r=` を渡す。`SwingBreakoutStrategy1Min` と同じ。
   - `exit_mode="swing_trail"`: `initial_sl_rule=` を渡す。`df` に `compute_h1_swings()` の列（H1SH/H1SL/H1SHSeq/H1SLSeq）も必要。
     `SwingBreakoutTrail1Min` と同じ。
+  - `exit_mode="dow_swing"`: `sl_atr_multiplier` は不要。`df` に `compute_exit_swings()` の ExitSH/ExitSL と DowTrend の列が必要。
+    週足ダウ・質のフィルターは `AllowLong` / `AllowShort` 列で渡す（`main_4H_dow_swingExit.dow_allow_columns()`）。
+    `SwingBreakoutDowSwingExit1Min` と同じ。swing_trail との違いは、トレーリングに4時間足スイングを使い、
+    エントリー後に確定したかを確認しないこと、当初SLが直近スイング（エントリー価格の反対側に無ければ発注しない）であること。
 - 仕組み: 何も起きない1分足を numpy でまとめて飛ばし、エントリー・SL・TP・建値ストップ・トレーリング・残った反対側の逆指値が
   動くバーだけを backtesting.py 0.6 のブローカーと同じ手順で処理する（窓開けの約定価格、同じバーで SL と TP に触れたら SL 優先、
   エントリーと同じバーの SL/TP の扱い、反対側の逆指値による決済、一部決済、証拠金不足の取消しまで再現）。
@@ -268,7 +276,8 @@ python dow_swing_chart.py --trades dow_results/trades_20210101-20251231_strict.c
   `equity_R_combined.csv`、`dow_trade_chart_<ペア>_*.html`、`log_<ペア>.txt`、`config.json`、`code/`）。
 - 所要時間: 5ペア × 5年分でチャート込み約36秒（読み込み約10秒・検証約1秒・チャート約8秒 / ペア、4並列）。
 - `compare_fast_engine.py`: `python compare_fast_engine.py EURUSD 2024-01-01 2024-12-31 [breakeven_trigger_r=1.0]`、
-  `... exit_mode=swing_trail [initial_sl_rule=near] [h1_window=5]` で両方を実行して比べる。
+  `... exit_mode=swing_trail [initial_sl_rule=near] [h1_window=5]`、
+  `... exit_mode=dow_swing [dow_mode=None|no_counter] [min_trend_age=8] [min_weekly_adx=25] [min_h4_er=0.2] [exit_window=6]` で両方を実行して比べる。
   食い違ったら両方の取引履歴を `fast_compare_results/<日時>_<ペア>/` に保存する。
 
 ## 5. `Config` の設定項目（4時間足系の共通項目）

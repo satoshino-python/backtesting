@@ -1,5 +1,6 @@
 """
-fast_engine.run_fast() が backtesting.py（SwingBreakoutStrategy1Min）と同じ結果になるかを確かめる。
+fast_engine.run_fast() が backtesting.py（SwingBreakoutStrategy1Min / SwingBreakoutTrail1Min /
+SwingBreakoutDowSwingExit1Min）と同じ結果になるかを確かめる。
 
 同じデータ・同じ設定で両方を実行し、取引履歴を1件ずつ照らし合わせ、主要な統計値と所要時間を比べる。
 一致しなかった場合は両方の取引履歴を fast_compare_results/<日時>_<ペア>/ に保存する。
@@ -7,6 +8,8 @@ fast_engine.run_fast() が backtesting.py（SwingBreakoutStrategy1Min）と同�
 例: python compare_fast_engine.py EURUSD 2024-01-01 2024-12-31
     python compare_fast_engine.py EURUSD 2024-01-01 2024-12-31 breakeven_trigger_r=1.0
     python compare_fast_engine.py EURUSD 2024-01-01 2024-12-31 exit_mode=swing_trail initial_sl_rule=near
+    python compare_fast_engine.py EURUSD 2024-01-01 2024-12-31 exit_mode=dow_swing
+    python compare_fast_engine.py EURUSD 2024-01-01 2024-12-31 exit_mode=dow_swing dow_mode=None min_h4_er=0.2
 """
 import sys
 import time
@@ -27,6 +30,7 @@ from main_4H_fixedSL_multi import (
     BASE_CFG, DATA_ROOT, zip_month_range, price_decimals_for, compute_h1_swings, SwingBreakoutTrail1Min,
 )
 from fast_engine import run_fast
+import main_4H_dow_swingExit as dow_swing
 
 TRADE_COLS = ["Size", "EntryBar", "ExitBar", "EntryPrice", "ExitPrice", "SL", "TP",
               "PnL", "Commission", "ReturnPct", "EntryTime", "ExitTime"]
@@ -62,13 +66,26 @@ def compare(pair, start, end, exit_mode="fixed", initial_sl_rule="atr", h1_windo
     （h1_window: 1時間足スイングの前後本数、initial_sl_rule: 当初SLの決め方）。
     overrides で BASE_CFG の項目を上書きできる（例: breakeven_trigger_r=1.0）
     """
-    cfg = dataclasses.replace(BASE_CFG, data_path=Path(DATA_ROOT) / pair, start_date=start,
+    base = dow_swing.CFG if exit_mode == "dow_swing" else BASE_CFG
+    cfg = dataclasses.replace(base, data_path=Path(DATA_ROOT) / pair, start_date=start,
                               end_date=end, price_decimals=price_decimals_for(pair), **overrides)
     trail = exit_mode == "swing_trail"
-    df, commission_func = prepare(pair, cfg, h1_window if trail else None)
+    if exit_mode == "dow_swing":
+        _, df, commission_func, _ = dow_swing.prepare(cfg)
+    else:
+        df, commission_func = prepare(pair, cfg, h1_window if trail else None)
     params = dict(sl_atr_multiplier=cfg.sl_atr_multiplier, price_decimals=cfg.price_decimals,
                   risk_pct=cfg.risk_pct)
-    if trail:
+    fast_df = df
+    if exit_mode == "dow_swing":
+        strategy = dow_swing.SwingBreakoutDowSwingExit1Min
+        params = dict(price_decimals=cfg.price_decimals, risk_pct=cfg.risk_pct, dow_mode=cfg.dow_mode,
+                      min_trend_age=cfg.min_trend_age, min_weekly_adx=cfg.min_weekly_adx, min_h4_er=cfg.min_h4_er)
+        fast_params = dict(price_decimals=cfg.price_decimals, risk_pct=cfg.risk_pct, exit_mode="dow_swing")
+        fast_df = dow_swing.dow_allow_columns(df, cfg)
+        label = (f"dow_swing（dow={cfg.dow_mode}, 決済スイング n={cfg.exit_window}, age={cfg.min_trend_age}, "
+                 f"adx={cfg.min_weekly_adx}, er={cfg.min_h4_er}）")
+    elif trail:
         strategy = SwingBreakoutTrail1Min
         params.update(initial_sl_rule=initial_sl_rule)
         fast_params = dict(params, exit_mode="swing_trail")
@@ -88,7 +105,7 @@ def compare(pair, start, end, exit_mode="fixed", initial_sl_rule="atr", h1_windo
         t_ref = time.perf_counter() - t
 
         t = time.perf_counter()
-        fast = run_fast(df, cash=cfg.cash, commission=commission_func, margin=cfg.margin, **fast_params)
+        fast = run_fast(fast_df, cash=cfg.cash, commission=commission_func, margin=cfg.margin, **fast_params)
         t_fast = time.perf_counter() - t
 
     a = ref["_trades"][TRADE_COLS].reset_index(drop=True)
@@ -141,7 +158,7 @@ if __name__ == "__main__":
             overrides[k] = None
         else:
             try:
-                overrides[k] = int(v) if k == "h1_window" else float(v)
+                overrides[k] = int(v) if k in ("h1_window", "exit_window", "window", "dow_n", "min_trend_age") else float(v)
             except ValueError:
                 overrides[k] = v
     compare(pair, start, end, **overrides)

@@ -4,6 +4,9 @@
 対応している戦略（exit_mode）:
   - "fixed"      : SwingBreakoutStrategy1Min（main_4H_fixedSL.py）。ATR倍率の固定 SL/TP＋建値ストップ
   - "swing_trail": SwingBreakoutTrail1Min（main_4H_fixedSL_multi.py）。1時間足スイングのトレーリングストップ（TP なし）
+  - "dow_swing"  : SwingBreakoutDowSwingExit1Min（main_4H_dow_swingExit.py）。4時間足スイングのトレーリングストップ
+                   （当初SLも直近の4時間足スイング。TP なし）。週足ダウ・トレンドの質のフィルターは
+                   呼び出し側で AllowLong / AllowShort 列にして渡す（main_4H_dow_swingExit.dow_allow_columns()）
 
 backtesting.py は1分足1本ごとに Strategy.next() とブローカー処理を Python で回すため、
 5年分（約180万本）だと1ペアあたり数分かかる。この戦略は
@@ -20,7 +23,7 @@ backtesting.py（0.6.x）のブローカーと同じ手順で1本ずつ処理す
     同じバーで触れ、SL には触れていない」場合だけ、そのバーで TP 決済する
   - fixed: ノーポジション中に置いた反対側の逆指値は、ポジションを持っても取り消されずに残る
     （exclusive_orders=False）。触れると今のポジションを決済する
-  - swing_trail: ポジションを持ったバーの next() で、反対側の逆指値を取り消す。
+  - swing_trail / dow_swing: ポジションを持ったバーの next() で、反対側の逆指値を取り消す。
     新しいスイングが既に終値の反対側にあるときの Trade.close() も、同じ next() の取消し
     （contingent でない注文の取消し）で消えるため、実際には成行決済されない。
     終値がスイングの内側に戻ったバーで SL が移動する
@@ -28,15 +31,18 @@ backtesting.py（0.6.x）のブローカーと同じ手順で1本ずつ処理す
   - 手数料・証拠金不足による注文取消し・一部決済・期間終了時に残ったポジション（取引履歴に含めない）
 
 使い方（bt.run() と同じ引数。df は map_signals_to_1min() で Signal* 列を付けた1分足。
-swing_trail では compute_h1_swings() の H1SH / H1SL / H1SHSeq / H1SLSeq 列も必要）:
+swing_trail では compute_h1_swings() の H1SH / H1SL / H1SHSeq / H1SLSeq 列、
+dow_swing では compute_exit_swings() の ExitSH / ExitSL 列と DowTrend 列も必要）:
     from fast_engine import run_fast
     stats = run_fast(df, cash=cfg.cash, commission=commission_func, margin=cfg.margin,
                      sl_atr_multiplier=..., tp_atr_multiplier=..., breakeven_trigger_r=...,
                      price_decimals=..., risk_pct=...)                      # fixed
     stats = run_fast(df, ..., exit_mode="swing_trail", initial_sl_rule="atr")  # swing_trail
+    stats = run_fast(df, cash=, commission=, margin=, price_decimals=, risk_pct=, exit_mode="dow_swing")
     stats["_trades"]  # backtesting.py と同じ列（Entry_/Exit_ の指標列は無し）
 
-戦略のルール（SwingBreakoutStrategy1Min / move_sl_to_breakeven() / SwingBreakoutTrail1Min）を変えたら、
+戦略のルール（SwingBreakoutStrategy1Min / move_sl_to_breakeven() / SwingBreakoutTrail1Min /
+SwingBreakoutDowSwingExit1Min）を変えたら、
 ここも合わせて変えること。compare_fast_engine.py で backtesting.py との一致を確かめられる。
 """
 import warnings
@@ -49,7 +55,9 @@ from backtesting._stats import compute_stats
 
 _SIGNAL_COLS = ("SignalSH", "SignalSL", "SignalSHValid", "SignalSLValid", "SignalATR")
 _H1_COLS = ("H1SH", "H1SL", "H1SHSeq", "H1SLSeq")
-EXIT_MODES = ("fixed", "swing_trail")
+_EXIT_COLS = ("ExitSH", "ExitSL", "DowTrend")
+EXIT_MODES = ("fixed", "swing_trail", "dow_swing")
+TRAIL_MODES = ("swing_trail", "dow_swing")
 
 
 class _Order:
@@ -143,15 +151,27 @@ class _Sim:
         self.cash_events = []  # (bar, cash) 現金が変わったバーと変わった後の値（資産曲線用）
 
         sh, sl_line, shv, slv, atr = (df[c].to_numpy(float) for c in _SIGNAL_COLS)
-        indicators = [sh, sl_line, shv, slv, atr]
+        # Strategy.I で登録している指標（warmup の計算に入る）
+        indicators = [sh, sl_line, shv, slv]
+        # トレーリングに使うスイング（買い: tr_sl / 売り: tr_sh）と、その「確定回数」（None なら確認しない）
+        self.tr_sh = self.tr_sl = self.seq_sh = self.seq_sl = None
         if exit_mode == "swing_trail":
             missing = [c for c in _H1_COLS if c not in df.columns]
             if missing:
                 raise ValueError(f"swing_trail には compute_h1_swings() の列が必要です（無い列: {missing}）")
-            self.h1sh, self.h1sl, self.h1sh_seq, self.h1sl_seq = (df[c].to_numpy(float) for c in _H1_COLS)
-            indicators += [self.h1sh, self.h1sl]  # Strategy.I で登録している指標（warmup の計算に入る）
-            self.h1_changes_long = _change_bars(self.h1sl, self.h1sl_seq)
-            self.h1_changes_short = _change_bars(self.h1sh, self.h1sh_seq)
+            self.tr_sh, self.tr_sl, self.seq_sh, self.seq_sl = (df[c].to_numpy(float) for c in _H1_COLS)
+            indicators += [atr, self.tr_sh, self.tr_sl]
+        elif exit_mode == "dow_swing":
+            missing = [c for c in _EXIT_COLS if c not in df.columns]
+            if missing:
+                raise ValueError(f"dow_swing には ExitSH / ExitSL / DowTrend 列が必要です（無い列: {missing}）")
+            self.tr_sh, self.tr_sl, dow = (df[c].to_numpy(float) for c in _EXIT_COLS)
+            indicators += [self.tr_sh, self.tr_sl, dow]  # SignalATR は使わない（I に登録していない）
+        else:
+            indicators.append(atr)
+        if self.tr_sh is not None:
+            self.changes_long = _change_bars(*(a for a in (self.tr_sl, self.seq_sl) if a is not None))
+            self.changes_short = _change_bars(*(a for a in (self.tr_sh, self.seq_sh) if a is not None))
         # Strategy.next() は Strategy.I の指標が全て揃ってから呼ばれる（backtesting.py の warmup）
         self.start = 1 + max(int(np.isnan(a).argmin()) for a in indicators)
 
@@ -174,13 +194,20 @@ class _Sim:
                 self.tps = np.round(self.es - tp_dist, d)
                 self.sls = np.round(self.es + sl_dist, d)
                 can_b = can_s = ok
-            else:
+            elif exit_mode == "swing_trail":
                 ok = nan_free
                 self.tpb = self.tps = None
                 self.slb, self.size_b, can_b = self._trail_entry(True, atr * sl_atr_multiplier,
                                                                  initial_sl_rule, risk_amount)
                 self.sls, self.size_s, can_s = self._trail_entry(False, atr * sl_atr_multiplier,
                                                                  initial_sl_rule, risk_amount)
+            else:
+                # dow_swing: ノーポジションのバーでは毎回注文を取り消して置き直す（データ欠損でも return しない）。
+                # 当初SL = 直近の4時間足スイング。エントリー価格の反対側に無ければ発注しない
+                ok = np.ones(self.n, dtype=bool)
+                self.tpb = self.tps = None
+                self.slb, self.size_b, can_b = self._swing_entry(True, risk_amount)
+                self.sls, self.size_s, can_s = self._swing_entry(False, risk_amount)
             # self.sh_valid[-1] の真偽（NaN は True 扱い）
             self.place_buy = ok & can_b & (self.C < sh) & (shv != 0)
             self.place_sell = ok & can_s & (self.C > sl_line) & (slv != 0)
@@ -220,7 +247,7 @@ class _Sim:
     def _trail_entry(self, is_long, atr_dist, rule, risk_amount):
         """SwingBreakoutTrail1Min.place_entry() の当初SL・枚数（と発注できるか）をバーごとに計算する"""
         entry = self.eb if is_long else self.es
-        swing = self.h1sl if is_long else self.h1sh
+        swing = self.tr_sl if is_long else self.tr_sh
         sl = entry - atr_dist if is_long else entry + atr_dist
         if rule in ("near", "far"):
             usable = ~np.isnan(swing) & ((swing < entry) if is_long else (swing > entry))
@@ -232,6 +259,16 @@ class _Sim:
         dist = np.abs(entry - sl)
         size = np.trunc(np.nan_to_num(np.where(dist > 0, risk_amount / dist, 0.0))).astype(np.int64)
         return sl, size, (dist > 0) & (size > 0)
+
+    def _swing_entry(self, is_long, risk_amount):
+        """SwingBreakoutDowSwingExit1Min.place_entry() の当初SL・枚数（と発注できるか）をバーごとに計算する"""
+        entry = self.eb if is_long else self.es
+        sl = np.round(self.tr_sl if is_long else self.tr_sh, self.d)
+        with np.errstate(invalid="ignore"):
+            usable = ~np.isnan(sl) & ((sl < entry) if is_long else (sl > entry))
+            dist = np.abs(entry - sl)
+            size = np.trunc(np.nan_to_num(np.where(usable, risk_amount / dist, 0.0))).astype(np.int64)
+        return sl, size, usable & (size > 0)
 
     # ---------- backtesting.py の _Broker と同じ処理 ----------
     def _set_contingent(self, trade, kind, price):
@@ -371,7 +408,7 @@ class _Sim:
             if not self.ok[i] or self.trades:
                 return
         else:
-            # SwingBreakoutTrail1Min.next()
+            # SwingBreakoutTrail1Min.next() / SwingBreakoutDowSwingExit1Min.next()
             self._trail_stops(i)
             if self.trades:
                 # 残っている反対側のエントリー注文を取り消す（SL・成行決済の注文は残す）
@@ -399,17 +436,26 @@ class _Sim:
                 if r > 0 and l <= entry - r * trig:
                     self._set_contingent(trade, "sl", entry)
 
+    def _trail_candidate(self, trade, i):
+        """
+        バー i でトレーリングの対象になるスイング（丸め済み）。対象外なら None。
+        swing_trail はエントリー後に確定したスイングだけ（確定回数で判定）、dow_swing は直近のスイング
+        """
+        if trade.is_long:
+            new_sl, seq = self.tr_sl[i], self.seq_sl
+        else:
+            new_sl, seq = self.tr_sh[i], self.seq_sh
+        if np.isnan(new_sl) or (seq is not None and not seq[i] > seq[trade.entry_bar]):
+            return None
+        return np.round(new_sl, self.d)
+
     def _trail_stops(self, i):
-        """SwingBreakoutTrail1Min.trail_stops()"""
+        """SwingBreakoutTrail1Min.trail_stops() / SwingBreakoutDowSwingExit1Min.trail_stops()"""
         close = self.C[i]
         for trade in tuple(self.trades):
-            if trade.is_long:
-                new_sl, seq = self.h1sl[i], self.h1sl_seq
-            else:
-                new_sl, seq = self.h1sh[i], self.h1sh_seq
-            if np.isnan(new_sl) or not seq[i] > seq[trade.entry_bar]:
+            new_sl = self._trail_candidate(trade, i)
+            if new_sl is None:
                 continue
-            new_sl = np.round(new_sl, self.d)
             sl = trade.sl
             if sl is not None:
                 if trade.is_long and new_sl <= sl:
@@ -431,13 +477,9 @@ class _Sim:
         """
         c_hi, c_lo = np.inf, -np.inf
         for trade in self.trades:
-            if trade.is_long:
-                new_sl, seq = self.h1sl[i], self.h1sl_seq
-            else:
-                new_sl, seq = self.h1sh[i], self.h1sh_seq
-            if np.isnan(new_sl) or not seq[i] > seq[trade.entry_bar]:
+            new_sl = self._trail_candidate(trade, i)
+            if new_sl is None:
                 continue
-            new_sl = np.round(new_sl, self.d)
             sl = trade.sl
             if sl is not None and (new_sl <= sl if trade.is_long else new_sl >= sl):
                 continue
@@ -510,10 +552,10 @@ class _Sim:
         return limit
 
     def _next_trail_bar(self, i):
-        """保有中のトレードについて、1時間足スイングの値が変わる次のバー（トレーリングが動き得るバー）"""
+        """保有中のトレードについて、トレーリング用スイングの値が変わる次のバー（トレーリングが動き得るバー）"""
         nxt = self.n
         for trade in self.trades:
-            bars = self.h1_changes_long if trade.is_long else self.h1_changes_short
+            bars = self.changes_long if trade.is_long else self.changes_short
             k = int(np.searchsorted(bars, i, side="right"))
             if k < len(bars):
                 nxt = min(nxt, int(bars[k]))
@@ -537,7 +579,7 @@ class _Sim:
                 th = self._thresholds()
                 if th is None:
                     i += 1
-                elif self.mode == "swing_trail":
+                elif self.mode in TRAIL_MODES:
                     limit = self._next_trail_bar(i) + 1
                     c_hi, c_lo = self._pending_trail(i)
                     i = min(self._next_hit(i + 1, th[0], th[1], min(limit, n), c_hi, c_lo), limit - 1)
@@ -580,7 +622,7 @@ class _Sim:
         return pd.Series(eq).bfill().fillna(self.cash).to_numpy()
 
 
-def run_fast(df, *, cash, commission, margin, sl_atr_multiplier, price_decimals, risk_pct,
+def run_fast(df, *, cash, commission, margin, price_decimals, risk_pct, sl_atr_multiplier=None,
              tp_atr_multiplier=None, breakeven_trigger_r=None, exit_mode="fixed", initial_sl_rule="atr"):
     """
     exit_mode="fixed":
@@ -588,12 +630,17 @@ def run_fast(df, *, cash, commission, margin, sl_atr_multiplier, price_decimals,
         .run(sl_atr_multiplier=, tp_atr_multiplier=, breakeven_trigger_r=, price_decimals=, risk_pct=)
     exit_mode="swing_trail":
         Backtest(df, SwingBreakoutTrail1Min, ...).run(sl_atr_multiplier=, price_decimals=, risk_pct=, initial_sl_rule=)
+    exit_mode="dow_swing":
+        Backtest(df, SwingBreakoutDowSwingExit1Min, ...).run(price_decimals=, risk_pct=, dow_mode=, min_*=)
+        （dow_mode / min_* のフィルターは df の AllowLong / AllowShort 列で渡す。main_4H_dow_swingExit.dow_allow_columns()）
     と同じ結果（stats の pd.Series）を返す。
 
     commission は backtesting.py と同じく関数 commission(order_size, price)、または比率（float）。
     """
     if exit_mode == "fixed" and tp_atr_multiplier is None:
         raise ValueError('exit_mode="fixed" には tp_atr_multiplier が必要です')
+    if exit_mode in ("fixed", "swing_trail") and sl_atr_multiplier is None:
+        raise ValueError(f'exit_mode="{exit_mode}" には sl_atr_multiplier が必要です')
     if not callable(commission):
         rate = float(commission)
         commission = lambda size, price: abs(size) * price * rate  # noqa: E731
@@ -616,6 +663,7 @@ def run_fast(df, *, cash, commission, margin, sl_atr_multiplier, price_decimals,
     c = ohlc["Close"].to_numpy()
     first = sim.start - 1
     stats["Buy & Hold Return [%]"] = (c[-1] - c[first]) / c[first] * 100
-    name = "SwingBreakoutStrategy1Min" if exit_mode == "fixed" else "SwingBreakoutTrail1Min"
+    name = {"fixed": "SwingBreakoutStrategy1Min", "swing_trail": "SwingBreakoutTrail1Min",
+            "dow_swing": "SwingBreakoutDowSwingExit1Min"}[exit_mode]
     stats["_strategy"] = f"{name}(fast_engine)"
     return stats
