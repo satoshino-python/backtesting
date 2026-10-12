@@ -1,0 +1,87 @@
+<title>金スポット 金利調整額の反映</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: one phone-width column — headline numbers, equity curve, yearly table, chart link, rules and cautions. Same look as the existing swing-breakout reports */
+:root { --bg:#f3f5f7; --surface:#fff; --line:#dde2e8; --fg:#17202b; --muted:#5e6b7a; --accent:#2a5bd7; --accent-soft:#e3eafb; --pos:#18865a; --neg:#c8413a; --gold:#9a7412;
+  --f-head:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",system-ui,sans-serif; --f-num:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#0f141a; --surface:#171e26; --line:#2a333e; --fg:#e3e8ee; --muted:#93a0ae; --accent:#79a2ff; --accent-soft:#1d2a45; --pos:#3ccb8b; --neg:#f0726a; --gold:#e0b84a; color-scheme:dark; } }
+:root[data-theme="dark"] { --bg:#0f141a; --surface:#171e26; --line:#2a333e; --fg:#e3e8ee; --muted:#93a0ae; --accent:#79a2ff; --accent-soft:#1d2a45; --pos:#3ccb8b; --neg:#f0726a; --gold:#e0b84a; color-scheme:dark; }
+* { box-sizing:border-box; }
+body { background:var(--bg); color:var(--fg); font:15px/1.6 var(--f-head); -webkit-text-size-adjust:100%; }
+.wrap { max-width:860px; margin:0 auto; padding:20px 16px 48px; display:grid; gap:26px; }
+.wrap > * { min-width:0; }
+h1 { font-size:1.45rem; line-height:1.3; margin:0; font-weight:700; text-wrap:balance; }
+h2 { font-size:1.05rem; margin:0 0 10px; font-weight:700; text-wrap:balance; }
+p { margin:0; } .sub { color:var(--muted); font-size:.85rem; margin-top:6px; }
+.num { font-family:var(--f-num); font-variant-numeric:tabular-nums; } .pos { color:var(--pos); } .neg { color:var(--neg); } .muted { color:var(--muted); }
+.cmp { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+.cmp div { background:var(--surface); padding:10px 12px; min-width:0; }
+.cmp .l { font-size:.7rem; color:var(--muted); letter-spacing:.04em; }
+.cmp .v { font-family:var(--f-num); font-size:1.2rem; font-weight:600; white-space:nowrap; }
+.cmp .was { font-family:var(--f-num); font-size:.72rem; color:var(--muted); }
+.card { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px; }
+.card p { font-size:.88rem; color:var(--muted); } .card p + p { margin-top:6px; } .card b { color:var(--fg); font-weight:500; }
+svg { width:100%; height:auto; display:block; }
+.gl { stroke:var(--line); stroke-width:1; } .ax { fill:var(--muted); font:11px var(--f-num); }
+.l-n { fill:none; stroke:var(--accent); stroke-width:2; } .l-g { fill:none; stroke:var(--gold); stroke-width:1.5; stroke-dasharray:4 3; }
+.legend { display:flex; gap:16px; flex-wrap:wrap; font-size:.78rem; color:var(--muted); margin-top:6px; }
+.legend i { display:inline-block; width:18px; height:0; border-top:2px solid var(--accent); vertical-align:middle; margin-right:6px; }
+.legend i.g { border-top:2px dashed var(--gold); }
+.scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; border:1px solid var(--line); border-radius:12px; background:var(--surface); }
+table { border-collapse:collapse; width:100%; font-size:.82rem; font-family:var(--f-num); }
+th,td { padding:7px 10px; text-align:right; white-space:nowrap; border-bottom:1px solid var(--line); }
+th { font-weight:500; color:var(--muted); font-size:.72rem; font-family:var(--f-head); }
+th:first-child,td:first-child { text-align:left; } tr:last-child td { border-bottom:0; } tr.tot td { background:var(--accent-soft); font-weight:600; }
+.link { display:block; text-decoration:none; color:var(--fg); background:var(--surface); border:1.5px solid var(--accent); border-radius:12px; padding:14px; }
+.link:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.link b { display:block; } .link span { font-size:.82rem; color:var(--muted); }
+ul { margin:0; padding-left:1.2em; display:grid; gap:6px; font-size:.88rem; color:var(--muted); } li b { color:var(--fg); font-weight:500; }
+code { font-family:var(--f-num); font-size:.78rem; background:var(--accent-soft); padding:1px 5px; border-radius:4px; }
+</style>
+<main class="wrap">
+<header><h1>金スポット 金利調整額の反映</h1>
+<p class="sub">XAUUSD 2021-01-04 ~ 2025-12-31 / 4H スイングブレイク、SL 1.5・TP 2.5 ATR、建値ストップなし / 1分足執行 / 1R = 200 USD</p></header>
+
+<section><h2>結果（金利調整後）</h2>
+<div class="cmp">
+<div><div class="l">合計R</div><div class="v">21.96</div><div class="was">調整前 22.24</div></div>
+<div><div class="l">プロフィットファクター</div><div class="v">1.31</div><div class="was">調整前 1.31</div></div>
+<div><div class="l">最大DD（R）</div><div class="v">10.3</div><div class="was">調整前 10.3</div></div>
+<div><div class="l">取引数 / 勝率</div><div class="v">133 / 45.1%</div><div class="was">金利が付いた取引 83 件</div></div>
+<div><div class="l">金利調整額 合計</div><div class="v neg">-56.6 USD</div><div class="was">-0.28R</div></div>
+<div><div class="l">収益率 / 最大DD</div><div class="v">+43.9% / -20.7%</div><div class="was">初期資金 10,000 USD</div></div>
+</div>
+<p class="sub">5年間の金利調整額は -0.28R で、成績への影響は小さい結果でした。保有期間の中央値が約0.9日と短く、金利が低かった2021〜2022年は1日あたり数円だったためです。</p></section>
+
+<section><h2>累積R</h2><div class="card"><svg viewBox="0 0 640 240" role="img" aria-label="累積R。金利調整前と調整後がほぼ重なる"><line x1="44" x2="628" y1="214.0" y2="214.0" class="gl"/><text x="38" y="218.0" class="ax" text-anchor="end">-10</text><line x1="44" x2="628" y1="185.1" y2="185.1" class="gl"/><text x="38" y="189.1" class="ax" text-anchor="end">-5</text><line x1="44" x2="628" y1="156.3" y2="156.3" class="gl"/><text x="38" y="160.3" class="ax" text-anchor="end">0</text><line x1="44" x2="628" y1="127.4" y2="127.4" class="gl"/><text x="38" y="131.4" class="ax" text-anchor="end">5</text><line x1="44" x2="628" y1="98.6" y2="98.6" class="gl"/><text x="38" y="102.6" class="ax" text-anchor="end">10</text><line x1="44" x2="628" y1="69.7" y2="69.7" class="gl"/><text x="38" y="73.7" class="ax" text-anchor="end">15</text><line x1="44" x2="628" y1="40.9" y2="40.9" class="gl"/><text x="38" y="44.9" class="ax" text-anchor="end">20</text><line x1="44" x2="628" y1="12.0" y2="12.0" class="gl"/><text x="38" y="16.0" class="ax" text-anchor="end">25</text><text x="158.9" y="232" class="ax" text-anchor="middle">2022</text><text x="277.2" y="232" class="ax" text-anchor="middle">2023</text><text x="395.4" y="232" class="ax" text-anchor="middle">2024</text><text x="514.0" y="232" class="ax" text-anchor="middle">2025</text>
+<path d="M44.0,156.3 L44.0,156.3 L44.0,162.0 L46.3,162.0 L46.3,167.7 L49.9,167.7 L49.9,173.1 L51.9,173.1 L51.9,164.3 L57.7,164.3 L57.7,169.9 L59.0,169.9 L59.0,160.4 L64.9,160.4 L64.9,166.2 L69.3,166.2 L69.3,156.9 L72.6,156.9 L72.6,162.7 L74.8,162.7 L74.8,153.7 L80.6,153.7 L80.6,159.3 L85.0,159.3 L85.0,150.2 L87.8,150.2 L87.8,141.1 L89.8,141.1 L89.8,146.8 L94.0,146.8 L94.0,152.5 L99.2,152.5 L99.2,158.2 L99.8,158.2 L99.8,164.0 L105.2,164.0 L105.2,169.7 L106.6,169.7 L106.6,175.4 L111.1,175.4 L111.1,166.0 L117.3,166.0 L117.3,171.9 L121.4,171.9 L121.4,177.8 L123.8,177.8 L123.8,183.5 L127.0,183.5 L127.0,189.1 L131.6,189.1 L131.6,194.8 L136.1,194.8 L136.1,200.6 L142.0,200.6 L142.0,191.4 L153.7,191.4 L153.7,197.3 L154.2,197.3 L154.2,188.4 L157.9,188.4 L157.9,194.4 L162.0,194.4 L162.0,200.1 L165.2,200.1 L165.2,191.0 L167.8,191.0 L167.8,182.0 L173.4,182.0 L173.4,172.6 L180.4,172.6 L180.4,164.1 L187.6,164.1 L187.6,169.8 L191.8,169.8 L191.8,160.9 L196.6,160.9 L196.6,151.8 L201.6,151.8 L201.6,142.9 L208.2,142.9 L208.2,148.8 L208.7,148.8 L208.7,154.6 L210.9,154.6 L210.9,160.4 L211.7,160.4 L211.7,166.2 L217.4,166.2 L217.4,172.0 L221.6,172.0 L221.6,163.1 L224.2,163.1 L224.2,168.9 L226.7,168.9 L226.7,159.5 L236.8,159.5 L236.8,165.2 L242.4,165.2 L242.4,156.2 L244.4,156.2 L244.4,161.9 L248.5,161.9 L248.5,152.6 L258.4,152.6 L258.4,158.5 L259.9,158.5 L259.9,149.4 L268.6,149.4 L268.6,154.8 L271.2,154.8 L271.2,161.0 L271.6,161.0 L271.6,166.7 L275.8,166.7 L275.8,172.4 L278.2,172.4 L278.2,163.1 L284.5,163.1 L284.5,168.5 L287.7,168.5 L287.7,174.4 L291.8,174.4 L291.8,165.5 L296.2,165.5 L296.2,171.2 L298.4,171.2 L298.4,177.0 L300.1,177.0 L300.1,167.0 L307.7,167.0 L307.7,158.1 L310.7,158.1 L310.7,163.9 L311.9,163.9 L311.9,169.6 L316.9,169.6 L316.9,160.6 L322.1,160.6 L322.1,166.2 L325.9,166.2 L325.9,171.9 L330.8,171.9 L330.8,177.8 L332.8,177.8 L332.8,183.7 L335.7,183.7 L335.7,189.4 L339.5,189.4 L339.5,180.0 L350.6,180.0 L350.6,185.8 L360.2,185.8 L360.2,176.7 L362.2,176.7 L362.2,167.4 L364.5,167.4 L364.5,158.1 L371.7,158.1 L371.7,148.7 L375.5,148.7 L375.5,154.3 L378.1,154.3 L378.1,145.3 L384.6,145.3 L384.6,135.9 L392.3,135.9 L392.3,127.1 L398.9,127.1 L398.9,133.0 L401.3,133.0 L401.3,138.8 L405.9,138.8 L405.9,144.3 L409.4,144.3 L409.4,150.3 L415.0,150.3 L415.0,141.1 L420.5,141.1 L420.5,146.8 L421.3,146.8 L421.3,137.5 L421.5,137.5 L421.5,143.4 L424.9,143.4 L424.9,134.0 L434.8,134.0 L434.8,139.7 L438.7,139.7 L438.7,145.0 L444.1,145.0 L444.1,150.9 L448.4,150.9 L448.4,156.5 L451.0,156.5 L451.0,147.4 L453.2,147.4 L453.2,153.1 L455.9,153.1 L455.9,144.0 L457.8,144.0 L457.8,134.9 L464.6,134.9 L464.6,125.5 L468.8,125.5 L468.8,131.3 L476.2,131.3 L476.2,137.1 L478.2,137.1 L478.2,128.1 L487.4,128.1 L487.4,133.8 L489.7,133.8 L489.7,124.7 L493.6,124.7 L493.6,115.6 L498.5,115.6 L498.5,106.9 L507.2,106.9 L507.2,98.2 L509.7,98.2 L509.7,89.3 L514.6,89.3 L514.6,79.9 L517.1,79.9 L517.1,71.2 L520.5,71.2 L520.5,62.3 L523.9,62.3 L523.9,52.9 L530.1,52.9 L530.1,58.7 L537.2,58.7 L537.2,49.7 L542.8,49.7 L542.8,40.4 L545.1,40.4 L545.1,45.2 L548.0,45.2 L548.0,37.4 L554.3,37.4 L554.3,42.4 L557.4,42.4 L557.4,33.1 L564.7,33.1 L564.7,38.5 L568.2,38.5 L568.2,43.5 L572.2,43.5 L572.2,34.9 L577.0,34.9 L577.0,40.2 L581.9,40.2 L581.9,45.5 L591.9,45.5 L591.9,36.4 L598.1,36.4 L598.1,42.1 L602.1,42.1 L602.1,34.1 L615.4,34.1 L615.4,38.5 L621.4,38.5 L621.4,30.9 L625.8,30.9 L625.8,22.3 L628.0,22.3 L628.0,27.9" class="l-g"/><path d="M44.0,156.3 L44.0,156.3 L44.0,162.0 L46.3,162.0 L46.3,167.7 L49.9,167.7 L49.9,173.1 L51.9,173.1 L51.9,164.3 L57.7,164.3 L57.7,169.9 L59.0,169.9 L59.0,160.4 L64.9,160.4 L64.9,166.2 L69.3,166.2 L69.3,156.9 L72.6,156.9 L72.6,162.7 L74.8,162.7 L74.8,153.7 L80.6,153.7 L80.6,159.3 L85.0,159.3 L85.0,150.3 L87.8,150.3 L87.8,141.1 L89.8,141.1 L89.8,146.9 L94.0,146.9 L94.0,152.5 L99.2,152.5 L99.2,158.2 L99.8,158.2 L99.8,164.0 L105.2,164.0 L105.2,169.8 L106.6,169.8 L106.6,175.4 L111.1,175.4 L111.1,166.1 L117.3,166.1 L117.3,172.0 L121.4,172.0 L121.4,177.9 L123.8,177.9 L123.8,183.6 L127.0,183.6 L127.0,189.2 L131.6,189.2 L131.6,194.9 L136.1,194.9 L136.1,200.7 L142.0,200.7 L142.0,191.6 L153.7,191.6 L153.7,197.5 L154.2,197.5 L154.2,188.5 L157.9,188.5 L157.9,194.5 L162.0,194.5 L162.0,200.2 L165.2,200.2 L165.2,191.2 L167.8,191.2 L167.8,182.2 L173.4,182.2 L173.4,172.8 L180.4,172.8 L180.4,164.3 L187.6,164.3 L187.6,170.0 L191.8,170.0 L191.8,161.1 L196.6,161.1 L196.6,152.0 L201.6,152.0 L201.6,143.1 L208.2,143.1 L208.2,149.0 L208.7,149.0 L208.7,154.7 L210.9,154.7 L210.9,160.5 L211.7,160.5 L211.7,166.4 L217.4,166.4 L217.4,172.2 L221.6,172.2 L221.6,163.2 L224.2,163.2 L224.2,168.9 L226.7,168.9 L226.7,159.6 L236.8,159.6 L236.8,165.4 L242.4,165.4 L242.4,156.4 L244.4,156.4 L244.4,162.1 L248.5,162.1 L248.5,152.9 L258.4,152.9 L258.4,158.7 L259.9,158.7 L259.9,149.7 L268.6,149.7 L268.6,155.3 L271.2,155.3 L271.2,161.4 L271.6,161.4 L271.6,167.2 L275.8,167.2 L275.8,173.0 L278.2,173.0 L278.2,163.8 L284.5,163.8 L284.5,169.4 L287.7,169.4 L287.7,175.6 L291.8,175.6 L291.8,166.4 L296.2,166.4 L296.2,171.7 L298.4,171.7 L298.4,177.8 L300.1,177.8 L300.1,168.0 L307.7,168.0 L307.7,159.6 L310.7,159.6 L310.7,165.5 L311.9,165.5 L311.9,171.2 L316.9,171.2 L316.9,162.3 L322.1,162.3 L322.1,167.8 L325.9,167.8 L325.9,173.1 L330.8,173.1 L330.8,179.0 L332.8,179.0 L332.8,184.8 L335.7,184.8 L335.7,189.9 L339.5,189.9 L339.5,180.6 L350.6,180.6 L350.6,186.5 L360.2,186.5 L360.2,176.4 L362.2,176.4 L362.2,167.5 L364.5,167.5 L364.5,158.0 L371.7,158.0 L371.7,149.0 L375.5,149.0 L375.5,154.9 L378.1,154.9 L378.1,145.7 L384.6,145.7 L384.6,136.6 L392.3,136.6 L392.3,127.8 L398.9,127.8 L398.9,133.7 L401.3,133.7 L401.3,138.9 L405.9,138.9 L405.9,144.6 L409.4,144.6 L409.4,150.4 L415.0,150.4 L415.0,141.4 L420.5,141.4 L420.5,147.1 L421.3,147.1 L421.3,137.8 L421.5,137.8 L421.5,143.7 L424.9,143.7 L424.9,134.3 L434.8,134.3 L434.8,139.9 L438.7,139.9 L438.7,145.3 L444.1,145.3 L444.1,151.2 L448.4,151.2 L448.4,156.5 L451.0,156.5 L451.0,147.5 L453.2,147.5 L453.2,152.8 L455.9,152.8 L455.9,143.6 L457.8,143.6 L457.8,134.6 L464.6,134.6 L464.6,125.5 L468.8,125.5 L468.8,131.4 L476.2,131.4 L476.2,137.2 L478.2,137.2 L478.2,128.2 L487.4,128.2 L487.4,133.4 L489.7,133.4 L489.7,124.4 L493.6,124.4 L493.6,115.4 L498.5,115.4 L498.5,106.5 L507.2,106.5 L507.2,98.0 L509.7,98.0 L509.7,89.1 L514.6,89.1 L514.6,79.8 L517.1,79.8 L517.1,71.5 L520.5,71.5 L520.5,62.8 L523.9,62.8 L523.9,53.3 L530.1,53.3 L530.1,59.2 L537.2,59.2 L537.2,50.2 L542.8,50.2 L542.8,41.1 L545.1,41.1 L545.1,45.9 L548.0,45.9 L548.0,38.4 L554.3,38.4 L554.3,43.3 L557.4,43.3 L557.4,33.8 L564.7,33.8 L564.7,39.7 L568.2,39.7 L568.2,44.9 L572.2,44.9 L572.2,36.2 L577.0,36.2 L577.0,41.6 L581.9,41.6 L581.9,46.8 L591.9,46.8 L591.9,37.7 L598.1,37.7 L598.1,43.6 L602.1,43.6 L602.1,35.7 L615.4,35.7 L615.4,39.7 L621.4,39.7 L621.4,32.4 L625.8,32.4 L625.8,23.9 L628.0,23.9 L628.0,29.5" class="l-n"/></svg>
+<div class="legend"><span><i></i>金利調整後</span><span><i class="g"></i>金利調整前</span></div></div>
+<p class="hint muted" style="font-size:.8rem;margin-top:8px">決済時点で計上した累積。2枚の線はほぼ重なります。</p></section>
+
+<section><h2>年別</h2>
+<div class="scroll"><table><thead><tr><th>決済年</th><th>取引</th><th>調整前R</th><th>調整後R</th><th>金利 USD</th><th>金利 R</th></tr></thead><tbody><tr><td>2021</td><td>30</td><td>-6.60</td><td>-6.62</td><td class="neg">-5.2</td><td class="neg">-0.03</td></tr><tr><td>2022</td><td>27</td><td>3.80</td><td>3.73</td><td class="neg">-14.5</td><td class="neg">-0.07</td></tr><tr><td>2023</td><td>26</td><td>7.85</td><td>7.83</td><td class="neg">-2.8</td><td class="neg">-0.01</td></tr><tr><td>2024</td><td>27</td><td>6.55</td><td>6.71</td><td class="pos">+32.2</td><td class="pos">+0.16</td></tr><tr><td>2025</td><td>23</td><td>10.65</td><td>10.31</td><td class="neg">-66.2</td><td class="neg">-0.33</td></tr><tr class="tot"><td>合計</td><td>133</td><td>22.24</td><td>21.96</td><td class="neg">-56.6</td><td class="neg">-0.28</td></tr></tbody></table></div>
+<p class="sub">買いは77件で -282.1 USD、売りは56件で +225.5 USD。2024年は売りの受取りが上回り、プラスになっています。2025年は1日あたり約-90円（1オンス）まで上がり、年間で最も重くなりました。</p></section>
+
+<section><h2>トレード付きダウ理論チャート</h2>
+<a class="link" href="dow_trade_chart_XAUUSD_20210104-20251231_fixed.html"><b>XAUUSD 2021-01-04 ~ 2025-12-31</b><span>エントリー ▲▼・決済 ●・SL/TP・週足トレンド背景（約2.5MB。別ページで開きます）。損益は金利調整後です。</span></a></section>
+
+<section><h2>金利調整額の計算ルール</h2>
+<ul>
+<li><b>対象:</b> 発生日ごとの NY 17:00 をまたいだポジション（エントリー &lt; 17:00 ≦ 決済）。水曜などの複数日分は、シートの金額（付与日数ぶんの合計）をそのまま使います。</li>
+<li><b>金額:</b> オンス数 × シートの金額。買いは「買」列、売りは「売」列です。単位は円/1オンス。</li>
+<li><b>円から USD へ:</b> 取引ごとの合計を、決済時点の USDJPY（1分足の仲値）で割ります。</li>
+<li><b>反映先:</b> 取引の損益と資産曲線（決済時に計上）。R はこの損益から計算します。</li>
+<li><b>データ:</b> <code>swap_data/gold_spot_interest.csv</code>（シートの「金利調整額」、金スポット 2020-01-02 ~ 2025-12-31、1,470行。土日・休場日は調整なしで省略）。</li>
+</ul></section>
+
+<section><h2>読むときの注意</h2>
+<ul>
+<li>期間の分割（検証期間とそれ以外）は行っていません。パラメータは既存の設定のままで、金利調整額は後から損益に足しただけです。</li>
+<li>金利調整額は損益に足すだけで、エントリー・決済の判断には影響しません。取引の件数やタイミングは調整前と同じです。</li>
+<li>保有中の日ごとの調整額は決済時に1回で計上するため、含み損益の途中経過（最大DDなど）は日次の発生を反映しません。</li>
+<li>Sharpe など backtesting.py の他の統計値は金利調整前の資産曲線から計算されたままです。Return・最大DD [%]・Equity Final は調整後に直してあります。</li>
+<li>価格調整額（先物の限月切替）は金スポットには発生しないため対象外です。</li>
+<li>スプレッドは既存どおり平均相対スプレッドの半分を売買の各回に課金しています。</li>
+</ul></section>
+</main>

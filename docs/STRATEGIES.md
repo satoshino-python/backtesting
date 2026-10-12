@@ -32,6 +32,16 @@
 `SwingBreakoutTrail1Min`（`main_4H_fixedSL_multi.py`）の売買ルールを自前で再現しているため、
 **これらのルールを変えたら `fast_engine.py` も合わせて直し、`compare_fast_engine.py` で一致を確かめる。**
 
+## 金利調整額（CFD の保有コスト）
+`main_4H_fixedSL_fast_multi.py` の `INTEREST_CSV`（ペア名 → CSV）に載せたペアは、取引履歴の損益に金利調整額を反映する
+（既定は `XAUUSD` → `swap_data/gold_spot_interest.csv`）。計算は `swap_costs.py`、データの更新方法は `swap_data/README.md`。
+
+- 発生日の NY 17:00 をまたいだポジションに、オンス数 × シートの金額（買い=「買」列 / 売り=「売」列、円）が付く
+- 取引ごとの合計を、決済時点の USDJPY（1分足の仲値）で USD に直して `PnL` に足す。`PnL_Gross`（調整前）・`InterestJPY`・`UsdJpy`・`Interest`（USD）も取引履歴に残る
+- 資産曲線・収益率・最大DD は決済時に計上して補正する。売買の判断には影響しない
+- `INTEREST_CSV = {}` にすると従来どおり（反映なし）。USDJPY のデータ（`histData/USDJPY`）が必要
+- 金スポットの価格桁数は 2桁（`price_decimals_for`）
+
 ## 2. 全スクリプト共通の仕組み
 
 ### データ

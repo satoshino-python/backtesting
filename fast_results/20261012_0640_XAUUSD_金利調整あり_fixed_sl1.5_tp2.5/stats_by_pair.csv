@@ -1,0 +1,38 @@
+﻿,XAUUSD
+Start,2021-01-03 18:01:00-05:00
+End,2025-12-31 16:59:00-05:00
+Duration,1822 days 22:58:00
+Exposure Time [%],12.123440638582593
+Equity Final [$],14392.275685852861
+Equity Peak [$],14744.180000000006
+Commissions [$],654.77
+Return [%],43.9227568585286
+Buy & Hold Return [%],126.18897967735177
+Return (Ann.) [%],6.149710287225352
+Volatility (Ann.) [%],12.432776779704307
+CAGR [%],5.219148206785018
+Sharpe Ratio,0.4946369098546312
+Sortino Ratio,0.8017032843713615
+Calmar Ratio,0.29805964464518303
+Alpha [%],41.399724170359065
+Beta,0.024475796836919337
+Max. Drawdown [%],-20.662016743478357
+Avg. Drawdown [%],-0.4070914326914264
+Max. Drawdown Duration,545 days 04:11:00
+Avg. Drawdown Duration,3 days 11:44:00
+# Trades,133
+Win Rate [%],45.11278195488722
+Best Trade [%],2.8724601997116888
+Worst Trade [%],-1.916985185740347
+Avg. Trade [%],0.10280621603158124
+Max. Trade Duration,13 days 17:07:00
+Avg. Trade Duration,1 days 14:51:00
+Profit Factor,1.2570234427248268
+Expectancy [%],0.10795207820259824
+SQN,1.5130242641134128
+Kelly Criterion,0.10675126192279766
+Avg. Win [$],313.3438333333334
+Avg. Loss [$],-196.60000000000008
+Payoff Ratio,1.5938140047473717
+Max. Consecutive Losses,6
+Interest [USD],-56.55431414714576

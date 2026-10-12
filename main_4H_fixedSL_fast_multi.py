@@ -40,6 +40,7 @@ from main_4H_fixedSL_multi import (
     zip_month_range, price_decimals_for, r_stats, max_drawdown, print_table, compute_h1_swings,
 )
 from fast_engine import run_fast
+from swap_costs import load_interest_table, usdjpy_close_series, apply_interest, cumulative_interest_curve
 from dow_swing_chart import make_chart
 
 
@@ -67,6 +68,11 @@ RESULTS_ROOT = Path("fast_results")
 RUN_LABEL = None
 # 同時に実行するペア数。1ペアあたり最大 1〜2GB 程度のメモリを使うので、メモリに合わせて決める
 WORKERS = 4
+# 金利調整額（CFD の保有コスト）。ペア名 → 金利調整額CSV。ここに載せたペアは、取引履歴の損益（PnL）と
+# 資産曲線に金利調整額を反映する（ルールは swap_costs.py の冒頭を参照）。None / {} なら反映しない（従来どおり）。
+# 円建ての金額を決済時点の USDJPY で USD に直すため、DATA_ROOT / "USDJPY" のデータも読み込む（検証期間の分だけ）。
+INTEREST_CSV = {"XAUUSD": Path("swap_data/gold_spot_interest.csv")}
+INTEREST_FX_PAIR = "USDJPY"
 MAKE_CHARTS = True                # True: ペアごとにトレード付きのダウ理論チャートを出力（1ペア数十秒）
 OPEN_CHARTS = False               # True: 出力したチャートをブラウザで開く（ペアの数だけタブが開く）
 
@@ -145,9 +151,28 @@ def run_pair(pair, cfg, out_dir, make_charts, exit_mode, h1_window, initial_sl_r
 
         risk_amount = cfg.cash * cfg.risk_pct  # 1R（決済通貨建て）
         trades = stats["_trades"].copy()
+        equity = stats["_equity_curve"]["Equity"]
+        interest_total = None
+        if INTEREST_CSV and pair in INTEREST_CSV:
+            # 金利調整額を反映（損益は金利調整後に置き換え、金利調整前は PnL_Gross に残る）
+            table = load_interest_table(INTEREST_CSV[pair])
+            fx_1min, _ = load_gmo_click_1min_data(
+                DATA_ROOT / INTEREST_FX_PAIR, price_side="mid", price_decimals=price_decimals_for(INTEREST_FX_PAIR),
+                month_range=zip_month_range(cfg), spread_period=(start_ts, end_ts),
+                session_start_hour=cfg.session_start_hour,
+            )
+            trades = apply_interest(trades, table, usdjpy_close_series(fx_1min), cfg.session_start_hour)
+            equity = equity + cumulative_interest_curve(trades, equity.index)
+            interest_total = float(trades["Interest"].sum())
+            stats["Interest [USD]"] = interest_total
+            stats["Equity Final [$]"] = float(equity.iloc[-1])
+            stats["Return [%]"] = (equity.iloc[-1] / cfg.cash - 1) * 100
+            stats["Max. Drawdown [%]"] = float(((equity - equity.cummax()) / equity.cummax()).min() * 100)
+            print(f"ℹ️ 金利調整額を反映: 合計 {interest_total:+,.2f} USD"
+                  f"（{interest_total / risk_amount:+.2f}R / 金利調整前の損益 {trades['PnL_Gross'].sum():+,.2f} USD）")
         trades.insert(0, "Pair", pair)
         trades["R"] = trades["PnL"] / risk_amount
-        r_curve = (stats["_equity_curve"]["Equity"] - cfg.cash) / risk_amount
+        r_curve = (equity - cfg.cash) / risk_amount
 
         chart_path = None
         if make_charts:
@@ -157,7 +182,7 @@ def run_pair(pair, cfg, out_dir, make_charts, exit_mode, h1_window, initial_sl_r
                 df_1min, chart_path,
                 f"{pair} {first_day:%Y-%m-%d} ~ {last_day:%Y-%m-%d} / トレード: {mode_text}",
                 first_day, last_day,
-                trades=stats["_trades"],
+                trades=trades.drop(columns=["Pair", "R"]),
                 weekly_trend=None,
                 mode=exit_mode, risk=risk_amount,
                 entry_window=cfg.window, entry_atr=cfg.atr_period, price_decimals=cfg.price_decimals,
@@ -188,6 +213,7 @@ def save_run_info(out_dir, pairs):
         "h1_swing_window": H1_SWING_WINDOW if EXIT_MODE == "swing_trail" else None,
         "initial_sl_rule": INITIAL_SL_RULE if EXIT_MODE == "swing_trail" else None,
         "pairs": pairs,
+        "interest_csv": {k: str(v) for k, v in (INTEREST_CSV or {}).items()},
         "base_cfg": {k: (str(v) if isinstance(v, Path) else v)
                      for k, v in dataclasses.asdict(BASE_CFG).items()},
     }
@@ -195,8 +221,10 @@ def save_run_info(out_dir, pairs):
     code_dir = out_dir / "code"
     code_dir.mkdir(exist_ok=True)
     here = Path(__file__).resolve().parent
-    for name in (Path(__file__).name, "fast_engine.py", "main_4H_fixedSL.py"):
+    for name in (Path(__file__).name, "fast_engine.py", "main_4H_fixedSL.py", "swap_costs.py"):
         shutil.copy2(here / name, code_dir / name)
+    for pair, csv_path in (INTEREST_CSV or {}).items():
+        shutil.copy2(here / csv_path, code_dir / Path(csv_path).name)
 
 
 def main():
