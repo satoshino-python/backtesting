@@ -4,7 +4,13 @@ import sys
 from pathlib import Path
 import numpy as np, pandas as pd
 
-d, dsplit = Path(sys.argv[1]), Path(sys.argv[2])
+import json
+d = Path(sys.argv[1]); dsplit = Path(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[2] != "-" else None
+dcmp = Path(sys.argv[3]) if len(sys.argv) > 3 else None   # 比較する他方式の実行フォルダ
+cfgj = json.loads((d / "config.json").read_text(encoding="utf-8")); MODE = cfgj.get("entry_mode", "donchian")
+ENT = ("確定済み直近18本の4時間足の最高値/最安値への逆指値（判定中の足は含めない）" if MODE == "donchian" else
+       "既存戦略と同じ Swing High/Low（前後18本で確定。一度抜かれたラインは、次のスイングが確定するまで無効）への逆指値")
+ENTS = "4時間足18本の高安ブレイク" if MODE == "donchian" else "4時間足18本のスイングハイ・ローブレイク"
 t = pd.read_csv(d / "trades_all.csv")
 t["ExitTime"] = pd.to_datetime(t.ExitTime, utc=True); t["EntryTime"] = pd.to_datetime(t.EntryTime, utc=True)
 t["Y"] = t.EntryTime.dt.tz_convert("America/New_York").dt.year
@@ -45,6 +51,10 @@ for k, nm in NAME.items():
     s = V[k]; hl = " class=hl" if k == "spec_slope1" else ""
     vr.append(f'<tr{hl}><td>{nm}</td><td class="num">{on.get(k, 100):.0f}%</td><td class="num">{s["n"]}</td><td class="num {cls(s["R"])}">{fs(s["R"])}</td><td class="num">{s["avg"]:+.3f}</td><td class="num">{s["PF"]:.2f}</td><td class="num">{s["DD"]:.0f}</td>'
               f'<td class="num {cls(s["IS"])}">{fs(s["IS"],0)}</td><td class="num {cls(s["OOS"])}">{fs(s["OOS"],0)}</td><td class="num">{s["pos"]}/15</td></tr>')
+same13 = V["spec_slope1"]["n"] == V["spec_slope3"]["n"] and abs(V["spec_slope1"]["R"] - V["spec_slope3"]["R"]) < 1e-6
+cmp_txt = (("ER(20)≥0.3 では、傾き1日と3日の取引が完全に同じです（ER が高く3本のMAが整列している日は、20MAの向きが1日で見ても3日で見ても一致するため）。" if same13 else "")
+           + f"ER を使わない場合は、MAの並び {fs(V['ma_only']['R'])}R に対して、傾き（1日）で {fs(V['ma_slope1']['R'])}R、傾き（3日）で {fs(V['ma_slope3']['R'])}R です。"
+           + f"ER(10) では {fs(V['er10']['R'])}R → 傾きを足して {fs(V['er10_slope1']['R'])}R です。")
 var_tbl = tbl(["設定", "ON期間", "取引数", "合計R", "1取引R", "PF", "最大DD", "〜2023", "2024〜", "プラスのペア"], vr)
 
 # 年別・ペア別
@@ -59,7 +69,8 @@ for p in sorted(t.Pair.unique(), key=lambda p: -st(t[(t.Variant == "spec_slope1"
 sdw = {k: st(t[(t.Variant == "spec_slope1") & (t.Side == k)]) for k in "LS"}; sdn = {k: st(t[(t.Variant == "spec") & (t.Side == k)]) for k in "LS"}
 
 # 傾きの効果だけを取り出す検定（MAの並びだけの全取引を、傾きが取引方向と一致/不一致で二分）
-ss = pd.read_csv(dsplit / "slope_split.csv"); ss["EntryTime"] = pd.to_datetime(ss.EntryTime, utc=True)
+HAS_SPLIT = dsplit is not None
+ss = pd.read_csv(dsplit / "slope_split.csv") if HAS_SPLIT else pd.DataFrame(columns=["EntryTime", "Pair", "R", "ER20", "slope1", "slope3"]); ss["EntryTime"] = pd.to_datetime(ss.EntryTime, utc=True)
 ss["Y"] = ss.EntryTime.dt.tz_convert("America/New_York").dt.year; ss["cl"] = ss.Pair + "_" + ss.EntryTime.dt.strftime("%Y%m")
 rng = np.random.default_rng(0)
 def boot(g, mask, B=4000):
@@ -70,7 +81,7 @@ def boot(g, mask, B=4000):
         if s[1] > 0 and s[3] > 0: o.append(s[0] / s[1] - s[2] / s[3])
     return np.percentile(o, [2.5, 97.5]), float(np.mean(np.array(o) <= 0))
 sr = []; STAT = {}
-for label, sub in (("MAの並びだけ（全取引）", ss), ("ER(20)≥0.3 の取引だけ", ss[ss.ER20 >= 0.3])):
+for label, sub in ((("MAの並びだけ（全取引）", ss), ("ER(20)≥0.3 の取引だけ", ss[ss.ER20 >= 0.3])) if HAS_SPLIT else ()):
     sub = sub.reset_index(drop=True)
     for k in (1, 3):
         m_ = (sub[f"slope{k}"] > 0).values; hi_, lo_ = sub.R[m_], sub.R[~m_]; ci, p = boot(sub, pd.Series(m_, index=sub.index))
@@ -80,12 +91,39 @@ for label, sub in (("MAの並びだけ（全取引）", ss), ("ER(20)≥0.3 の�
                   f'<td class="num {cls(hi_.mean()-lo_.mean(),.0005)}"><b>{hi_.mean()-lo_.mean():+.3f}</b></td><td class="num {"ci" if ci[0] > 0 else ""}">{ci[0]:+.3f}〜{ci[1]:+.3f}</td><td class="num">{p:.3f}</td>'
                   f'<td class="num {cls(dis,.0005)}">{dis:+.3f}</td><td class="num {cls(doo,.0005)}">{doo:+.3f}</td></tr>')
 sp_tbl = tbl(["取引の範囲 / 傾き", "一致 取引数", "一致 平均R", "不一致 取引数", "不一致 平均R", "差", "差の95%区間", "片側p", "差〜2023", "差2024〜"], sr)
-s_all, s_er = STAT[("MAの並びだけ（全取引）", 1)], STAT[("ER(20)≥0.3 の取引だけ", 1)]
-s_all3 = STAT[("MAの並びだけ（全取引）", 3)]
+if HAS_SPLIT:
+    s_all, s_er = STAT[("MAの並びだけ（全取引）", 1)], STAT[("ER(20)≥0.3 の取引だけ", 1)]
+    s_all3 = STAT[("MAの並びだけ（全取引）", 3)]
 drop = A["n"] - B["n"]; dropR = A["R"] - B["R"]
+dd = B["R"] - A["R"]; rel = abs(dd) / max(abs(A["R"]), 1)
+se = 1.25 * B["n"] ** .5
+vd = "ほぼ同じ（誤差の範囲）" if abs(dd) < se else ("改善" if dd > 0 else "悪化")
+vtail = ("傾きの条件による差は、この誤差の範囲に収まります。" if abs(dd) < se else "傾きの条件による差は、この誤差を超えています。") + ("取引数が少なく、成績の差は判断できません。" if B["n"] < 300 else "")
 links = "".join(f'<button type="button" class="chip" data-chart="{p}">{p}</button>' for p in sorted(t.Pair.unique()))
 
-doc = f"""<title>20MA傾きフィルター検証</title>
+split_html = f"""<section><h2>傾きの効果だけを取り出す検定（1取引あたりの平均R）</h2>{sp_tbl}
+<p class="sub" style="margin-top:8px">MAの並びで入った全取引を、エントリー時の20MAの傾きが取引方向と一致した群と、しなかった群に二分して比較。差の95%区間は、ペア×月のまとまりで4,000回引き直して求めました。</p>
+<p class="sub">結果: MAの並びだけの全取引では、傾きが一致した群の方が平均Rが高く、差は1日で {s_all['diff']:+.3f}R（95%区間 {s_all['lo']:+.3f}〜{s_all['hi']:+.3f}）、3日で {s_all3['diff']:+.3f}R（{s_all3['lo']:+.3f}〜{s_all3['hi']:+.3f}）です。{'3日では区間が0を超えますが、1日では0を含み、' if s_all3['lo'] > 0 >= s_all['lo'] else ''}傾き単独の効果は ER より小さいです（ER(20)≥0.3 の差は約 +0.10R）。
+ER(20)≥0.3 の取引だけに絞ると、傾きが不一致の取引は {s_er['nl']} 回と少なく、差は {s_er['diff']:+.3f}R（{s_er['lo']:+.3f}〜{s_er['hi']:+.3f}）と幅が広くて確定できません。ER で絞った後に傾きを足しても、除外される取引が少ないので、合計Rはほとんど変わりません。</p></section>""" if HAS_SPLIT else ""
+
+# 他方式との比較
+cmp_html = ""
+if dcmp is not None:
+    t2 = pd.read_csv(dcmp / "trades_all.csv"); t2["ExitTime"] = pd.to_datetime(t2.ExitTime, utc=True); t2["EntryTime"] = pd.to_datetime(t2.EntryTime, utc=True)
+    t2["Y"] = t2.EntryTime.dt.tz_convert("America/New_York").dt.year
+    V2 = {k: st(g) for k, g in t2.groupby("Variant")}
+    m2 = json.loads((dcmp / "config.json").read_text(encoding="utf-8")).get("entry_mode", "donchian")
+    nm = lambda mo: "高安ブレイク" if mo == "donchian" else "スイング"
+    rows2 = []
+    for k in ("nofilter", "ma_only", "spec", "spec_slope1", "ma_slope3", "er10"):
+        if k in V and k in V2:
+            r1, r2 = V[k], V2[k]
+            rows2.append(f'<tr><td>{NAME[k]}</td><td class="num">{r2["n"]}</td><td class="num {cls(r2["R"])}">{fs(r2["R"])}</td><td class="num">{r2["PF"]:.2f}</td><td class="num">{r2["DD"]:.0f}</td>'
+                         f'<td class="num">{r1["n"]}</td><td class="num {cls(r1["R"])}">{fs(r1["R"])}</td><td class="num">{r1["PF"]:.2f}</td><td class="num">{r1["DD"]:.0f}</td></tr>')
+    cmp_html = ('<section><h2>エントリー方式の比較</h2>' + tbl(["設定", f"{nm(m2)} 取引数", "合計R", "PF", "最大DD", f"{nm(MODE)} 取引数", "合計R", "PF", "最大DD"], rows2)
+                + f'<p class="sub" style="margin-top:8px">{nm(m2)}は直近18本の高安（添付ルール）、スイングは既存戦略と同じ Swing High/Low です。同じフィルターと SL/TP で、エントリー方式だけが違います。ER(20)≥0.3 の場合、{nm(MODE)}方式の取引数は {nm(m2)}方式の約{V["spec"]["n"]/V2["spec"]["n"]*100:.0f}% で、合計Rは {fs(V["spec"]["R"])}R と {fs(V2["spec"]["R"])}R です。スイング方式は、強いトレンドで直近のスイングが更新されると、次のスイングが確定するまで注文が出ないため、取引が大きく減ると考えられます。</p></section>')
+
+doc = f"""<title>20MA傾きフィルター検証{"" if MODE == "donchian" else " スイング版"}</title>
 <style>
 :root {{ --bg:#f3f5f7; --surface:#fff; --line:#dde2e8; --fg:#17202b; --muted:#5e6b7a; --accent:#2a5bd7; --accent-soft:#e3eafb; --pos:#18865a; --neg:#c8413a; --gray:#8a95a3; --hl:#eef3ff;
   --f-head:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",system-ui,sans-serif; --f-num:"IBM Plex Mono",ui-monospace,Menlo,monospace; }}
@@ -120,10 +158,10 @@ ul {{ margin:0; padding-left:1.2em; }} li {{ margin-bottom:4px; }}
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
 <div class="wrap">
-<header><h1>20MA傾きフィルター検証 15ペア</h1><p class="sub">添付ルール（日足MA20/75/200の並び + ER(20)≥0.3）に、ロングは日足20MAが上向き、ショートは下向きの条件を追加。4時間足18本ブレイク、SL1.0 / TP1.5 ATR。2021-01〜2025-12。</p></header>
+<header><h1>20MA傾きフィルター検証 15ペア{"" if MODE == "donchian" else "（スイング版）"}</h1><p class="sub">日足MA20/75/200の並び + ER(20)≥0.3 に、ロングは日足20MAが上向き、ショートは下向きの条件を追加。{ENTS}、SL1.0 / TP1.5 ATR。2021-01〜2025-12。</p></header>
 
-<section class="verdict"><p><b>合計 {fs(B['R'])}R（PF {B['PF']:.2f}）。傾きなしの {fs(A['R'])}R（PF {A['PF']:.2f}）とほぼ同じで、条件の追加による改善は小さい。</b></p>
-<p class="muted">取引は {A['n']} → {B['n']} 回（{drop}回、{drop/A['n']*100:.0f}%減）。除外した分の合計Rは {fs(dropR)}R と小さく、平均Rは {A['avg']:+.3f} → {B['avg']:+.3f}、最大DDは {A['DD']:.0f} → {B['DD']:.0f}、2024〜の合計Rは {fs(A['OOS'],1)} → {fs(B['OOS'],1)} です。ER で絞った後は、傾きの条件が加える情報は少ないです。</p></section>
+<section class="verdict"><p><b>合計 {fs(B['R'])}R（PF {B['PF']:.2f}）。傾きなしの {fs(A['R'])}R（PF {A['PF']:.2f}）と比べて、{vd}。</b></p>
+<p class="muted">取引は {A['n']} → {B['n']} 回（{drop}回、{drop/A['n']*100:.0f}%減）。除外した分の合計Rは {fs(dropR)}R、平均Rは {A['avg']:+.3f} → {B['avg']:+.3f}、最大DDは {A['DD']:.0f} → {B['DD']:.0f}、2024〜の合計Rは {fs(A['OOS'],1)} → {fs(B['OOS'],1)} です。取引1回のRの標準偏差は約1.25Rなので、{B['n']}回の合計Rの誤差は±{1.25*B['n']**.5:.0f}R 程度です。{vtail}</p></section>
 
 <section><div class="kpis">
 <div class="k"><small>合計R（傾きあり）</small><b class="{cls(B['R'])}">{fs(B['R'])}</b><span>傾きなし {fs(A['R'])}</span></div>
@@ -131,15 +169,13 @@ ul {{ margin:0; padding-left:1.2em; }} li {{ margin-bottom:4px; }}
 <div class="k"><small>最大DD（R・決済順）</small><b>{B['DD']:.1f}</b><span>傾きなし {A['DD']:.1f}</span></div>
 <div class="k"><small>取引数 / 勝率</small><b>{B['n']}</b><span>勝率 {B['win']:.1f}%（傾きなし {A['win']:.1f}%）</span></div></div></section>
 
+{cmp_html}
 <section><h2>累積R（15ペア合算・決済順）</h2><div class="card">{svg}</div></section>
 
 <section><h2>設定の比較</h2>{var_tbl}
-<p class="sub" style="margin-top:8px">1日・3日の傾きは、ER(20)≥0.3 では取引が完全に同じです。ER が高く3本のMAが整列している日は、20MA の向きが1日で見ても3日で見ても一致するためです。5日にするとわずかに変わります。ER を使わない場合は、傾き（3日）で +70R と、傾き条件だけでも ER に近い働きをします。ER と併用すると改善は小さく、ER(10) では下がります（{fs(V['er10']['R'])}R → {fs(V['er10_slope1']['R'])}R）。</p></section>
+<p class="sub" style="margin-top:8px">{cmp_txt}</p></section>
 
-<section><h2>傾きの効果だけを取り出す検定（1取引あたりの平均R）</h2>{sp_tbl}
-<p class="sub" style="margin-top:8px">MAの並びで入った全取引を、エントリー時の20MAの傾きが取引方向と一致した群と、しなかった群に二分して比較。差の95%区間は、ペア×月のまとまりで4,000回引き直して求めました。</p>
-<p class="sub">結果: MAの並びだけの全取引では、傾きが一致した群の方が平均Rが高く、差は1日で {s_all['diff']:+.3f}R（95%区間 {s_all['lo']:+.3f}〜{s_all['hi']:+.3f}）、3日で {s_all3['diff']:+.3f}R（{s_all3['lo']:+.3f}〜{s_all3['hi']:+.3f}）です。{'3日では区間が0を超えますが、1日では0を含み、' if s_all3['lo'] > 0 >= s_all['lo'] else ''}傾き単独の効果は ER より小さいです（ER(20)≥0.3 の差は約 +0.10R）。
-ER(20)≥0.3 の取引だけに絞ると、傾きが不一致の取引は {s_er['nl']} 回と少なく、差は {s_er['diff']:+.3f}R（{s_er['lo']:+.3f}〜{s_er['hi']:+.3f}）と幅が広くて確定できません。ER で絞った後に傾きを足しても、除外される取引が少ないので、合計Rはほとんど変わりません。</p></section>
+{split_html}
 
 <section><h2>年別（合計R）</h2>{tbl(["年","傾きなし 取引数","傾きなし 合計R","傾きあり 取引数","傾きあり 合計R","差"], yr)}</section>
 
@@ -151,13 +187,13 @@ ER(20)≥0.3 の取引だけに絞ると、傾きが不一致の取引は {s_er[
 
 <section class="card"><h2>売買ルール・設定</h2><ul>
 <li>日足（NY17:00区切り）: 20/75/200 単純MAの並び、ER(20)≥0.3、<b>追加: 20MAの傾き</b>（ロング: MA20 &gt; 1日前のMA20、ショート: MA20 &lt; 1日前のMA20）。すべて前日確定の日足の値。</li>
-<li>エントリー: 方向が許可されたとき、確定済み直近18本の4時間足の最高値/最安値への逆指値。</li>
+<li>エントリー: 方向が許可されたとき、{ENT}。</li>
 <li>決済: 4時間足 ATR(14)（ワイルダー平滑）×1.0 で SL、×1.5 で TP。1R=200（複利なし）。平均スプレッドの半分を売買の両方で課金。</li></ul></section>
 
 <section class="card"><h2>読むときの注意</h2><ul>
 <li>傾きの日数（1・3・5日）、ER のしきい値、ER の期間を並べて見ています。最良の設定を選ぶと合わせ込みになります。</li>
 <li>傾き条件は、MA の並びと ER が示す「整ったトレンド」の中の押し目・戻りを避ける働きをします。ER(20)≥0.3 の日のうち約{(1-on['spec_slope1']/on['spec'])*100:.0f}%がこの条件で見送りになります。</li>
-<li>スワップは未考慮です。5年のデータで、2024〜2025年は ER の効果自体が弱い期間です。</li>
+<li>スワップは未考慮です。データは2021〜2025年の5年間のみです。</li>
 <li>コード: <code>main_4H_trend_slope_fast.py</code>、<code>trend_slope_split.py</code>。結果: <code>trend_results/{d.name}/</code></li></ul></section>
 </div>
 <script>

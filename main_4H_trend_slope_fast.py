@@ -5,7 +5,7 @@
 他のルール（MA20>75>200 の並び、ER(20)≥0.3、4H 18本ブレイク、SL1.0/TP1.5 ATR）は main_4H_trend_breakout_fast.py と同じ。
 結果は trend_results/<日時>_ma20_slope/ に保存する。
 """
-import contextlib, io, json, shutil, time, warnings
+import contextlib, io, json, os, shutil, time, warnings
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import asdict, replace
 from datetime import datetime
@@ -17,12 +17,16 @@ import pandas as pd
 import main_4H_fixedSL_multi as multi
 import main_4H_trend_breakout_fast as m
 from main_4H_fixedSL import (load_gmo_click_1min_data, resample_to_signal_bars, map_signals_to_1min,
-                             get_trading_day_label, get_signal_bar_label)
+                             get_trading_day_label, get_signal_bar_label, compute_signals)
 from main_4H_fixedSL_multi import zip_month_range, price_decimals_for
 from fast_engine import run_fast
 from dow_swing_chart import make_chart
 
-RUN_LABEL = "ma20_slope"
+# エントリー方式（環境変数 ENTRY_MODE で切り替え）
+#   donchian: 確定済み直近18本の最高値/最安値（添付ルール。既定）
+#   swing   : 既存戦略と同じ Swing High/Low（前後18本で確定。一度抜かれたラインは次のスイングが確定するまで無効）
+ENTRY_MODE = os.environ.get("ENTRY_MODE", "donchian")
+RUN_LABEL = "ma20_slope" if ENTRY_MODE == "donchian" else f"ma20_slope_{ENTRY_MODE}"
 # name: (ER期間, ERしきい値, 傾きの日数k（0=条件なし）, ER を使うか)。SL1.0 / TP1.5 / ブレイク18本は共通
 VARIANTS = {
     "nofilter":      None,
@@ -52,7 +56,11 @@ def run_pair(pair, cfg, out_dir):
                                               session_start_hour=cfg.session_start_hour)
         h4 = resample_to_signal_bars(df, cfg.session_start_hour, 4)
         d1 = resample_to_signal_bars(df, cfg.session_start_hour, 24)
-        sig = m.breakout_signals(h4, cfg.window, cfg.price_decimals)
+        if ENTRY_MODE == "swing":
+            sig = compute_signals(h4, window=cfg.window, atr_period=14, price_decimals=cfg.price_decimals)
+            sig["ATR"] = m.atr_wilder(h4["High"], h4["Low"], h4["Close"], 14, cfg.price_decimals).shift(1)  # ATR は他の版と同じワイルダー平滑
+        else:
+            sig = m.breakout_signals(h4, cfg.window, cfg.price_decimals)
         base = map_signals_to_1min(df, sig, cfg.session_start_hour, 4)
         lab = get_signal_bar_label(df.index, cfg.session_start_hour, 24)
         day = get_trading_day_label(df.index, cfg.session_start_hour)
@@ -97,7 +105,7 @@ def run_pair(pair, cfg, out_dir):
                 chart_trades = st["_trades"]
         fd, ld = day[inp][[0, -1]]
         make_chart(df, out_dir / f"dow_trade_chart_{pair}.html",
-                   f"{pair} {fd:%Y-%m-%d} ~ {ld:%Y-%m-%d} / 日足MA20>75>200 + ER(20)≥0.3 + 20MA傾き → 4H 18本ブレイク SL1.0/TP1.5 ATR",
+                   f"{pair} {fd:%Y-%m-%d} ~ {ld:%Y-%m-%d} / 日足MA20>75>200 + ER(20)≥0.3 + 20MA傾き → 4H {"18本スイング" if ENTRY_MODE == "swing" else "18本高安"}ブレイク SL1.0/TP1.5 ATR",
                    fd, ld, trades=chart_trades, weekly_trend=None, mode="fixed", risk=risk, entry_window=cfg.window, entry_atr=14,
                    price_decimals=cfg.price_decimals, session_start_hour=cfg.session_start_hour, signal_hours=4,
                    filter_state=state_chart, filter_label="日足 MA20/75/200 並び + ER(20)≥0.3 + 20MA傾き（前日確定）",
@@ -112,7 +120,7 @@ if __name__ == "__main__":
     here = Path(__file__).resolve().parent
     for fn in (Path(__file__).name, "main_4H_trend_breakout_fast.py", "fast_engine.py"):
         shutil.copy2(here / fn, out / "code" / fn)
-    (out / "config.json").write_text(json.dumps(dict(base_cfg={k: str(v) for k, v in asdict(m.BASE_CFG).items()},
+    (out / "config.json").write_text(json.dumps(dict(entry_mode=ENTRY_MODE, base_cfg={k: str(v) for k, v in asdict(m.BASE_CFG).items()},
                                                      pairs=m.PAIRS, variants=VARIANTS, warmup_months=m.WARMUP_MONTHS),
                                                 ensure_ascii=False, indent=2), encoding="utf-8")
     res = {}
