@@ -55,6 +55,7 @@
   <span id="trctl" class="keep" style="display:none; gap:6px 18px; flex-wrap:wrap; align-items:center">
     <label>背景 <select id="bg"><option value="used" selected>検証で使った週足トレンド</option><option value="tf">表示中の時間足で計算</option><option value="filter">検証で使ったフィルター</option><option value="live">スライダーのフィルター</option></select></label>
     <label><input id="trd" type="checkbox" checked> トレード</label>
+    <label id="eswl" style="display:none"><input id="esw" type="checkbox" checked> エントリー用スイング</label>
     <label><input id="eln" type="checkbox" checked> <span id="elnlab">エントリーライン</span></label>
     <button id="prev">◀ 前のトレード</button><button id="next">次のトレード ▶</button>
   </span>
@@ -288,6 +289,7 @@ function draw() {
   const r = Math.max(3, Math.min(7, bw * 0.6 + 2));
   for (const p of P) {
     if (p.bar < view.from - 2 || p.bar > view.to + 2) continue;
+    if (TR && TR.entryTf && !$("zig").checked) continue;   // エントリー用スイングを表示するチャートでは、ダウ理論の山谷の印も「スイング線」と一緒に切り替える
     const x = X(p.bar), y = Y(p.price), isH = p.kind === "H";
     if ($("conf").checked) {
       ctx.strokeStyle = isH ? "rgba(242,184,75,.6)" : "rgba(74,168,242,.6)"; ctx.setLineDash([3, 3]); ctx.lineWidth = 1;
@@ -336,6 +338,7 @@ function draw() {
       : `背景（${bgMode() === "used" ? "検証で使った週足トレンド" : "この時間足のダウ理論"}）: <span class="sw" style="background:rgba(43,182,115,.5)"></span>上昇　<span class="sw" style="background:rgba(229,83,75,.5)"></span>下降　背景なし=レンジ`) +
     ($("smaon").checked ? "<br>" + maLines().map((m, k) => `<span class="sw" style="background:${MA_COLORS[k]}"></span>SMA${m.p}`).join("　") + `（${$("tf").value}足）` : "") +
     (DAILY && $("dma").checked ? "<br>" + DAILY.ma.map((p, k) => `<span class="sw" style="background:${DMA_COLORS[k]}"></span>日足MA${p}`).join("　") + "（前日確定）" : "") +
+    (TR && TR.entryTf && $("tf").value === TR.entryTf && $("esw").checked ? `<br>◇ エントリー用スイング（前後${TR.entryWindow}本の最高値=黄 / 最安値=青）` : "") +
     (TR ? `<br><span class="sw" style="background:#b18cff"></span>▲買い / <span class="sw" style="background:#ff6fd1"></span>▼売り エントリー　● 決済（緑=勝ち / 赤=負け）　点線=SL・TP　<span class="sw" style="background:#c9a227"></span>買いライン　<span class="sw" style="background:#5b8fd9"></span>売りライン（薄い=無効）` : "");
   placeInfo(mouse ? [mouse.x, mouse.y] : (TR && cur >= 0 ? (() => { const t = TR.trades[cur], [ei, xi] = tradeIdx(t); return [X((ei + xi) / 2), Y(t.ep)]; })() : null));
 }
@@ -454,7 +457,33 @@ function tradeAt(i, my, Y) {
   }
   return bd < 40 ? best : null;
 }
+/* エントリー用スイング（前後 entryWindow 本の最高値/最安値。同値も含む。main_4H_fixedSL.py の get_swing_*_marks と同じ） */
+const swCache = {};
+function entrySwings() {
+  const key = $("tf").value + "|" + TR.entryWindow;
+  if (swCache[key]) return swCache[key];
+  const w = TR.entryWindow, n = d.h.length, hs = [], ls = [];
+  for (let i = w; i < n - w; i++) {
+    let mh = -Infinity, ml = Infinity;
+    for (let k = i - w; k <= i + w; k++) { if (d.h[k] > mh) mh = d.h[k]; if (d.l[k] < ml) ml = d.l[k]; }
+    if (d.h[i] === mh) hs.push(i); if (d.l[i] === ml) ls.push(i);
+  }
+  return swCache[key] = { hs, ls };
+}
+function drawEntrySwings(i0, i1, X, Y, bw) {
+  if (!TR.entryTf || $("tf").value !== TR.entryTf || !$("esw").checked) return;
+  const sw = entrySwings(), r = Math.max(3.5, Math.min(7, bw * .6 + 2));
+  for (const [arr, up] of [[sw.hs, true], [sw.ls, false]]) {
+    ctx.strokeStyle = up ? "#f2b84b" : "#4aa8f2"; ctx.fillStyle = up ? "rgba(242,184,75,.35)" : "rgba(74,168,242,.35)"; ctx.lineWidth = 1.6;
+    for (const i of arr) {
+      if (i < i0 - 1 || i > i1 + 1) continue;
+      const x = X(i), y = Y(up ? d.h[i] : d.l[i]) + (up ? -r - 2 : r + 2);
+      ctx.beginPath(); ctx.moveTo(x, y - r); ctx.lineTo(x + r, y); ctx.lineTo(x, y + r); ctx.lineTo(x - r, y); ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
+  }
+}
 function drawTrades(i0, i1, X, Y, bw) {
+  drawEntrySwings(i0, i1, X, Y, bw);
   // エントリーライン（4時間足 Swing High/Low。1本前の判定足までの確定情報＝バックテストと同じ値）
   if (d.esh && $("eln").checked) {
     for (const [arr, val, col] of [[d.esh, d.eshv, "201,162,39"], [d.esl, d.eslv, "91,143,217"]]) {
@@ -554,7 +583,8 @@ if (TR) {
   if (DLIVE) $("bg").value = "live"; else if (DATA["4H"].fs) $("bg").value = "filter"; else $("bg").value = $("bg").value;
   if (!DATA["4H"].fs) $("bg").options[2].disabled = true;
   if (!DLIVE) $("bg").options[3].disabled = true;  // 方向フィルターを使った検証
-  for (const id of ["trd", "eln", "bg"]) $(id).addEventListener("change", draw);
+  for (const id of ["trd", "eln", "bg", "esw"]) $(id).addEventListener("change", draw);
+  if (TR.entryTf) { $("eswl").style.display = "flex"; $("zig").checked = false; }   // ダウ理論のスイング線は、エントリー用スイングと混同しないよう既定で消す
   $("prev").onclick = () => gotoTrade(-1); $("next").onclick = () => gotoTrade(1);
   window.addEventListener("keydown", e => { if (e.key === "ArrowRight") gotoTrade(1); else if (e.key === "ArrowLeft") gotoTrade(-1); });
 }

@@ -137,6 +137,9 @@ if dcmps:
     cmp_html = ('<section><h2>エントリー方式の比較</h2>' + tbl(head, rows2)
                 + f'<p class="sub" style="margin-top:8px">同じフィルターと SL/TP の倍率で、エントリー方式だけが違います。ER(20)≥0.3 では、{spec_line}です。</p></section>')
 
+swing_note = ("" if MODE == "donchian" else
+              ("時間足を1Hにすると、エントリーに使ったスイング（◇ 黄=スイングハイ、青=スイングロー）も表示します。◇ から伸びる横線がエントリーラインで、一度抜かれると薄くなります。「エントリー用スイング」のチェックで切り替えられます。" if MODE.startswith("swing1h") else
+               "エントリーに使ったスイングのラインは、横線で表示します（一度抜かれると薄くなります）。"))
 doc = f"""<title>20MA傾きフィルター検証{"" if MODE == "donchian" else " " + ENTN}</title>
 <style>
 :root {{ --bg:#f3f5f7; --surface:#fff; --line:#dde2e8; --fg:#17202b; --muted:#5e6b7a; --accent:#2a5bd7; --accent-soft:#e3eafb; --pos:#18865a; --neg:#c8413a; --gray:#8a95a3; --hl:#eef3ff;
@@ -196,7 +199,7 @@ ul {{ margin:0; padding-left:1.2em; }} li {{ margin-bottom:4px; }}
 <section><h2>通貨ペア別（傾きあり）</h2>{tbl(["ペア","取引数","合計R","勝率","PF","最大DD","傾きなし 合計R"], pr)}
 <p class="sub" style="margin-top:8px">買い {sdw['L']['n']}回 {fs(sdw['L']['R'])}R（傾きなし {fs(sdn['L']['R'])}R）、売り {sdw['S']['n']}回 {fs(sdw['S']['R'])}R（傾きなし {fs(sdn['S']['R'])}R）。ペア名からトレード付きチャートを開けます。</p></section>
 
-<section id="viewer"><h2>トレード付きチャート</h2><p class="muted">ペアを選ぶと、このページの中に表示します（約1MB）。背景は検証で使ったフィルター（MA並び + ER + 20MA傾き）で、買いだけ許可は緑、売りだけ許可は赤。日足MA20/75/200（黄・青・橙）と下に日足ER(20)も表示します。</p><div>{links}</div>
+<section id="viewer"><h2>トレード付きチャート</h2><p class="muted">ペアを選ぶと、このページの中に表示します（約1MB）。背景は検証で使ったフィルター（MA並び + ER + 20MA傾き）で、買いだけ許可は緑、売りだけ許可は赤。日足MA20/75/200（黄・青・橙）と下に日足ER(20)も表示します。{swing_note}</p><div>{links}</div>
 <p id="cmsg" class="sub" role="status"></p><div id="vwrap"><div id="vbar"><button type="button" id="vfull">全画面</button></div><iframe id="cframe" title="トレード付きチャート" sandbox="allow-scripts" hidden></iframe></div></section>
 
 <section class="card"><h2>売買ルール・設定</h2><ul>

@@ -119,7 +119,7 @@ def run_pair(pair, cfg, out_dir):
         fd, ld = day[inp][[0, -1]]
         make_chart(df, out_dir / f"dow_trade_chart_{pair}.html",
                    f"{pair} {fd:%Y-%m-%d} ~ {ld:%Y-%m-%d} / 日足MA20>75>200 + ER(20)≥0.3 + 20MA傾き → 4H {ENTRY_TXT[ENTRY_MODE]}ブレイク SL1.0/TP1.5 ATR",
-                   fd, ld, trades=chart_trades, weekly_trend=None, mode="fixed", risk=risk, entry_window=cfg.window, entry_atr=14,
+                   fd, ld, trades=chart_trades, weekly_trend=None, mode="fixed", risk=risk, entry_window=(24 if sig_hours == 1 else cfg.window), entry_atr=14, entry_swing=(ENTRY_MODE != "donchian"),
                    price_decimals=cfg.price_decimals, session_start_hour=cfg.session_start_hour, signal_hours=sig_hours,
                    filter_state=state_chart, filter_label="日足 MA20/75/200 並び + ER(20)≥0.3 + 20MA傾き（前日確定）",
                    daily_ma=m.MA_PERIODS, daily_er=(20, 0.3), entry_signals=sig, timeframes=(("1H", "4H", "D1", "W1") if sig_hours == 1 else ("4H", "D1", "W1")))

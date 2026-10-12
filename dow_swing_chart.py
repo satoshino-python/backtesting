@@ -104,7 +104,7 @@ def make_chart(df_1min, path, title, start=None, end=None, trades=None, weekly_t
                mode="", risk=200.0, entry_window=18, entry_atr=18, price_decimals=5,
                session_start_hour=17, signal_hours=4, filter_state=None, filter_label="",
                ma_periods=(20, 50, 120), daily_ma=None, daily_er=None, live_daily=False,
-               entry_signals=None, timeframes=TIMEFRAMES):
+               entry_signals=None, timeframes=TIMEFRAMES, entry_swing=False):
     """
     チャートの HTML を path に書き出す（スクリプトから呼び出す用）。
 
@@ -124,6 +124,7 @@ def make_chart(df_1min, path, title, start=None, end=None, trades=None, weekly_t
                    daily_ma / daily_er を既定値（スライダーの初期値）として渡す。トレードには「MAの並びだけで入った全取引」などを渡すと、
                    フィルターを通る取引と除外される取引が分かる
     entry_signals: エントリーラインに使うシグナル（compute_signals と同じ列の DataFrame）。None なら Swing High/Low
+    entry_swing  : True なら、エントリーに使ったスイング（signal_hours 時間足の前後 entry_window 本）を山谷の印でチャートに表示する
     timeframes   : 埋め込む時間足（("4H", "D1", "W1") にするとファイルが小さくなる）
     daily_er     : (期間, しきい値)（例 (20, 0.3)）。日足の Efficiency Ratio（前日確定）を価格チャートの下に別パネルで表示
     entry_window / entry_atr / signal_hours : エントリー側 Swing High/Low ラインの設定（1H/4H に表示）
@@ -188,7 +189,8 @@ def make_chart(df_1min, path, title, start=None, end=None, trades=None, weekly_t
     tr = None
     if trades is not None:
         tr = dict(trades=load_trades(trades, labels, price_decimals), risk=risk, mode=mode,
-                  entryWindow=entry_window, filterLabel=filter_label)
+                  entryWindow=entry_window, filterLabel=filter_label,
+                  entryTf=f"{signal_hours}H" if entry_swing else None)
         rs = np.array([t["pnl"] for t in tr["trades"]]) / risk
         print(f"ℹ️ トレード {len(rs)} 件 / 合計 {rs.sum():+.2f}R")
 
