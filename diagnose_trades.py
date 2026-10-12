@@ -2,7 +2,7 @@
 """
 取引履歴CSVの診断スクリプト。
 
-入力: main_4H.py が出力する取引履歴CSV（単発検証の trade_history_*.csv、
+入力: main_4H_fixedSL.py などが出力する取引履歴CSV（単発検証の trade_history_*.csv、
       またはグリッド検証の grid_trades/trades_SL◯_TP◯.csv）。
 
 出力: ・端末に診断レポートを表示
@@ -21,8 +21,8 @@
     （グリッド検証の trades_SL1.5_TP2.5.csv も「SL1.5_TP2.5」などで探せます）。
     複数見つかったときは、更新日時が最新のものを使い、使ったファイル名を表示します。
 
-MAE/MFE を計算するときは、このファイルを main_4H.py と同じフォルダに置いてください
-（main_4H.py のデータ読み込み関数を使います）。
+MAE/MFE を計算するときは、このファイルを main_4H_fixedSL.py と同じフォルダに置いてください
+（main_4H_fixedSL.py のデータ読み込み関数を使います）。
 
 診断の内容:
     1. 全体成績（期待値・t値・最大連敗）   2. 買い/売り別   3. 年別
@@ -51,7 +51,7 @@ COL_ATR = "Entry_ATR (Signal, EMA)"
 COL_SH = "Entry_Active Swing High Line (Signal)"
 COL_SL = "Entry_Active Swing Low Line (Signal)"
 WEEKDAY_JA = ["月", "火", "水", "木", "金", "土", "日"]
-SESSION_START_HOUR = 17   # 4時間足の区切りの起点（NY時間）。main_4H.py の Config と合わせる
+SESSION_START_HOUR = 17   # 4時間足の区切りの起点（NY時間）。main_4H_fixedSL.py の Config と合わせる
 SIGNAL_HOURS = 4          # 判定足の長さ（時間）
 MIN_N = 20                # これ未満の区分は「参考」扱い
 
@@ -129,7 +129,7 @@ def load_trades(path, pip_size, price_tol):
     missing = [c for c in need if c not in t.columns]
     if missing:
         raise SystemExit(f"❌ 取引履歴CSVに必要な列がありません: {missing}\n"
-                         f"   main_4H.py が出力した取引履歴CSVを指定してください。")
+                         f"   main_4H_fixedSL.py などが出力した取引履歴CSVを指定してください。")
     if t.empty:
         raise SystemExit("❌ 取引履歴CSVにトレードが1件もありません。")
 
@@ -265,9 +265,9 @@ def load_price_data(data_path):
     if here not in sys.path:
         sys.path.insert(0, here)
     try:
-        m = importlib.import_module("main_4H")
+        m = importlib.import_module("main_4H_fixedSL")
     except ImportError:
-        raise SystemExit("❌ main_4H.py が見つかりません。このスクリプトを main_4H.py と同じフォルダに置いてください。")
+        raise SystemExit("❌ main_4H_fixedSL.py が見つかりません。このスクリプトを main_4H_fixedSL.py と同じフォルダに置いてください。")
     path = data_path or m.CFG.data_path
     print(f"📥 1分足データを読み込みます: {path}")
     df_1min, _ = m.load_gmo_click_1min_data(path, price_side=m.CFG.price_side,
@@ -413,7 +413,7 @@ def main():
     ap.add_argument("--price-tol", type=float, default=None, help="決済価格とSL/TPの一致判定の許容幅（既定: pip-size の1/10）")
     ap.add_argument("--out-dir", default="diagnosis", help="レポートと加工済みCSVの出力先フォルダ")
     ap.add_argument("--mae-mfe", action="store_true", help="MAE/MFE も計算する（元の1分足データが必要）")
-    ap.add_argument("--data-path", default=None, help="1分足データのパス（既定: main_4H.py の Config.data_path）")
+    ap.add_argument("--data-path", default=None, help="1分足データのパス（既定: main_4H_fixedSL.py の Config.data_path）")
     args = ap.parse_args()
 
     tol = args.price_tol if args.price_tol is not None else args.pip_size / 10

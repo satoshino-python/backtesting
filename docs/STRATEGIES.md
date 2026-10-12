@@ -7,8 +7,8 @@
 
 | ファイル | 役割 | 判定足 | 決済 | 枚数 |
 |---|---|---|---|---|
-| `main_D1.py` | 最初の版。日足のスイングブレイク | 日足 | ATR倍率の固定SL/TP | 固定（`size`） |
-| `main_4H.py` | 判定足を4時間足（任意の時間足）に変更。SL×TPグリッド検証を追加 | 4時間足 | ATR倍率の固定SL/TP | 固定（`size`） |
+| `legacy/main_D1.py` | 最初の版。日足のスイングブレイク（backtesting.py が必要） | 日足 | ATR倍率の固定SL/TP | 固定（`size`） |
+| `legacy/main_4H.py` | 判定足を4時間足（任意の時間足）に変更。SL×TPグリッド検証を追加（backtesting.py が必要） | 4時間足 | ATR倍率の固定SL/TP | 固定（`size`） |
 | `main_4H_fixedSL.py` | **基準となる版**。1回の損失額を固定する枚数計算と建値ストップを追加 | 4時間足 | 固定SL/TP＋建値ストップ | 損失額固定（`risk_pct`） |
 | `main_4H_fixedSL_multi.py` | 全通貨ペアを一括検証し、R倍数で合算。1時間足スイングのトレーリングストップも選べる | 4時間足 | 固定SL/TP または トレーリング | 損失額固定 |
 | `main_4H_fixedSL_dow.py` | 週足ダウ理論のトレンド方向にだけエントリーするフィルター版 | 4時間足＋週足 | 固定SL/TP＋建値ストップ | 損失額固定 |
@@ -90,14 +90,15 @@
 
 ## 4. 各スクリプトの詳細
 
-### 4.1 `main_D1.py`（日足版）
+### 4.1 `legacy/main_D1.py`（日足版）
+- `legacy/` は backtesting.py でしか動かない古いスクリプト。リポジトリのルートで `python legacy/main_D1.py` のように実行する（`pip install backtesting==0.6.6`）。
 - 判定足は日足（NY 17:00 区切り）。`window=5`（前後5日）、`atr_period=14`。
 - 枚数は固定で、`size`（既定 10000）を使う。
 - 現在の設定: 2021-01-01〜2025-12-31、SL 1.0 × ATR、TP 1.0 × ATR。
 - 出力: `trade_history.csv`、`swing_breakout_chart.html`（チャートの最下部に成績表）。
 - `chart_timeframe`: `"daily"`（日足にまとめて表示）/ `"native"`。
 
-### 4.2 `main_4H.py`（4時間足版）
+### 4.2 `legacy/main_4H.py`（4時間足版）
 - `signal_hours` で判定足の長さを変えられる（24の約数: 1, 2, 3, 4, 6, 8, 12, 24）。`window=18`（4時間足18本 ≒ 3日）、`atr_period=18`。
 - 枚数は D1版と同じく固定の `size`。
 - **SL×TP グリッド検証**（`grid_enabled=True`）: `grid_sl_values` × `grid_tp_values` のうち、TP倍率 > SL倍率 の組み合わせをすべて検証し、
@@ -105,7 +106,7 @@
 - 現在の設定: 2021-01-01〜2025-12-31、SL 1.5、TP 2.5、グリッドなし。
 
 ### 4.3 `main_4H_fixedSL.py`（基準版）
-`main_4H.py` に次の変更を加えたもの。
+`legacy/main_4H.py` に次の変更を加えたもの。
 
 - **損失額固定の枚数計算**: 枚数 = 初期資金 × `risk_pct` ÷ 損切り幅。
   - 損切りになると、損失はおおよそ「初期資金 × `risk_pct`」（＝ **1R**）になる。既定は 10,000 × 2% = 200。
@@ -210,11 +211,11 @@ python diagnose_trades.py sl1.5_tp2.5 --mae-mfe --data-path histData/EURUSD
 | `--price-tol` | pip-size の1/10 | 決済価格とSL/TPの一致を判定するときの許容幅 |
 | `--out-dir` | `diagnosis` | 出力先 |
 | `--mae-mfe` | なし | MAE/MFE（保有中の最大逆行・最大順行）も計算する。元の1分足データが必要 |
-| `--data-path` | `main_4H.py` の `data_path` | 1分足データの場所 |
+| `--data-path` | `main_4H_fixedSL.py` の `data_path` | 1分足データの場所 |
 
 - 診断の切り口: 全体成績（期待値・t値）、買い/売り、年、エントリー時間帯、曜日、ATR水準、スイング幅、決済理由（SL/TP/その他）、保有時間、コスト感度、MAE/MFE。
 - 出力: `diagnosis/diagnosis_report.txt`、`diagnosis/trades_enriched.csv`。
-- 4時間足版（`main_4H.py` / `main_4H_fixedSL.py`、`execution_timeframe="1min"`）の取引履歴の列名（`Entry_ATR (Signal, EMA)` など）を前提にしている。D1版の CSV には対応していない。
+- 4時間足版（`legacy/main_4H.py` / `main_4H_fixedSL.py`、`execution_timeframe="1min"`）の取引履歴の列名（`Entry_ATR (Signal, EMA)` など）を前提にしている。D1版の CSV には対応していない。
 
 ### 4.9 `dow_swing_chart.py`（ダウ理論・トレードの確認用チャート）
 ```
@@ -301,7 +302,7 @@ python dow_swing_chart.py --trades dow_results/trades_20210101-20251231_strict.c
 | `session_start_hour` | 17 | 足の区切りの起点（NY時間） |
 | `signal_hours` | 4 | 判定足の長さ（24の約数） |
 | `cash` | 10,000 | 初期資金 |
-| `size` | 10000 | 1回の枚数（`main_D1.py` / `main_4H.py` のみ） |
+| `size` | 10000 | 1回の枚数（`legacy/main_D1.py` / `legacy/main_4H.py` のみ） |
 | `risk_pct` | 0.02 | 1回の損失額 ＝ 初期資金 × この値（fixedSL 系のみ） |
 | `window` | 18 | スイング判定の前後本数（D1版は5） |
 | `atr_period` | 18 | ATR期間（D1版は14） |
