@@ -51,7 +51,7 @@ from math import copysign
 
 import numpy as np
 import pandas as pd
-from backtesting._stats import compute_stats
+from fast_stats import compute_stats
 
 _SIGNAL_COLS = ("SignalSH", "SignalSL", "SignalSHValid", "SignalSLValid", "SignalATR")
 _H1_COLS = ("H1SH", "H1SL", "H1SHSeq", "H1SLSeq")
@@ -83,7 +83,7 @@ class _Order:
 
 
 class _Trade:
-    """compute_stats() にそのまま渡せるよう、backtesting.py の Trade と同じ属性名を持たせる"""
+    """fast_stats.compute_stats() に渡す。backtesting.py の Trade と同じ属性名を持たせる"""
     __slots__ = ("size", "entry_price", "entry_bar", "exit_price", "exit_bar",
                  "sl_order", "tp_order", "_commissions", "entry_time", "exit_time", "tag")
 
@@ -656,14 +656,11 @@ def run_fast(df, *, cash, commission, margin, price_decimals, risk_pct, sl_atr_m
         t.exit_time = index[t.exit_bar]
     equity = sim.equity_curve()
     ohlc = df[["Open", "High", "Low", "Close"]]
-    with np.errstate(invalid="ignore", divide="ignore"):
-        stats = compute_stats(trades=sim.closed, equity=equity, ohlc_data=ohlc,
-                              strategy_instance=None, risk_free_rate=0.0)
-    # strategy_instance を渡せないため、Buy & Hold の起点だけ backtesting.py に合わせて直す
-    c = ohlc["Close"].to_numpy()
-    first = sim.start - 1
-    stats["Buy & Hold Return [%]"] = (c[-1] - c[first]) / c[first] * 100
     name = {"fixed": "SwingBreakoutStrategy1Min", "swing_trail": "SwingBreakoutTrail1Min",
             "dow_swing": "SwingBreakoutDowSwingExit1Min"}[exit_mode]
-    stats["_strategy"] = f"{name}(fast_engine)"
+    # Buy & Hold の起点は backtesting.py と同じく指標の warmup 本数（最初に next() が呼ばれるバー - 1）
+    first = min(max(sim.start - 1, 0), len(df) - 1)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        stats = compute_stats(sim.closed, equity, ohlc, first_trading_bar=first,
+                              strategy=f"{name}(fast_engine)")
     return stats

@@ -38,6 +38,16 @@ STAT_KEYS = ["Equity Final [$]", "Return [%]", "Max. Drawdown [%]", "# Trades", 
              "Profit Factor", "Sharpe Ratio", "Exposure Time [%]", "Buy & Hold Return [%]"]
 
 
+def _same_value(a, b):
+    """統計値1項目の比較（数値は相対誤差 1e-9 まで、NaN 同士は一致）"""
+    if isinstance(a, (pd.Timestamp, pd.Timedelta)) or isinstance(b, (pd.Timestamp, pd.Timedelta)):
+        return (pd.isna(a) and pd.isna(b)) or a == b
+    try:
+        return bool(np.isclose(float(a), float(b), rtol=1e-9, atol=1e-12, equal_nan=True))
+    except (TypeError, ValueError):
+        return (pd.isna(a) and pd.isna(b)) or a == b
+
+
 def prepare(pair, cfg, h1_window=None):
     s = pd.Timestamp(cfg.start_date)
     e = pd.Timestamp(cfg.end_date)
@@ -132,6 +142,12 @@ def compare(pair, start, end, exit_mode="fixed", initial_sl_rule="atr", h1_windo
     print(f"取引履歴: {'一致' if ok else '不一致'}（{len(a)} 件 / {len(b)} 件）  資産曲線の最大差: {eq_diff:.3g}")
     for k in STAT_KEYS:
         print(f"  {k:24s} {ref[k]!s:>24} {fast[k]!s:>24}")
+    # 統計値の全項目（fast_stats.compute_stats が backtesting.py と同じか）
+    keys = [k for k in ref.index if not str(k).startswith("_")]
+    stat_diff = [k for k in keys if k not in fast.index or not _same_value(ref[k], fast[k])]
+    stat_diff += [k for k in fast.index if not str(k).startswith("_") and k not in ref.index]
+    print(f"統計値: {'全項目一致' if not stat_diff else '不一致 ' + str(stat_diff)}（{len(keys)} 項目）")
+    ok = ok and not stat_diff
 
     if not ok:
         out = Path("fast_compare_results") / f"{datetime.now():%Y%m%d_%H%M%S}_{pair}"

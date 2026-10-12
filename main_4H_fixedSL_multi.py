@@ -29,7 +29,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from backtesting import Backtest, Strategy
+from bt_compat import Backtest, Strategy, warn_bokeh_version
 
 from main_4H_fixedSL import (
     Config,
@@ -442,6 +442,7 @@ def print_table(title, table):
 
 
 def main():
+    warn_bokeh_version()
     if BASE_CFG.signal_hours <= 0 or 24 % BASE_CFG.signal_hours != 0:
         print(f"❌ signal_hours は 24 の約数を指定してください: {BASE_CFG.signal_hours}")
         return

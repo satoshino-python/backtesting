@@ -6,8 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import numpy as np
 import pandas as pd
-import bokeh
-from backtesting import Backtest, Strategy
+from bt_compat import Backtest, Strategy, warn_bokeh_version  # backtesting.py は無くても import できる
 from html import escape
 import webbrowser
 import time
@@ -94,14 +93,6 @@ CFG = Config(
     grid_enabled=False,
 )  
 
-# Bokeh 3.x 系の互換性警告チェック
-if bokeh.__version__.startswith('3.'):
-    print("=" * 60)
-    print(f"⚠️  検出された Bokeh バージョン: {bokeh.__version__}")
-    print("⚠️  backtesting.py は Bokeh 3.x で取引マーク（▲/▼矢印）が非表示になる問題があります。")
-    print("👉 ターミナルで以下のコマンドを実行して Bokeh 2.4.3 をインストールしてください:")
-    print("   pip install \"bokeh==2.4.3\"")
-    print("=" * 60 + "\n")
 
 
 # GMOクリック証券のFXヒストリカルデータ（1分足）のCSV列名
@@ -1137,6 +1128,7 @@ def run_sl_tp_grid(bt, fixed_params):
     if CFG.grid_save_trades:
         print(f"💾 組み合わせごとの取引履歴を出力しました: {CFG.grid_trades_dir}/ （trades_SL◯_TP◯.csv）")
 def main():
+    warn_bokeh_version()
     # histData フォルダに GMOクリック証券からダウンロードしたZIP（例: USDJPY_202608.zip,
     # USDJPY_202609.zip, ...）を解凍せずそのまま複数まとめて置いてください。
     # フォルダ内の全ZIPの中身を自動的に結合して読み込みます。

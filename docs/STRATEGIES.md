@@ -14,7 +14,9 @@
 | `main_4H_fixedSL_dow.py` | 週足ダウ理論のトレンド方向にだけエントリーするフィルター版 | 4時間足＋週足 | 固定SL/TP＋建値ストップ | 損失額固定 |
 | `main_4H_fixedSL_fast_multi.py` | `main_4H_fixedSL_multi.py` の高速版。`fast_engine.py` で全ペアを並列に検証 | 4時間足 | 固定SL/TP または トレーリング | 損失額固定 |
 | `fast_engine.py` | 1分足執行版の戦略（固定SL/TP・1時間足トレーリング・週足ダウ＋4Hスイング決済）を backtesting.py なしで約100倍速く検証するエンジン | 4時間足 | 固定SL/TP または トレーリング | 損失額固定 |
-| `compare_fast_engine.py` | `fast_engine.py` と backtesting.py の結果が一致するかを確かめる | – | – | – |
+| `compare_fast_engine.py` | `fast_engine.py` と backtesting.py の結果が一致するかを確かめる（取引履歴・資産曲線・統計値の全項目） | – | – | – |
+| `fast_stats.py` | backtesting.py の `compute_stats()` の移植。fast_engine の統計値を backtesting.py なしで計算する | – | – | – |
+| `bt_compat.py` | backtesting.py を「入っていれば使う」ための import。無くても fast 系のスクリプトは動く | – | – | – |
 | `dow_trend.py` | ダウ理論のトレンド判定ライブラリ（単体では売買しない） | 任意 | – | – |
 | `main_4H_dow_swingExit.py` | 週足ダウ理論フィルター＋4時間足スイングのトレーリングストップ決済。トレンドの質フィルターも選べる | 4時間足＋週足 | 4Hスイングへのトレーリング | 損失額固定 |
 | `trend_quality_study.py` | 上の戦略にトレンドの質フィルターを組み合わせ、全ペアで期間を分けて比較 | 4時間足＋週足 | 同上 | 損失額固定 |
@@ -251,7 +253,8 @@ python dow_swing_chart.py --trades dow_results/trades_20210101-20251231_strict.c
 
 ### 4.12 `fast_engine.py` / `main_4H_fixedSL_fast_multi.py` / `compare_fast_engine.py`（高速版）
 - `fast_engine.run_fast(df, cash=, commission=, margin=, sl_atr_multiplier=, price_decimals=, risk_pct=, ...)` は backtesting.py と同じ stats を返す
-  （`_trades`・`_equity_curve` を含む。`_trades` に `Entry_…`/`Exit_…` の指標列は無い）。`df` は `map_signals_to_1min()` で Signal* 列を付けた1分足。
+  （`_trades`・`_equity_curve` を含む。`_trades` に `Entry_…`/`Exit_…` の指標列は無い）。統計値は `fast_stats.compute_stats()` で計算し、
+  backtesting.py 0.6.6 と全項目同じ値になる（`_strategy` は戦略名の文字列）。backtesting.py は import しない。`df` は `map_signals_to_1min()` で Signal* 列を付けた1分足。
   - `exit_mode="fixed"`（既定）: `tp_atr_multiplier=`・`breakeven_trigger_r=` を渡す。`SwingBreakoutStrategy1Min` と同じ。
   - `exit_mode="swing_trail"`: `initial_sl_rule=` を渡す。`df` に `compute_h1_swings()` の列（H1SH/H1SL/H1SHSeq/H1SLSeq）も必要。
     `SwingBreakoutTrail1Min` と同じ。

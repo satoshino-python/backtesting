@@ -32,7 +32,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from backtesting import Backtest, Strategy
+from bt_compat import Backtest, Strategy, warn_bokeh_version
 
 from dow_swing_chart import make_chart
 from fast_engine import run_fast
@@ -287,6 +287,7 @@ def run_backtest(df, cfg, commission_func, engine=None):
         return None, add_extra_stats(stats)
     if engine != "backtesting":
         raise ValueError(f'engine は "fast" か "backtesting" です: {engine}')
+    warn_bokeh_version()
     bt = Backtest(df, SwingBreakoutDowSwingExit1Min, cash=cfg.cash, commission=commission_func,
                   margin=cfg.margin, exclusive_orders=False)
     stats = add_extra_stats(bt.run(

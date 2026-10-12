@@ -1,6 +1,7 @@
 # CLAUDE.md
 
-FX（GMOクリック証券の1分足）のスイングブレイクアウト戦略を backtesting.py で検証するリポジトリ。
+FX（GMOクリック証券の1分足）のスイングブレイクアウト戦略を検証するリポジトリ。検証は自前の高速エンジン `fast_engine.py` で行い、
+backtesting.py（0.6.6）は答え合わせ用に残している。
 各スクリプトのルール・設定・出力は [docs/STRATEGIES.md](docs/STRATEGIES.md)、ダウ理論判定の仕様は
 [docs/DOW_TREND_SPEC.md](docs/DOW_TREND_SPEC.md) にまとめてある。作業の前に読むこと。
 
@@ -14,9 +15,11 @@ FX（GMOクリック証券の1分足）のスイングブレイクアウト戦�
   backtesting.py なしで再現した高速版（約100倍速い）。複数ペアは `main_4H_fixedSL_fast_multi.py` で並列に検証できる。
   `main_4H_dow_swingExit.py` / `trend_quality_study.py` も既定で fast_engine を使う（`ENGINE`）。
   新しいルールは fast_engine 側に実装し、backtesting.py 版も書けるときは `compare_fast_engine.py` で一致を確かめる。
+- 統計値（stats）は `fast_stats.py`（backtesting.py の compute_stats の移植）で計算する。fast 系のスクリプトは backtesting.py と Bokeh が
+  入っていなくても動く（`bt_compat.py` で import を任意にしている）。答え合わせと backtesting.py 標準のチャートには `pip install backtesting==0.6.6` が必要。
 
 ## 検証結果のチャート（毎回作る）
-トレードを伴う検証では、backtesting.py 標準のチャートに加えて、**トレード付きのダウ理論チャート**を必ず出力する。
+トレードを伴う検証では、**トレード付きのダウ理論チャート**を必ず出力する（backtesting.py で実行したときは標準のチャートも出る）。
 `dow_swing_chart.make_chart()` を呼ぶだけでよい（`main_4H_fixedSL_dow.py` は `TRADE_CHART = True` で自動的に出力する）。
 
 ```python
@@ -27,7 +30,7 @@ make_chart(
     out_dir / f"dow_trade_chart_{symbol}_{period}_{mode}.html",
     f"{symbol} {start} ~ {end} / トレード: {mode}",
     start, end,
-    trades=stats["_trades"],      # backtesting.py の取引履歴（そのCSVのパスでも可）
+    trades=stats["_trades"],      # 取引履歴（fast_engine / backtesting.py の stats。そのCSVのパスでも可）
     weekly_trend=used_weekly,     # 各週に使った週足トレンド（前週末の判定）。使わない戦略は None
     mode=mode, risk=cfg.cash * cfg.risk_pct,
     entry_window=cfg.window, entry_atr=cfg.atr_period, price_decimals=cfg.price_decimals,

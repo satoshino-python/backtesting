@@ -23,7 +23,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from backtesting import Backtest
+from bt_compat import Backtest, warn_bokeh_version
 
 from dow_swing_chart import make_chart
 from dow_trend import DowConfig, compute_dow_trend
@@ -151,6 +151,7 @@ def summarize(stats, cfg):
 
 
 def main():
+    warn_bokeh_version()
     if CFG.execution_timeframe != "1min":
         print('❌ この版は execution_timeframe="1min" のみ対応しています。')
         return
