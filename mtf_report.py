@@ -99,11 +99,11 @@ def table(head, rows, total=None):
     return f'<div class="scroll"><table><thead><tr>{h}</tr></thead><tbody>{body}</tbody></table></div>'
 
 
-def write_report(path, trades, stats, funnel, cfg, spread, chart_file, period_label):
+def write_report(path, trades, stats, stats_side, funnels, cfg, spread, chart_file, period_label):
     d = cfg.price_decimals
     r = trades["R"].to_numpy(float) if len(trades) else np.array([])
     pip = 10 ** -(d - 1)
-    risk_pips = ((trades["entry"] - trades["sl"]) / pip) if len(trades) else pd.Series(dtype=float)
+    risk_pips = ((trades["entry"] - trades["sl"]).abs() / pip) if len(trades) else pd.Series(dtype=float)
     cost_r = (trades["R_gross"] - trades["R"]).mean() if len(trades) else float("nan")
     wins = r[r > 0]
     hold_h = ((pd.to_datetime(trades["exit_time"], utc=True) - pd.to_datetime(trades["entry_time"], utc=True))
@@ -128,19 +128,28 @@ def write_report(path, trades, stats, funnel, cfg, spread, chart_file, period_la
         yearly = table(["決済年", "取引", "勝率", "合計R"], rows,
                        [("合計", ""), (str(len(r)), ""), (f"{stats['勝率 [%]']:.0f}%", ""), (_f(r.sum(), 2, True), "")])
         trows = []
+        SIDE = {"long": "買い", "short": "売り"}
         for k, t in trades.reset_index(drop=True).iterrows():
             et = pd.Timestamp(t["entry_time"])
-            trows.append([(f'<a href="setups.html#t{k + 1}">{k + 1}</a>', ""), (f"{et:%Y-%m-%d %H:%M}", ""),
+            trows.append([(f'<a href="setups.html#t{k + 1}">{k + 1}</a>', ""), (SIDE[t["side"]], ""), (f"{et:%Y-%m-%d %H:%M}", ""),
                           (f"{t['entry']:.{d}f}", ""), (f"{t['sl']:.{d}f}", ""), (f"{t['tp']:.{d}f}", ""),
                           (f"{t['rr_level']:.{d}f}", ""), (t["exit_reason"], ""), (_f(t["R"], 2, True), _cls(t["R"]))])
-        trade_tbl = table(["#", "エントリー（NY）", "価格", "SL", "TP", "H_b", "決済", "R"], trows)
+        trade_tbl = table(["#", "売買", "エントリー（NY）", "価格", "SL", "TP", "H_b", "決済", "R"], trows)
     else:
         yearly = trade_tbl = "<p class='sub'>トレードはありませんでした。</p>"
 
+    SN = {"long": "買い", "short": "売り"}
+    srows = [[(SN[sd], ""), (str(st["トレード数"]), ""), (_f(st["勝率 [%]"], 1) + "%", ""),
+              (_f(st["合計R"], 2, True), _cls(st["合計R"])), (_f(st["PF"]), ""), (_f(st["最大DD [R]"], 1), "")]
+             for sd, st in stats_side.items()]
+    side_tbl = table(["売買", "取引", "勝率", "合計R", "PF", "最大DD"], srows,
+                     [("合計", ""), (str(stats["トレード数"]), ""), (_f(stats["勝率 [%]"], 1) + "%", ""),
+                      (_f(stats["合計R"], 2, True), ""), (_f(stats["PF"]), ""), (_f(stats["最大DD [R]"], 1), "")])
     order = ["開始", "転換(CHoCH)", "RR接触", "エントリー"]
-    frows = [[(escape(k), ""), (str(funnel.get(k, 0)), "")] for k in order]
-    frows += [[(escape(k), "muted"), (str(v), "muted")] for k, v in funnel.items() if k not in order]
-    funnel_tbl = table(["段階", "件数"], frows)
+    keys = order + [k for k in next(iter(funnels.values())) if k not in order]
+    frows = [[(escape(k), "" if k in order else "muted")] + [(str(f.get(k, 0)), "" if k in order else "muted")
+                                                              for f in funnels.values()] for k in keys]
+    funnel_tbl = table(["段階"] + [SN[sd] for sd in funnels], frows)
 
     rr_txt = f"エントリー + 損切り幅 × {cfg.rr_target}" if cfg.rr_target else "上位足の直近スイング高値"
     html = f"""<title>上位足押し目×下位足転換 {escape(cfg.pair)}</title>
@@ -150,7 +159,7 @@ def write_report(path, trades, stats, funnel, cfg, spread, chart_file, period_la
 {CSS}</style>
 <main class="wrap">
 <header><h1>上位足押し目 × 下位足転換 {escape(cfg.pair)}</h1>
-<p class="sub">{escape(period_label)} / 上位足 {escape(cfg.htf_rule)} × 下位足 {cfg.ltf_hours}h / ロングのみ / TP {cfg.rr_target}R / 1分足執行 / スプレッド課金後のR</p></header>
+<p class="sub">{escape(period_label)} / 上位足 {escape(cfg.htf_rule)} × 下位足 {cfg.ltf_hours}h / {"・".join(SN[x] for x in stats_side)} / TP {cfg.rr_target}R / 1分足執行 / スプレッド課金後のR</p></header>
 
 <section><h2>結果</h2>
 {kpi}
@@ -158,6 +167,9 @@ def write_report(path, trades, stats, funnel, cfg, spread, chart_file, period_la
 
 <section><h2>累積R</h2><div class="card">{equity_svg(trades["exit_time"] if len(trades) else [], r)}</div>
 <p class="hint muted">決済順の累積R（スプレッド課金後）。</p></section>
+
+<section><h2>売買別</h2>{side_tbl}
+<p class="hint muted">買いと売りは別々に検証して合算しています。同じ時期に買いと売りのポジションが重なることがあります。</p></section>
 
 <section><h2>年別</h2>{yearly}</section>
 
@@ -175,6 +187,7 @@ def write_report(path, trades, stats, funnel, cfg, spread, chart_file, period_la
 
 <section><h2>売買ルールと設定</h2>
 <ul>
+<li><b>売り:</b> 買いの条件の高値と安値を入れ替えた対称ルールです（上位足の下降トレンド、上抜けされた前回高値の代わりに下抜けされた前回安値、H_a / H_b は L_a / L_b、トリガーは直近 {cfg.trigger_n} 本の安値の下抜け）。</li>
 <li><b>足:</b> 1分足から NY 17:00 区切りで下位足（{cfg.ltf_hours}時間足）を作り、上位足（{escape(cfg.htf_rule)}）は下位足をまとめて作ります。</li>
 <li><b>スイング:</b> 左右 n 本のフラクタル（上位足 n={cfg.swing_n_htf}、下位足 n={cfg.swing_n_ltf}）。同値は最初の1本だけ。ピボットの n 本後から使います。</li>
 <li><b>上位足:</b> 直近2つのスイング高値・安値がともに切り上がっていれば上昇。ゾーン = 上抜けされた前回スイング高値 ± 上位足ATR × {cfg.htf_zone_atr}。上位足が確定した後の下位足にだけ使います。</li>
@@ -190,7 +203,7 @@ def write_report(path, trades, stats, funnel, cfg, spread, chart_file, period_la
 <ul>
 <li>取引数が {len(r)} 件と少なく、勝率や PF のぶれが大きい段階です。結論より、まずセットアップ一覧で検出の形が意図どおりかを確かめる用途です。</li>
 <li>パラメータは仕様書の既定値のままで、合わせ込みはしていません。期間の分割（ウォークフォワード）もまだ行っていません。</li>
-<li>ロングのみです。下落の続いた期間（EURUSD なら 2021〜2022年）は上位足の上昇条件で見送られ、ショート側を加えると結果が変わります。</li>
+<li>買いと売りの合計は、2本の独立した検証の単純合算です。同時保有の制限や資金の共有は考えていません。</li>
 <li>検証開始より前の数ヶ月はスイングと ATR の助走期間で、セットアップは {escape(str(cfg.start_date))} 以降の足からだけ始めています。</li>
 </ul></section>
 </main>

@@ -56,13 +56,14 @@ class MtfConfig:
     setup_expiry: int = 72            # 各段階の有効期限（下位足本数）
     sl_buffer_atr: float = 0.2        # 損切り = 接触安値 − ATR × これ
     rr_target: float | None = 2.0     # 利確 = エントリー + 損切り幅 × これ（None なら上位足の目標値）
+    sides: tuple = ("long", "short")   # ショートは価格の高値と安値を反転（符号を反転）したロジックを同じコードで走らせる
     exec_1min: bool = True            # True: SL/TP を1分足で判定 / False: 下位足で判定
     price_decimals: int = 5
     cash: float = 10_000              # チャートの損益表示用（1R = cash × risk_pct）
     risk_pct: float = 0.02
 
 
-CFG = MtfConfig()
+CFG = MtfConfig(htf_rule="1D")
 WARMUP_MONTHS = 3
 RESULTS_ROOT = Path("mtf_results")
 RUN_LABEL = None                      # None なら「ペア_上位足x下位足」
@@ -85,6 +86,28 @@ def htf_labels(ltf_index, htf_rule, session_start_hour=17):
     if 24 % hours:
         raise ValueError(f"htf_rule は 24 の約数の時間足か 1D / 1W: {htf_rule}")
     return (idx - off).floor(pd.Timedelta(hours=hours)) + off
+
+
+PRICE_COLS = ("entry", "sl", "tp", "exit", "rr_level", "swing_low", "h_a", "bottom", "inval", "htf_target",
+              "contact_price")
+
+
+def mirror(df):
+    """価格を符号反転し、高値と安値を入れ替える（ショートをロングのロジックで扱うため。足の位置・ATR は変わらない）"""
+    out = df.copy()
+    out["Open"], out["Close"] = -df["Open"], -df["Close"]
+    out["High"], out["Low"] = -df["Low"], -df["High"]
+    return out
+
+
+def unmirror_trades(trades):
+    """mirror() した価格で作ったトレード一覧を、実際の価格（ショート）に戻す。R・位置の列はそのまま"""
+    t = trades.copy()
+    for c in PRICE_COLS:
+        t[c] = -t[c]
+    t["zone_lo"], t["zone_hi"] = -trades["zone_hi"], -trades["zone_lo"]
+    t["side"] = "short"
+    return t
 
 
 def resample_bars(df, labels):
@@ -279,12 +302,12 @@ def run_strategy(ltf, ctx, cfg, df_1min=None, commission=0.0, trade_from=None):
                         funnel["エントリー"] += 1
                         i0, entry, xi, xp, why = ex.run(k + 1, sl, tp)
                         r_gross = (xp - entry) / risk
-                        r = r_gross - (entry + xp) * commission / risk
+                        r = r_gross - (abs(entry) + abs(xp)) * commission / risk
                         k_exit = int(ex.bar_of[xi])
                         trades.append(dict(
                             entry_time=ex.t[i0], entry=entry, sl=sl, tp=tp, exit_time=ex.t[xi], exit=xp,
                             exit_pos=k_exit, exit_reason=why, R=r, R_gross=r_gross, rr_level=s["rr"],
-                            swing_low=s["touch_low"], h_a=s["ha"], bottom=s["bottom"], inval=s["inval"],
+                            swing_low=s["touch_low"], contact_price=l[s["contact"]], h_a=s["ha"], bottom=s["bottom"], inval=s["inval"],
                             zone_lo=s["zone_lo"], zone_hi=s["zone_hi"], htf_target=s["target"],
                             setup_pos=s["start"], bottom_pos=s["bpos"], ha_pos=s["ha_pos"], rr_pos=s["rr_pos"],
                             hl_pos=s["hl_pos"], choch_pos=s["choch"], contact_pos=s["contact"],
@@ -293,6 +316,8 @@ def run_strategy(ltf, ctx, cfg, df_1min=None, commission=0.0, trade_from=None):
                         k = max(k_exit, k)             # 保有中は新しいシグナルを出さない
         k += 1
     out = pd.DataFrame(trades)
+    if len(out):
+        out["side"] = "long"
     out.attrs["funnel"] = funnel                       # 各段階を通過した数・取り消しの理由
     return out
 
@@ -317,7 +342,8 @@ def summarize(r):
 def to_chart_trades(trades, cfg):
     """dow_swing_chart.make_chart() に渡せる形（backtesting.py の _trades と同じ列名）"""
     risk_cash = cfg.cash * cfg.risk_pct
-    size = (risk_cash / (trades["entry"] - trades["sl"])).round().astype(int).clip(lower=1)
+    size = (risk_cash / (trades["entry"] - trades["sl"]).abs()).round().astype(int).clip(lower=1)
+    size = size.where(trades["side"] == "long", -size)
     return pd.DataFrame({
         "Size": size, "EntryTime": trades["entry_time"], "ExitTime": trades["exit_time"],
         "EntryPrice": trades["entry"], "ExitPrice": trades["exit"], "SL": trades["sl"], "TP": trades["tp"],
@@ -334,8 +360,11 @@ def setup_svg(ltf, tr, cfg, pad_before=25, pad_after=12, width=720, height=300):
     if b - a > 260:                                   # 長い保有は決済側を切る
         b = a + 260
     seg = ltf.iloc[a:b + 1]
-    lo = min(seg["Low"].min(), tr["sl"], tr["zone_lo"])
-    hi = max(seg["High"].max(), min(tr["tp"], seg["High"].max() * 1.002), tr["zone_hi"])
+    short = tr["side"] == "short"
+    rng = seg["High"].max() - seg["Low"].min()
+    tp_in = min(max(tr["tp"], seg["Low"].min() - 0.3 * rng), seg["High"].max() + 0.3 * rng)   # 遠い TP は枠の端に寄せる
+    lo = min(seg["Low"].min(), tr["sl"], tr["zone_lo"], tp_in)
+    hi = max(seg["High"].max(), tr["sl"], tr["zone_hi"], tp_in)
     padv = (hi - lo) * 0.04
     lo, hi = lo - padv, hi + padv
     L, R, T, B = 8, 64, 8, 22
@@ -362,16 +391,18 @@ def setup_svg(ltf, tr, cfg, pad_before=25, pad_after=12, width=720, height=300):
         out.append(f'<line class="{cls}" x1="{x0:.1f}" x2="{x1:.1f}" y1="{Y(p):.1f}" y2="{Y(p):.1f}"/>'
                    f'<text class="lb {cls}t" x="{L + W + 4}" y="{Y(p) + 4:.1f}">{label}</text>')
 
-    hline("rr", tr["rr_level"], tr["rr_pos"], tr["entry_pos"], "H_b")
+    nm = dict(a="L_a", b="L_b", bottom="天井", hl="LH") if short else dict(a="H_a", b="H_b", bottom="底", hl="HL")
+    hline("rr", tr["rr_level"], tr["rr_pos"], tr["entry_pos"], nm["b"])
     hline("inv", tr["inval"], tr["choch_pos"], tr["entry_pos"], "否定")
     hline("sl", tr["sl"], tr["entry_pos"], tr["exit_pos"], "SL")
     hline("tp", tr["tp"], tr["entry_pos"], tr["exit_pos"], "TP")
     hline("en", tr["entry"], tr["entry_pos"], tr["exit_pos"], "IN")
-    pts = [("ha", tr["ha_pos"], tr["h_a"], "H_a", -8), ("ha", tr["rr_pos"], tr["rr_level"], "H_b", -8),
-           ("bt", tr["bottom_pos"], tr["bottom"], "底", 16), ("ct", tr["contact_pos"],
-           ltf["Low"].iloc[int(tr["contact_pos"])], "接触", 16)]
+    up_, dn_ = (16, -8) if short else (-8, 16)       # ラベルを置く向き（ロングは高値が上・安値が下）
+    pts = [("ha", tr["ha_pos"], tr["h_a"], nm["a"], dn_), ("ha", tr["rr_pos"], tr["rr_level"], nm["b"], dn_),
+           ("bt", tr["bottom_pos"], tr["bottom"], nm["bottom"], up_), ("ct", tr["contact_pos"],
+           tr["contact_price"], "接触", up_)]
     if not pd.isna(tr["hl_pos"]):
-        pts.append(("hl", tr["hl_pos"], tr["inval"], "HL", 16))
+        pts.append(("hl", tr["hl_pos"], tr["inval"], nm["hl"], up_))
     for cls, i, p, label, dy in pts:
         if a <= i <= b:
             out.append(f'<circle class="{cls}" cx="{X(i):.1f}" cy="{Y(p):.1f}" r="4"/>'
@@ -409,11 +440,11 @@ def write_setup_page(path, ltf, trades, cfg, title):
     for k, tr in trades.reset_index(drop=True).iterrows():
         cls = "pos" if tr["R"] > 0 else "neg"
         cards.append(
-            f'<div class="card" id="t{k + 1}"><h2>#{k + 1} <span class="{cls}">{tr["R"]:+.2f}R</span> '
-            f'{tr["exit_reason"]}</h2><p class="meta">エントリー {tr["entry_time"]:%Y-%m-%d %H:%M} @ '
+            f'<div class="card" id="t{k + 1}"><h2>#{k + 1} {"売り" if tr["side"] == "short" else "買い"} '
+            f'<span class="{cls}">{tr["R"]:+.2f}R</span> {tr["exit_reason"]}</h2><p class="meta">エントリー {tr["entry_time"]:%Y-%m-%d %H:%M} @ '
             f'{tr["entry"]:.{cfg.price_decimals}f} ／ 決済 {tr["exit_time"]:%Y-%m-%d %H:%M} @ '
             f'{tr["exit"]:.{cfg.price_decimals}f}</p>{setup_svg(ltf, tr, cfg)}</div>')
-    legend = ('<div class="legend"><span>オレンジ帯: 上位足サポートゾーン</span><span>赤: H_a / H_b（RR水準）</span>'
+    legend = ('<div class="legend"><span>オレンジ帯: 上位足サポート（売りはレジスタンス）ゾーン</span><span>赤: H_a / H_b（RR水準）。売りは上下反転</span>'
               '<span>オレンジ点: 底</span><span>緑の丸: 接触</span><span>灰の点線: 否定ライン（HL）</span>'
               '<span>青: エントリー / 赤緑の破線: SL・TP</span><span>縦線: CHoCH・IN・OUT</span></div>')
     html = (f'<!doctype html><html lang="ja"><head><meta charset="utf-8">'
@@ -429,13 +460,15 @@ def write_setup_page(path, ltf, trades, cfg, title):
 # ---------------------------------------------------------------------------
 # 実行
 # ---------------------------------------------------------------------------
-def prepare(df_1min, cfg):
-    """1分足 → 下位足・上位足・上位足の状態（下位足に割り当て済み）"""
+def prepare(df_1min, cfg, side="long"):
+    """1分足 → 下位足・上位足・上位足の状態（下位足に割り当て済み）。side="short" は価格を反転した世界で作る"""
+    if side == "short":
+        df_1min = mirror(df_1min)
     ltf = resample_to_signal_bars(df_1min, cfg.session_start_hour, cfg.ltf_hours)
     labels = htf_labels(ltf.index, cfg.htf_rule, cfg.session_start_hour)
     htf = resample_bars(ltf, labels)
     ctx_htf = htf_context(htf, cfg)
-    return ltf, htf, ctx_htf, map_htf_to_ltf(ltf, ctx_htf, labels)
+    return ltf, htf, ctx_htf, map_htf_to_ltf(ltf, ctx_htf, labels), df_1min
 
 
 def main(cfg=CFG):
@@ -458,23 +491,39 @@ def main(cfg=CFG):
     print(f"⏱ 読み込み {time.time() - t0:.1f} 秒")
 
     t1 = time.time()
-    ltf, htf, ctx_htf, ctx = prepare(df_1min, cfg)
-    ltf_day = (ltf.index - pd.Timedelta(hours=cfg.session_start_hour)).normalize() + pd.Timedelta(days=1)
-    trade_from = int(np.argmax(ltf_day >= start_ts)) if start_ts is not None else 0
-    trades = run_strategy(ltf, ctx, cfg, df_1min, commission=spread / 2, trade_from=trade_from)
-    print(f"⏱ 検証 {time.time() - t1:.1f} 秒（下位足 {len(ltf):,} 本 / 上位足 {len(htf):,} 本）")
+    ltf_day = None
+    parts, funnels = [], {}
+    for side in cfg.sides:
+        ltf_s, htf_s, ctx_htf, ctx, src = prepare(df_1min, cfg, side)
+        if ltf_day is None:
+            ltf_day = (ltf_s.index - pd.Timedelta(hours=cfg.session_start_hour)).normalize() + pd.Timedelta(days=1)
+            trade_from = int(np.argmax(ltf_day >= start_ts)) if start_ts is not None else 0
+        t = run_strategy(ltf_s, ctx, cfg, src, commission=spread / 2, trade_from=trade_from)
+        funnels[side] = t.attrs.get("funnel")
+        if len(t) and side == "short":
+            t = unmirror_trades(t)
+        parts.append(t)
+    ltf = resample_to_signal_bars(df_1min, cfg.session_start_hour, cfg.ltf_hours)   # 表示用（実際の価格）
+    trades = pd.concat([p for p in parts if len(p)], ignore_index=True) if any(len(p) for p in parts) \
+        else pd.DataFrame()
+    if len(trades):
+        trades = trades.sort_values("entry_time", kind="stable").reset_index(drop=True)
+    print(f"⏱ 検証 {time.time() - t1:.1f} 秒（下位足 {len(ltf):,} 本 / 上位足 {len(htf_s):,} 本）")
 
     stats = summarize(trades["R"] if len(trades) else [])
-    print("  段階ごとの件数:", trades.attrs.get("funnel"))
-    for key, v in stats.items():
-        print(f"  {key}: {v:.3f}" if isinstance(v, float) else f"  {key}: {v}")
+    stats_side = {sd: summarize(trades.loc[trades["side"] == sd, "R"] if len(trades) else []) for sd in cfg.sides}
+    for sd, f in funnels.items():
+        print(f"  段階ごとの件数（{sd}）:", f)
+    for name, st in (("全体", stats), *stats_side.items()):
+        print(f"  [{name}] " + " / ".join(f"{k} {v:.3f}" if isinstance(v, float) else f"{k} {v}" for k, v in st.items()))
 
-    label = RUN_LABEL or f"{cfg.pair}_{cfg.htf_rule}x{cfg.ltf_hours}h"
+    label = RUN_LABEL or f"{cfg.pair}_{cfg.htf_rule}x{cfg.ltf_hours}h_{'-'.join(cfg.sides)}"
     out_dir = RESULTS_ROOT / f"{datetime.now():%Y%m%d_%H%M}_{label}"
     out_dir.mkdir(parents=True, exist_ok=True)
     cfg_json = {k: (str(v) if isinstance(v, Path) else v) for k, v in dataclasses.asdict(cfg).items()}
     (out_dir / "config.json").write_text(json.dumps(dict(cfg=cfg_json, avg_relative_spread=spread,
-                                                         stats=stats, funnel=trades.attrs.get("funnel")), ensure_ascii=False, indent=2),
+                                                         stats=stats, stats_by_side=stats_side, funnel=funnels),
+                                                    ensure_ascii=False, indent=2),
                                          encoding="utf-8")
     (out_dir / "code").mkdir(exist_ok=True)
     for src in (Path(__file__), Path(__file__).with_name("mtf_report.py")):
@@ -494,10 +543,10 @@ def main(cfg=CFG):
         except Exception as e:  # チャートの失敗で検証結果を失わない
             print(f"⚠️ チャートを作れませんでした: {e}")
         from mtf_report import write_report
-        write_report(out_dir / "report.html", trades, stats, trades.attrs.get("funnel", {}), cfg, spread, chart_file,
+        write_report(out_dir / "report.html", trades, stats, stats_side, funnels, cfg, spread, chart_file,
                      f"{cfg.start_date} ~ {cfg.end_date}")
     print(f"💾 出力先: {out_dir.resolve()}（合計 {time.time() - t0:.1f} 秒）")
-    return dict(trades=trades, stats=stats, ltf=ltf, htf=htf, ctx_htf=ctx_htf, ctx=ctx, out_dir=out_dir,
+    return dict(trades=trades, stats=stats, stats_by_side=stats_side, funnels=funnels, ltf=ltf, out_dir=out_dir,
                 spread=spread, df_1min=df_1min)
 
 

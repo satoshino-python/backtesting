@@ -8,7 +8,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from mtf_pullback_strategy import (  # noqa: E402
-    MtfConfig, fractal_pivots, map_htf_to_ltf, prepare, run_strategy,
+    MtfConfig, fractal_pivots, map_htf_to_ltf, mirror, prepare, run_strategy, unmirror_trades,
 )
 
 # 下位足図の折れ線（図の y 座標を 600 - y で価格にしたもの）。各区間 10 本で線形補間
@@ -63,13 +63,29 @@ def test_random_walk_runs():
     df["Low"] = df[["Open", "Close"]].min(axis=1) - 0.0001
     df["Volume"] = 0
     for cfg in (MtfConfig(), MtfConfig(htf_rule="1D", ltf_hours=4, rr_target=None, support_mode="last_low")):
-        ltf, _, ctx_htf, ctx = prepare(df, cfg)
-        trades = run_strategy(ltf, ctx, cfg, df, commission=0.00001)
-        if len(trades):
-            assert (trades["entry"] > trades["sl"]).all()
-            assert (trades["tp"] > trades["entry"]).all()
-            assert (trades["entry_time"] > trades["exit_time"].shift(1).fillna(trades["entry_time"].iloc[0]
-                                                                              - pd.Timedelta(1, "min"))).all()
+        for side in ("long", "short"):
+            ltf, _, ctx_htf, ctx, src = prepare(df, cfg, side)
+            trades = run_strategy(ltf, ctx, cfg, src, commission=0.00001)
+            if not len(trades):
+                continue
+            assert (trades["entry"] > trades["sl"]).all() and (trades["tp"] > trades["entry"]).all()   # 反転した世界ではロング
+            prev_exit = trades["exit_time"].shift(1)
+            assert (trades["entry_time"][1:] > prev_exit[1:]).all()                                  # 保有中は新規なし
+            if side == "short":
+                real = unmirror_trades(trades)
+                assert (real["sl"] > real["entry"]).all() and (real["tp"] < real["entry"]).all()
+
+
+def test_short_is_mirror_of_long():
+    """ショートは、反転した世界でのロングと同じ。売りの形（パターンの上下反転）で1件・実価格に戻して SL が上、TP が下"""
+    ltf_long = pattern_bars()
+    ltf_short = mirror(ltf_long)                              # 実際の売りの形（価格は符号反転）
+    ctx = fixed_context(ltf_long, 40, 90)                     # 反転した世界（ロングの形）の上位足条件
+    raw = run_strategy(mirror(ltf_short), ctx, CFG)
+    t = unmirror_trades(raw).iloc[0]
+    assert t["side"] == "short" and t["sl"] > t["entry"] > t["tp"]
+    assert abs(t["rr_level"] - (-313)) < 1e-9 and abs(t["zone_hi"] - (-40)) < 1e-9
+    assert t["R"] > 0
 
 
 def test_htf_state_uses_closed_bar_only():
