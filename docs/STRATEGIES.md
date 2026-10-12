@@ -27,6 +27,7 @@
 | `build_h4_cache.py` | 1分足を4時間足にまとめて `cache/h4_<ペア>.pkl` に保存（下の2本の下準備） | 4時間足 | – | – |
 | `trend_filter_study.py` | `fast_results` の取引に、エントリー直前の方向・強さの指標（ADX・ER・CHOP・移動平均・週足ダウなど）を付けて成績との関係を集計 | 4H/D1/W1 | – | – |
 | `filter_rerun.py` | 方向フィルター（`fast_engine` の `AllowLong`/`AllowShort` 列）を入れて全ペアを再検証。結果は `filter_results/<日時>_rerun/` | 4時間足＋日足/週足 | 固定SL/TP と 1Hトレーリング | 損失額固定 |
+| `mtf_pullback_strategy.py` | 上位足押し目 × 下位足転換（ロングのみ）。仕様は [MTF_PULLBACK_SPEC.md](MTF_PULLBACK_SPEC.md)。レポートは `mtf_report.py`、結果は `mtf_results/<日時>_<ラベル>/` | 上位足（4H/D1/W1）＋下位足（1H/4H） | 接触安値下の SL・R倍数の TP | R で集計 |
 
 `main_4H_fixedSL_multi.py` と `main_4H_fixedSL_dow.py` は、`main_4H_fixedSL.py` の関数と Strategy を import して使っている。
 **`main_4H_fixedSL.py` を変更すると、この2つの結果も変わる。**
@@ -296,6 +297,19 @@ python dow_swing_chart.py --trades dow_results/trades_20210101-20251231_strict.c
   `... exit_mode=swing_trail [initial_sl_rule=near] [h1_window=5]`、
   `... exit_mode=dow_swing [dow_mode=None|no_counter] [min_trend_age=8] [min_weekly_adx=25] [min_h4_er=0.2] [exit_window=6]` で両方を実行して比べる。
   食い違ったら両方の取引履歴を `fast_compare_results/<日時>_<ペア>/` に保存する。
+
+### `mtf_pullback_strategy.py`（上位足押し目 × 下位足転換）
+fast_engine は使わず、自前の状態遷移（IDLE → WAIT_CHOCH → WAIT_RR → WAIT_TRIGGER）で判定する。ルールの詳細は [MTF_PULLBACK_SPEC.md](MTF_PULLBACK_SPEC.md)。
+
+- 設定は `MtfConfig`（`CFG`）。上位足は `htf_rule`（"4h" / "1D" / "1W"）、下位足は `ltf_hours`。他は仕様書のパラメータ名のまま
+- 下位足・上位足とも 1分足から NY 17:00 区切りで作る（上位足は下位足をまとめる）。上位足の状態は1本ずらして、確定後の下位足にだけ使う
+- 上位足のサポート「上抜けされた前回スイング高値」は、確定済みスイング高値のうち、その後の終値で上抜けされたもののうちピボットが最も新しいもの
+- エントリー後の SL/TP は1分足で判定（`exec_1min=False` なら下位足）。同じ足で両方なら SL。窓開けで飛び越えたら始値で約定
+- スプレッドは既存と同じく平均相対スプレッドの半分を売買の各回に課金し、R から差し引く（`R_gross` は課金前）
+- 出力: `trades_<ペア>.csv`（仕様書の列＋各点の下位足の位置）、`setups.html`（1トレード1枚のセットアップ図）、`report.html`、
+  トレード付きダウ理論チャート、`config.json`（設定・段階ごとの件数）
+- テスト: `python tests/test_mtf_pullback.py`（下位足図のパターン再現・ランダムウォーク・上位足の割り当て）
+- 未実装（仕様書の今後のタスク）: トリガーの差し替え、ショート側、ウォークフォワード検証
 
 ## 5. `Config` の設定項目（4時間足系の共通項目）
 

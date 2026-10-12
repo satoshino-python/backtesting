@@ -1,0 +1,44 @@
+{
+  "cfg": {
+    "pair": "EURUSD",
+    "data_root": "histData",
+    "start_date": "2021-01-01",
+    "end_date": "2025-12-31",
+    "session_start_hour": 17,
+    "ltf_hours": 1,
+    "htf_rule": "4h",
+    "swing_n_htf": 3,
+    "swing_n_ltf": 3,
+    "atr_len": 14,
+    "support_mode": "broken_high",
+    "htf_zone_atr": 0.5,
+    "rr_away_atr": 1.0,
+    "rr_zone_atr": 0.3,
+    "trigger_n": 5,
+    "setup_expiry": 72,
+    "sl_buffer_atr": 0.2,
+    "rr_target": 2.0,
+    "exec_1min": true,
+    "price_decimals": 5,
+    "cash": 10000,
+    "risk_pct": 0.02
+  },
+  "avg_relative_spread": 4.759614527389122e-05,
+  "stats": {
+    "トレード数": 36,
+    "勝率 [%]": 22.22222222222222,
+    "平均R": -0.35119498660241033,
+    "合計R": -12.643019517686772,
+    "最大DD [R]": 13.60280348205326,
+    "PF": 0.5566128263424127
+  },
+  "funnel": {
+    "開始": 319,
+    "転換(CHoCH)": 91,
+    "RR接触": 52,
+    "エントリー": 36,
+    "取消:ゾーン割れ": 199,
+    "取消:否定ライン割れ": 45,
+    "取消:期限切れ": 39
+  }
+}
