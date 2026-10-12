@@ -268,6 +268,11 @@ python dow_swing_chart.py --trades dow_results/trades_20210101-20251231_strict.c
 - 確認結果（2026-10-06）: 5ペア × 2021〜2025年と SP500（2024-02〜2025-11）で、fixed（建値ストップなし・あり）と
   swing_trail（当初SL atr / near / far）の全組み合わせで、取引履歴・資産曲線・統計値が backtesting.py と完全に一致。
   1ペア5年分で backtesting.py 約150秒 → 約1秒。
+- 確認結果（2026-10-12、backtesting.py 0.6.6）: dow_swing を EURUSD・USDJPY（strict）、GBPUSD（フィルターなし）、
+  AUDUSD（strict＋継続8週＋4H効率比0.2）、USDCHF（no_counter＋週足ADX25）、XAUUSD（strict、2024〜2025）で比べ、
+  取引履歴・資産曲線・統計値が完全に一致（2年分で backtesting.py 約16秒 → 約0.3〜0.6秒）。fixed・swing_trail も1年分で再確認して一致。
+- **backtesting.py は 0.6.6 で比べる。** 0.6.5 以前は、窓開けで SL を飛び越えて約定したトレードの取引履歴の `SL` 列が空（NaN）になり、
+  fast_engine（常に SL を残す。0.6.6 と同じ）とその列だけ食い違う。0.6.4 以前は取引履歴に `Commission` 列が無い。
 - `main_4H_fixedSL_fast_multi.py`: `main_4H_fixedSL_multi.py` と同じ検証（`EXIT_MODE` = `"fixed"` / `"swing_trail"`、`H1_SWING_WINDOW`、
   `INITIAL_SL_RULE`）を、ペアごとに別プロセスで並列実行する（`WORKERS`、既定4。1ペアあたり最大1〜2GBのメモリを使う）。
   集計は multi と同じ（ペア別・総合・年別を R倍数で）。`RUN_LABEL=None` なら決済ルールからフォルダ名を自動で付ける。
