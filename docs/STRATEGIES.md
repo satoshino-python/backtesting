@@ -1,6 +1,6 @@
 # 検証用コードの一覧と設定ガイド
 
-このフォルダの各スクリプトの「売買ルール」「設定できる項目」「出力」をまとめたもの（2026-10-05 時点のコードに基づく）。
+このフォルダの各スクリプトの「売買ルール」「設定できる項目」「出力」をまとめたもの（2026-10-12 時点のコードに基づく）。
 ダウ理論トレンド判定の詳細仕様は [DOW_TREND_SPEC.md](DOW_TREND_SPEC.md) を参照。
 
 ## 1. ファイル一覧
@@ -30,6 +30,8 @@
 
 `main_4H_fixedSL_multi.py` と `main_4H_fixedSL_dow.py` は、`main_4H_fixedSL.py` の関数と Strategy を import して使っている。
 **`main_4H_fixedSL.py` を変更すると、この2つの結果も変わる。**
+backtesting.py が必要なのは、`main_4H_fixedSL.py` / `main_4H_fixedSL_multi.py` / `main_4H_fixedSL_dow.py` の `main()`、`compare_fast_engine.py`、
+`main_4H_dow_swingExit.py` の `ENGINE="backtesting"`、`legacy/` だけ（`pip install backtesting==0.6.6`）。それ以外は backtesting.py・Bokeh なしで動く。
 `fast_engine.py` は `SwingBreakoutStrategy1Min`・`move_sl_to_breakeven()`（`main_4H_fixedSL.py`）と
 `SwingBreakoutTrail1Min`（`main_4H_fixedSL_multi.py`）・`SwingBreakoutDowSwingExit1Min`（`main_4H_dow_swingExit.py`）の売買ルールを自前で再現しているため、
 **これらのルールを変えたら `fast_engine.py` も合わせて直し、`compare_fast_engine.py` で一致を確かめる。**
@@ -48,8 +50,12 @@
 
 ### データ
 - GMOクリック証券の1分足ヒストリカルデータ（BID/ASK）。月ごとの ZIP を解凍せずに `histData/<通貨ペア>/` に置く。
-  - 現在あるフォルダ: `AUDUSD` / `EURUSD` / `GBPUSD` / `USDCHF` / `USDJPY`（2020-01〜2025-12 ほか）、`SP500`（US500、2024-01〜2025-12）
-  - CSV の日時の書式は銘柄で違う（FX は `2024/01/15 07:00:00`、US500 は `202401020800`）。どちらも日本時間で、読み込み時に両方に対応している。
+  - 現在あるフォルダ（2020-01〜2025-12。GBPUSD・USDCHF は 2026-09、AUDUSD は 2026-07 まで）: FX 15ペア
+    `AUDJPY` / `AUDUSD` / `EURAUD` / `EURCHF` / `EURGBP` / `EURJPY` / `EURUSD` / `GBPAUD` / `GBPCHF` / `GBPJPY` / `GBPUSD` / `NZDJPY` / `NZDUSD` / `USDCHF` / `USDJPY`、
+    金スポット `XAUUSD`（ファイル名は `SPOT_GOLD_YYYYMM.zip`）、`SP500`（US500、2024-01〜2025-12）
+  - CSV の日時の書式は銘柄で違う（FX は `2024/01/15 07:00:00`、US500・金スポットは `202401020800`）。どちらも日本時間で、読み込み時に両方に対応している。
+  - 価格の小数桁（`price_decimals_for`）: クロス円・USDJPY は3桁、SP500・XAUUSD は2桁、それ以外は5桁。
+  - 金スポットは CFD のため、保有中に金利調整額が発生する（上の「金利調整額」）。損益・1R は USD 建て。
   - 2023年6月以前の ZIP に同梱されている `_EX` 付きの別系列 CSV は読み込まない（`main_4H_fixedSL.py` 以降）。
 - タイムスタンプは日本時間で記録されているため、NY時間に変換する（サマータイムは自動で考慮）。
 - 価格は既定で仲値（`(BID+ASK)/2`）を使う。スプレッドは、データ全体の平均相対スプレッドの半分を
@@ -111,7 +117,7 @@
 - **損失額固定の枚数計算**: 枚数 = 初期資金 × `risk_pct` ÷ 損切り幅。
   - 損切りになると、損失はおおよそ「初期資金 × `risk_pct`」（＝ **1R**）になる。既定は 10,000 × 2% = 200。
   - 初期資金を基準にした固定額なので、複利にはならない。
-  - 窓開けでSLを飛び越えた場合は 1R を超えることがある。証拠金が足りない注文は backtesting.py がキャンセルする。
+  - 窓開けでSLを飛び越えた場合は 1R を超えることがある。証拠金が足りない注文はキャンセルされる（backtesting.py・fast_engine とも）。
 - **建値ストップ**: 含み益が `breakeven_trigger_r` × R に達したら、SLをエントリー価格に移す。`None` で無効。
   - 判定は現在のバーの高値・安値で行い、移動したSLは次のバーから有効になる。到達したのと同じバーで建値まで戻った場合は、当初のSLのまま扱う（保守的）。
 - `_EX` 付きの CSV を除外する処理を追加した。
@@ -264,7 +270,7 @@ python dow_swing_chart.py --trades dow_results/trades_20210101-20251231_strict.c
     `SwingBreakoutDowSwingExit1Min` と同じ。swing_trail との違いは、トレーリングに4時間足スイングを使い、
     エントリー後に確定したかを確認しないこと、当初SLが直近スイング（エントリー価格の反対側に無ければ発注しない）であること。
 - 仕組み: 何も起きない1分足を numpy でまとめて飛ばし、エントリー・SL・TP・建値ストップ・トレーリング・残った反対側の逆指値が
-  動くバーだけを backtesting.py 0.6 のブローカーと同じ手順で処理する（窓開けの約定価格、同じバーで SL と TP に触れたら SL 優先、
+  動くバーだけを backtesting.py 0.6.6 のブローカーと同じ手順で処理する（窓開けの約定価格、同じバーで SL と TP に触れたら SL 優先、
   エントリーと同じバーの SL/TP の扱い、反対側の逆指値による決済、一部決済、証拠金不足の取消しまで再現）。
 - `SwingBreakoutTrail1Min` の注意（backtesting.py の動きをそのまま再現している）: 新しい1時間足スイングが既に終値の反対側にあると
   `trade.close()` を出すが、同じ `next()` の「contingent でない注文の取消し」で消えるため成行決済はされない。

@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-FX（GMOクリック証券の1分足）のスイングブレイクアウト戦略を検証するリポジトリ。検証は自前の高速エンジン `fast_engine.py` で行い、
+FX・CFD（GMOクリック証券の1分足。FX 15ペア、金スポット XAUUSD、US500）のスイングブレイクアウト戦略を検証するリポジトリ。検証は自前の高速エンジン `fast_engine.py` で行い、
 backtesting.py（0.6.6）は答え合わせ用に残している。
 各スクリプトのルール・設定・出力は [docs/STRATEGIES.md](docs/STRATEGIES.md)、ダウ理論判定の仕様は
 [docs/DOW_TREND_SPEC.md](docs/DOW_TREND_SPEC.md) にまとめてある。作業の前に読むこと。
@@ -8,8 +8,11 @@ backtesting.py（0.6.6）は答え合わせ用に残している。
 ## 実行
 - リポジトリのルートで実行する（`histData/` などを相対パスで探す）。ローカルの Python は `.venv/`。
 - Windows では出力の絵文字で落ちるため `PYTHONIOENCODING=utf-8` を付ける。
-- 1分足で5年分は時間がかかる（1回あたり数分）。新しいルールは短い期間で確かめてから広げる。
-- `main_4H_fixedSL.py` は他のスクリプトから import されている。変更すると multi / dow 版の結果も変わる。
+- fast_engine なら1ペア5年分の検証は約1秒（データの読み込みに約10秒）。backtesting.py では1回あたり数分かかるので、
+  答え合わせは短い期間（1〜2年）で行う。新しいルールは短い期間で確かめてから広げる。
+- `main_4H_fixedSL.py` は他のスクリプトから import されている。変更すると multi / dow / fast 版の結果も変わる。
+- backtesting.py が必要なのは、`compare_fast_engine.py`、`main_4H_fixedSL.py` / `main_4H_fixedSL_multi.py` / `main_4H_fixedSL_dow.py` の
+  `main()`（backtesting.py で実行する単発・複数ペア・週足ダウフィルター版）、`ENGINE="backtesting"` のとき、`legacy/` の古いスクリプトだけ。
 - **検証は `fast_engine.py` を使う（backtesting.py は答え合わせ用に残している）。** `fast_engine.py` は `SwingBreakoutStrategy1Min`（固定SL/TP）・
   `SwingBreakoutTrail1Min`（1時間足トレーリング）・`SwingBreakoutDowSwingExit1Min`（週足ダウ＋4Hスイング決済）の売買ルールを
   backtesting.py なしで再現した高速版（約100倍速い）。複数ペアは `main_4H_fixedSL_fast_multi.py` で並列に検証できる。
@@ -17,6 +20,10 @@ backtesting.py（0.6.6）は答え合わせ用に残している。
   新しいルールは fast_engine 側に実装し、backtesting.py 版も書けるときは `compare_fast_engine.py` で一致を確かめる。
 - 統計値（stats）は `fast_stats.py`（backtesting.py の compute_stats の移植）で計算する。fast 系のスクリプトは backtesting.py と Bokeh が
   入っていなくても動く（`bt_compat.py` で import を任意にしている）。答え合わせと backtesting.py 標準のチャートには `pip install backtesting==0.6.6` が必要。
+  0.6.5 以前は窓開けで SL を飛び越えたトレードの取引履歴の `SL` 列が空になり、fast_engine と食い違う。
+- CFD の金利調整額: `main_4H_fixedSL_fast_multi.py` の `INTEREST_CSV` に載せたペア（既定は XAUUSD）は、取引の損益に金利調整額を反映する
+  （発生日の NY 17:00 をまたいだ保有に、オンス数 × 円の金額。決済時点の USDJPY で USD に直す）。計算は `swap_costs.py`、
+  データは `swap_data/gold_spot_interest.csv`（GMO の「金利調整額」シートから作成。更新方法は `swap_data/README.md`）。
 
 ## 検証結果のチャート（毎回作る）
 トレードを伴う検証では、**トレード付きのダウ理論チャート**を必ず出力する（backtesting.py で実行したときは標準のチャートも出る）。
