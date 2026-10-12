@@ -3,7 +3,7 @@
 フィルターは 日足MA20>75>200 の並び + ER(20)≥0.3（+ 比較用に「フィルターなし」「MAの並びだけ」「+ 20MA傾き1日」）。
 SL/TP は 4時間足 ATR(14)（ワイルダー）× 1.0 / 1.5 で共通。結果は trend_results/<日時>_entry_window_sweep/
 """
-import contextlib, io, warnings
+import contextlib, io, os, warnings
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import replace
 from datetime import datetime
@@ -16,6 +16,10 @@ from main_4H_fixedSL_multi import zip_month_range, price_decimals_for
 from fast_engine import run_fast
 
 CONFIGS = [(1, w) for w in (6, 12, 18, 24, 36, 48)] + [(4, w) for w in (3, 6, 9, 12, 18)]   # (足の時間, 前後の本数)
+# 環境変数 CONFIGS="2:3,2:6,3:2" のように指定すると、その組み合わせだけを検証する（例: 2時間足3本、2時間足6本、3時間足2本）
+if os.environ.get("CONFIGS"):
+    CONFIGS = [tuple(int(x) for x in c.split(":")) for c in os.environ["CONFIGS"].split(",")]
+LABEL = os.environ.get("RUN_LABEL", "entry_window_sweep")
 VARIANTS = ("nofilter", "ma_only", "spec", "spec_slope1")
 
 
@@ -28,7 +32,7 @@ def one(pair):
         s, e = pd.Timestamp(cfg.start_date), pd.Timestamp(cfg.end_date)
         df, spread = load_gmo_click_1min_data(cfg.data_path, price_side=cfg.price_side, price_decimals=cfg.price_decimals,
                                               month_range=zip_month_range(cfg), spread_period=(s, e), session_start_hour=cfg.session_start_hour)
-        h = {1: resample_to_signal_bars(df, 17, 1), 4: resample_to_signal_bars(df, 17, 4)}
+        h = {hh: resample_to_signal_bars(df, 17, hh) for hh in sorted({c[0] for c in CONFIGS} | {4})}
         d1 = resample_to_signal_bars(df, 17, 24)
         atr4 = m.atr_wilder(h[4]["High"], h[4]["Low"], h[4]["Close"], 14, cfg.price_decimals).shift(1)
         lab = get_signal_bar_label(df.index, 17, 24); day = get_trading_day_label(df.index, 17); inp = np.asarray((day >= s) & (day <= e))
@@ -44,7 +48,7 @@ def one(pair):
                  "spec_slope1": (g["up"] & g["ok"] & g["er"] & g["su"], g["dn"] & g["ok"] & g["er"] & g["sd"])}
         for hours, w in CONFIGS:
             sig = compute_signals(h[hours], window=w, atr_period=14, price_decimals=cfg.price_decimals)
-            sig["ATR"] = (atr4.reindex(get_signal_bar_label(h[1].index, 17, 4)).to_numpy() if hours == 1 else atr4)
+            sig["ATR"] = (atr4.reindex(get_signal_bar_label(h[hours].index, 17, 4)).to_numpy() if hours != 4 else atr4)
             base = map_signals_to_1min(df, sig, 17, hours).loc[inp]
             for v in VARIANTS:
                 d = base.copy(); d["AllowLong"], d["AllowShort"] = allow[v][0][inp], allow[v][1][inp]
@@ -58,7 +62,7 @@ def one(pair):
 
 
 if __name__ == "__main__":
-    out = m.RESULTS_ROOT / f"{datetime.now():%Y%m%d_%H%M}_entry_window_sweep"; out.mkdir(parents=True, exist_ok=True)
+    out = m.RESULTS_ROOT / f"{datetime.now():%Y%m%d_%H%M}_{LABEL}"; out.mkdir(parents=True, exist_ok=True)
     rows = []
     with ProcessPoolExecutor(m.WORKERS) as ex:
         futs = {ex.submit(one, p): p for p in m.PAIRS}
