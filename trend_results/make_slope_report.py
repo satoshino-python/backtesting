@@ -6,11 +6,15 @@ import numpy as np, pandas as pd
 
 import json
 d = Path(sys.argv[1]); dsplit = Path(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[2] != "-" else None
-dcmp = Path(sys.argv[3]) if len(sys.argv) > 3 else None   # 比較する他方式の実行フォルダ
+dcmps = [Path(a) for a in sys.argv[3:]]   # 比較する他方式の実行フォルダ（複数可）
 cfgj = json.loads((d / "config.json").read_text(encoding="utf-8")); MODE = cfgj.get("entry_mode", "donchian")
-ENT = ("確定済み直近18本の4時間足の最高値/最安値への逆指値（判定中の足は含めない）" if MODE == "donchian" else
-       "既存戦略と同じ Swing High/Low（前後18本で確定。一度抜かれたラインは、次のスイングが確定するまで無効）への逆指値")
-ENTS = "4時間足18本の高安ブレイク" if MODE == "donchian" else "4時間足18本のスイングハイ・ローブレイク"
+ENT_ALL = {
+    "donchian": ("確定済み直近18本の4時間足の最高値/最安値への逆指値（判定中の足は含めない）", "4時間足18本の高安ブレイク", "4H 高安"),
+    "swing": ("既存戦略と同じ Swing High/Low（4時間足 前後18本で確定。一度抜かれたラインは、次のスイングが確定するまで無効）への逆指値", "4時間足18本のスイングハイ・ローブレイク", "4H スイング"),
+    "swing1h": ("1時間足 前後24本で確定した Swing High/Low（一度抜かれたラインは、次のスイングが確定するまで無効）への逆指値。SL/TP の ATR は4時間足 ATR(14)", "1時間足24本のスイングハイ・ローブレイク", "1H スイング"),
+    "swing1h_atr1h": ("1時間足 前後24本で確定した Swing High/Low への逆指値。SL/TP の ATR は1時間足 ATR(14)", "1時間足24本のスイングハイ・ローブレイク（ATR 1H）", "1H スイング(ATR1H)"),
+}
+ENT, ENTS, ENTN = ENT_ALL[MODE]
 t = pd.read_csv(d / "trades_all.csv")
 t["ExitTime"] = pd.to_datetime(t.ExitTime, utc=True); t["EntryTime"] = pd.to_datetime(t.EntryTime, utc=True)
 t["Y"] = t.EntryTime.dt.tz_convert("America/New_York").dt.year
@@ -107,23 +111,33 @@ split_html = f"""<section><h2>傾きの効果だけを取り出す検定（1取�
 ER(20)≥0.3 の取引だけに絞ると、傾きが不一致の取引は {s_er['nl']} 回と少なく、差は {s_er['diff']:+.3f}R（{s_er['lo']:+.3f}〜{s_er['hi']:+.3f}）と幅が広くて確定できません。ER で絞った後に傾きを足しても、除外される取引が少ないので、合計Rはほとんど変わりません。</p></section>""" if HAS_SPLIT else ""
 
 # 他方式との比較
-cmp_html = ""
-if dcmp is not None:
-    t2 = pd.read_csv(dcmp / "trades_all.csv"); t2["ExitTime"] = pd.to_datetime(t2.ExitTime, utc=True); t2["EntryTime"] = pd.to_datetime(t2.EntryTime, utc=True)
-    t2["Y"] = t2.EntryTime.dt.tz_convert("America/New_York").dt.year
-    V2 = {k: st(g) for k, g in t2.groupby("Variant")}
-    m2 = json.loads((dcmp / "config.json").read_text(encoding="utf-8")).get("entry_mode", "donchian")
-    nm = lambda mo: "高安ブレイク" if mo == "donchian" else "スイング"
+cmp_html = ""; ev_txt = ""
+if dcmps:
+    runs = []
+    for dc in dcmps:
+        t2 = pd.read_csv(dc / "trades_all.csv"); t2["ExitTime"] = pd.to_datetime(t2.ExitTime, utc=True); t2["EntryTime"] = pd.to_datetime(t2.EntryTime, utc=True)
+        t2["Y"] = t2.EntryTime.dt.tz_convert("America/New_York").dt.year
+        mo = json.loads((dc / "config.json").read_text(encoding="utf-8")).get("entry_mode", "donchian")
+        runs.append((mo, {k: st(g) for k, g in t2.groupby("Variant")}))
+    runs.append((MODE, V))
+    head = ["設定"]; 
+    for mo, _ in runs: head += [f"{ENT_ALL[mo][2]} 取引数", "合計R", "PF", "最大DD"]
     rows2 = []
     for k in ("nofilter", "ma_only", "spec", "spec_slope1", "ma_slope3", "er10"):
-        if k in V and k in V2:
-            r1, r2 = V[k], V2[k]
-            rows2.append(f'<tr><td>{NAME[k]}</td><td class="num">{r2["n"]}</td><td class="num {cls(r2["R"])}">{fs(r2["R"])}</td><td class="num">{r2["PF"]:.2f}</td><td class="num">{r2["DD"]:.0f}</td>'
-                         f'<td class="num">{r1["n"]}</td><td class="num {cls(r1["R"])}">{fs(r1["R"])}</td><td class="num">{r1["PF"]:.2f}</td><td class="num">{r1["DD"]:.0f}</td></tr>')
-    cmp_html = ('<section><h2>エントリー方式の比較</h2>' + tbl(["設定", f"{nm(m2)} 取引数", "合計R", "PF", "最大DD", f"{nm(MODE)} 取引数", "合計R", "PF", "最大DD"], rows2)
-                + f'<p class="sub" style="margin-top:8px">{nm(m2)}は直近18本の高安（添付ルール）、スイングは既存戦略と同じ Swing High/Low です。同じフィルターと SL/TP で、エントリー方式だけが違います。ER(20)≥0.3 の場合、{nm(MODE)}方式の取引数は {nm(m2)}方式の約{V["spec"]["n"]/V2["spec"]["n"]*100:.0f}% で、合計Rは {fs(V["spec"]["R"])}R と {fs(V2["spec"]["R"])}R です。スイング方式は、強いトレンドで直近のスイングが更新されると、次のスイングが確定するまで注文が出ないため、取引が大きく減ると考えられます。</p></section>')
+        r = f"<tr><td>{NAME[k]}</td>"
+        for mo, VV in runs:
+            x = VV.get(k)
+            r += (f'<td class="num">{x["n"]}</td><td class="num {cls(x["R"])}">{fs(x["R"])}</td><td class="num">{x["PF"]:.2f}</td><td class="num">{x["DD"]:.0f}</td>' if x else '<td></td>' * 4)
+        rows2.append(r + "</tr>")
+    spec_line = "、".join(f'{ENT_ALL[mo][2]}は{VV["spec"]["n"]}回・{fs(VV["spec"]["R"])}R' for mo, VV in runs)
+    pf_line = "、".join(f'{ENT_ALL[mo][2]} {VV["spec"]["PF"]:.2f}' for mo, VV in runs)
+    dd_line = "、".join(f'{ENT_ALL[mo][2]} {VV["spec"]["DD"]:.0f}' for mo, VV in runs)
+    ev_txt = (f'<p><b>エントリー方式の違い（ER(20)≥0.3）: {spec_line}。</b></p>'
+              f'<p class="muted">PF は {pf_line}、最大DD(R)は {dd_line} です。</p>')
+    cmp_html = ('<section><h2>エントリー方式の比較</h2>' + tbl(head, rows2)
+                + f'<p class="sub" style="margin-top:8px">同じフィルターと SL/TP の倍率で、エントリー方式だけが違います。ER(20)≥0.3 では、{spec_line}です。</p></section>')
 
-doc = f"""<title>20MA傾きフィルター検証{"" if MODE == "donchian" else " スイング版"}</title>
+doc = f"""<title>20MA傾きフィルター検証{"" if MODE == "donchian" else " " + ENTN}</title>
 <style>
 :root {{ --bg:#f3f5f7; --surface:#fff; --line:#dde2e8; --fg:#17202b; --muted:#5e6b7a; --accent:#2a5bd7; --accent-soft:#e3eafb; --pos:#18865a; --neg:#c8413a; --gray:#8a95a3; --hl:#eef3ff;
   --f-head:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",system-ui,sans-serif; --f-num:"IBM Plex Mono",ui-monospace,Menlo,monospace; }}
@@ -158,9 +172,9 @@ ul {{ margin:0; padding-left:1.2em; }} li {{ margin-bottom:4px; }}
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
 <div class="wrap">
-<header><h1>20MA傾きフィルター検証 15ペア{"" if MODE == "donchian" else "（スイング版）"}</h1><p class="sub">日足MA20/75/200の並び + ER(20)≥0.3 に、ロングは日足20MAが上向き、ショートは下向きの条件を追加。{ENTS}、SL1.0 / TP1.5 ATR。2021-01〜2025-12。</p></header>
+<header><h1>20MA傾きフィルター検証 15ペア{"" if MODE == "donchian" else "（" + ENTN + "）"}</h1><p class="sub">日足MA20/75/200の並び + ER(20)≥0.3 に、ロングは日足20MAが上向き、ショートは下向きの条件を追加。{ENTS}、SL1.0 / TP1.5 ATR。2021-01〜2025-12。</p></header>
 
-<section class="verdict"><p><b>合計 {fs(B['R'])}R（PF {B['PF']:.2f}）。傾きなしの {fs(A['R'])}R（PF {A['PF']:.2f}）と比べて、{vd}。</b></p>
+<section class="verdict">{ev_txt}<p><b>合計 {fs(B['R'])}R（PF {B['PF']:.2f}）。傾きなしの {fs(A['R'])}R（PF {A['PF']:.2f}）と比べて、{vd}。</b></p>
 <p class="muted">取引は {A['n']} → {B['n']} 回（{drop}回、{drop/A['n']*100:.0f}%減）。除外した分の合計Rは {fs(dropR)}R、平均Rは {A['avg']:+.3f} → {B['avg']:+.3f}、最大DDは {A['DD']:.0f} → {B['DD']:.0f}、2024〜の合計Rは {fs(A['OOS'],1)} → {fs(B['OOS'],1)} です。取引1回のRの標準偏差は約1.25Rなので、{B['n']}回の合計Rの誤差は±{1.25*B['n']**.5:.0f}R 程度です。{vtail}</p></section>
 
 <section><div class="kpis">

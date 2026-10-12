@@ -24,7 +24,9 @@ from dow_swing_chart import make_chart
 
 # エントリー方式（環境変数 ENTRY_MODE で切り替え）
 #   donchian: 確定済み直近18本の最高値/最安値（添付ルール。既定）
-#   swing   : 既存戦略と同じ Swing High/Low（前後18本で確定。一度抜かれたラインは次のスイングが確定するまで無効）
+#   swing   : 既存戦略と同じ Swing High/Low（4時間足 前後18本で確定。一度抜かれたラインは次のスイングが確定するまで無効）
+#   swing1h : 1時間足 前後24本の Swing High/Low（判定は同じ仕組み）。SL/TP の ATR は4時間足 ATR(14)
+#   swing1h_atr1h : swing1h と同じエントリーで、SL/TP の ATR を1時間足 ATR(14) にした版
 ENTRY_MODE = os.environ.get("ENTRY_MODE", "donchian")
 RUN_LABEL = "ma20_slope" if ENTRY_MODE == "donchian" else f"ma20_slope_{ENTRY_MODE}"
 # name: (ER期間, ERしきい値, 傾きの日数k（0=条件なし）, ER を使うか)。SL1.0 / TP1.5 / ブレイク18本は共通
@@ -43,6 +45,7 @@ VARIANTS = {
 for _th in (0.2, 0.25, 0.35, 0.4):
     VARIANTS[f"slope1_er{_th}"] = (20, _th, 1, True)
 CHART_VARIANT = "spec_slope1"
+ENTRY_TXT = {"donchian": "18本高安", "swing": "18本スイング", "swing1h": "1H24本スイング", "swing1h_atr1h": "1H24本スイング(ATR1H)"}
 
 
 def run_pair(pair, cfg, out_dir):
@@ -56,12 +59,22 @@ def run_pair(pair, cfg, out_dir):
                                               session_start_hour=cfg.session_start_hour)
         h4 = resample_to_signal_bars(df, cfg.session_start_hour, 4)
         d1 = resample_to_signal_bars(df, cfg.session_start_hour, 24)
-        if ENTRY_MODE == "swing":
+        sig_hours = 4
+        if ENTRY_MODE in ("swing1h", "swing1h_atr1h"):
+            sig_hours = 1
+            h1 = resample_to_signal_bars(df, cfg.session_start_hour, 1)
+            sig = compute_signals(h1, window=24, atr_period=14, price_decimals=cfg.price_decimals)
+            if ENTRY_MODE == "swing1h":   # SL/TP の ATR は4時間足（1時間足の各バーには、直前に確定した4時間足の値）
+                atr4 = m.atr_wilder(h4["High"], h4["Low"], h4["Close"], 14, cfg.price_decimals).shift(1)
+                sig["ATR"] = atr4.reindex(get_signal_bar_label(h1.index, cfg.session_start_hour, 4)).to_numpy()
+            else:
+                sig["ATR"] = m.atr_wilder(h1["High"], h1["Low"], h1["Close"], 14, cfg.price_decimals).shift(1)
+        elif ENTRY_MODE == "swing":
             sig = compute_signals(h4, window=cfg.window, atr_period=14, price_decimals=cfg.price_decimals)
             sig["ATR"] = m.atr_wilder(h4["High"], h4["Low"], h4["Close"], 14, cfg.price_decimals).shift(1)  # ATR は他の版と同じワイルダー平滑
         else:
             sig = m.breakout_signals(h4, cfg.window, cfg.price_decimals)
-        base = map_signals_to_1min(df, sig, cfg.session_start_hour, 4)
+        base = map_signals_to_1min(df, sig, cfg.session_start_hour, sig_hours)
         lab = get_signal_bar_label(df.index, cfg.session_start_hour, 24)
         day = get_trading_day_label(df.index, cfg.session_start_hour)
         inp = np.asarray((day >= s) & (day <= e))
@@ -105,11 +118,11 @@ def run_pair(pair, cfg, out_dir):
                 chart_trades = st["_trades"]
         fd, ld = day[inp][[0, -1]]
         make_chart(df, out_dir / f"dow_trade_chart_{pair}.html",
-                   f"{pair} {fd:%Y-%m-%d} ~ {ld:%Y-%m-%d} / 日足MA20>75>200 + ER(20)≥0.3 + 20MA傾き → 4H {"18本スイング" if ENTRY_MODE == "swing" else "18本高安"}ブレイク SL1.0/TP1.5 ATR",
+                   f"{pair} {fd:%Y-%m-%d} ~ {ld:%Y-%m-%d} / 日足MA20>75>200 + ER(20)≥0.3 + 20MA傾き → 4H {ENTRY_TXT[ENTRY_MODE]}ブレイク SL1.0/TP1.5 ATR",
                    fd, ld, trades=chart_trades, weekly_trend=None, mode="fixed", risk=risk, entry_window=cfg.window, entry_atr=14,
-                   price_decimals=cfg.price_decimals, session_start_hour=cfg.session_start_hour, signal_hours=4,
+                   price_decimals=cfg.price_decimals, session_start_hour=cfg.session_start_hour, signal_hours=sig_hours,
                    filter_state=state_chart, filter_label="日足 MA20/75/200 並び + ER(20)≥0.3 + 20MA傾き（前日確定）",
-                   daily_ma=m.MA_PERIODS, daily_er=(20, 0.3), entry_signals=sig, timeframes=("4H", "D1", "W1"))
+                   daily_ma=m.MA_PERIODS, daily_er=(20, 0.3), entry_signals=sig, timeframes=(("1H", "4H", "D1", "W1") if sig_hours == 1 else ("4H", "D1", "W1")))
     (out_dir / f"log_{pair}.txt").write_text(log.getvalue(), encoding="utf-8")
     return pair, pd.concat(rows, ignore_index=True), pd.DataFrame(ons), spread, time.perf_counter() - t0
 
