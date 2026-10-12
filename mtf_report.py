@@ -193,7 +193,7 @@ def write_report(path, trades, stats, stats_side, funnels, cfg, spread, chart_fi
 <li><b>上位足:</b> 直近2つのスイング高値・安値がともに切り上がっていれば上昇。ゾーン = 上抜けされた前回スイング高値 ± 上位足ATR × {cfg.htf_zone_atr}。上位足が確定した後の下位足にだけ使います。</li>
 <li><b>開始:</b> 上昇中に、下位足の安値がゾーン上限以下・終値がゾーン下限以上。</li>
 <li><b>転換（CHoCH）:</b> 底より前の確定済みスイング高値の直近2つが切り下がり（H_a &gt; H_b）、終値が H_b を上抜け。底の後の高値（H_c）は使いません。否定ライン = 底の後の押し安値（無ければ底）。</li>
-<li><b>RR水準への押し:</b> 高値が H_b + ATR × {cfg.rr_away_atr} まで離れた後、安値が H_b + ATR × {cfg.rr_zone_atr} 以下で接触。割り込みの深さは制限しません。</li>
+<li><b>RR水準への押し:</b> 高値が H_b + max(下位足ATR × {cfg.rr_away_atr}, 上位足ATR × {cfg.rr_away_htf_atr}) まで離れた後（上位足ATR側は仕様書にない追加）、安値が H_b + ATR × {cfg.rr_zone_atr} 以下で接触。割り込みの深さは制限しません。</li>
 <li><b>トリガー:</b> 終値が直近 {cfg.trigger_n} 本の高値を上抜け → 次の足の始値で買い。各段階の期限 {cfg.setup_expiry} 本、終値がゾーン下限・否定ラインを割れば取り消し。</li>
 <li><b>決済:</b> SL = 接触安値 − ATR × {cfg.sl_buffer_atr}、TP = {rr_txt}。SL / TP は1分足で判定し、同じ足で両方に触れたら SL 優先。ATR は EMA の {cfg.atr_len} 本。ポジションは1つだけ。</li>
 <li><b>コスト:</b> 平均相対スプレッド {spread * 100:.5f}% の半分をエントリーと決済のそれぞれに課金（R から差し引き）。</li>

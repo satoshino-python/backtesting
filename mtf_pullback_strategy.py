@@ -51,6 +51,8 @@ class MtfConfig:
     support_mode: str = "broken_high"  # "broken_high": 上抜けされた前回スイング高値 / "last_low": 直近の押し安値
     htf_zone_atr: float = 0.5         # 上位足ゾーン = 水準 ± 上位足ATR × これ
     rr_away_atr: float = 1.0          # 転換後に RR 水準から上へ離れる幅（下位足ATR倍）
+    rr_away_htf_atr: float = 0.0      # 仕様書にない追加: 離れる幅の下限を上位足ATRの倍率でも指定（0 なら無効 = 仕様書どおり）。
+                                      # 1時間足ATRだけだと数pipsの上抜けでも「離れた」扱いになり、戻りが戻りに見えない
     rr_zone_atr: float = 0.3          # RR 水準への接触判定幅（下位足ATR倍）
     trigger_n: int = 5                # トリガー: 終値が直近 trigger_n 本の高値を上抜け
     setup_expiry: int = 72            # 各段階の有効期限（下位足本数）
@@ -63,7 +65,7 @@ class MtfConfig:
     risk_pct: float = 0.02
 
 
-CFG = MtfConfig(htf_rule="1D")
+CFG = MtfConfig(htf_rule="1D", rr_away_htf_atr=0.3)
 WARMUP_MONTHS = 3
 RESULTS_ROOT = Path("mtf_results")
 RUN_LABEL = None                      # None なら「ペア_上位足x下位足」
@@ -244,7 +246,7 @@ def run_strategy(ltf, ctx, cfg, df_1min=None, commission=0.0, trade_from=None):
     atr = calculate_atr_ema(h, l, c, cfg.atr_len, cfg.price_decimals)
     sh_piv, sl_piv = (list(map(int, a)) for a in fractal_pivots(h, l, n))
     up = ctx["Up"].to_numpy(bool)
-    zlo, zhi, tgt = (ctx[k].to_numpy(float) for k in ("ZoneLo", "ZoneHi", "Target"))
+    zlo, zhi, tgt, hatr = (ctx[k].to_numpy(float) for k in ("ZoneLo", "ZoneHi", "Target", "ATR"))
     ex = _Exec(ltf, df_1min, cfg)
     trades = []
     funnel = dict.fromkeys(["開始", "転換(CHoCH)", "RR接触", "エントリー", "取消:ゾーン割れ", "取消:否定ライン割れ",
@@ -281,7 +283,8 @@ def run_strategy(ltf, ctx, cfg, df_1min=None, commission=0.0, trade_from=None):
                 funnel["取消:否定ライン割れ" if c[k] < s["inval"] else "取消:期限切れ"] += 1
                 state = IDLE
             elif not s["away"]:
-                s["away"] = h[k] >= s["rr"] + atr[k] * cfg.rr_away_atr
+                s["away"] = h[k] >= s["rr"] + max(atr[k] * cfg.rr_away_atr,
+                                                  hatr[k] * cfg.rr_away_htf_atr if np.isfinite(hatr[k]) else 0.0)
             elif l[k] <= s["rr"] + atr[k] * cfg.rr_zone_atr:
                 s.update(contact=k, touch_low=l[k], stage=k)
                 state = WAIT_TRIGGER
@@ -517,7 +520,8 @@ def main(cfg=CFG):
     for name, st in (("全体", stats), *stats_side.items()):
         print(f"  [{name}] " + " / ".join(f"{k} {v:.3f}" if isinstance(v, float) else f"{k} {v}" for k, v in st.items()))
 
-    label = RUN_LABEL or f"{cfg.pair}_{cfg.htf_rule}x{cfg.ltf_hours}h_{'-'.join(cfg.sides)}"
+    label = RUN_LABEL or (f"{cfg.pair}_{cfg.htf_rule}x{cfg.ltf_hours}h_{'-'.join(cfg.sides)}"
+                         + (f"_away{cfg.rr_away_htf_atr:g}" if cfg.rr_away_htf_atr else ""))
     out_dir = RESULTS_ROOT / f"{datetime.now():%Y%m%d_%H%M}_{label}"
     out_dir.mkdir(parents=True, exist_ok=True)
     cfg_json = {k: (str(v) if isinstance(v, Path) else v) for k, v in dataclasses.asdict(cfg).items()}

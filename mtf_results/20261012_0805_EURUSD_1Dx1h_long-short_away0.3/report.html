@@ -1,0 +1,99 @@
+<title>上位足押し目×下位足転換 EURUSD</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: one phone-width column — headline numbers, equity curve, yearly / funnel / trade tables, chart links, rules and cautions. Same look as the existing swing-breakout reports */
+:root { --bg:#f3f5f7; --surface:#fff; --line:#dde2e8; --fg:#17202b; --muted:#5e6b7a; --accent:#2a5bd7; --accent-soft:#e3eafb; --pos:#18865a; --neg:#c8413a; --gold:#9a7412;
+  --f-head:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",system-ui,sans-serif; --f-num:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#0f141a; --surface:#171e26; --line:#2a333e; --fg:#e3e8ee; --muted:#93a0ae; --accent:#79a2ff; --accent-soft:#1d2a45; --pos:#3ccb8b; --neg:#f0726a; --gold:#e0b84a; color-scheme:dark; } }
+:root[data-theme="dark"] { --bg:#0f141a; --surface:#171e26; --line:#2a333e; --fg:#e3e8ee; --muted:#93a0ae; --accent:#79a2ff; --accent-soft:#1d2a45; --pos:#3ccb8b; --neg:#f0726a; --gold:#e0b84a; color-scheme:dark; }
+* { box-sizing:border-box; }
+body { background:var(--bg); color:var(--fg); font:15px/1.6 var(--f-head); -webkit-text-size-adjust:100%; }
+.wrap { max-width:860px; margin:0 auto; padding:20px 16px 48px; display:grid; gap:26px; }
+.wrap > * { min-width:0; }
+h1 { font-size:1.45rem; line-height:1.3; margin:0; font-weight:700; text-wrap:balance; }
+h2 { font-size:1.05rem; margin:0 0 10px; font-weight:700; text-wrap:balance; }
+p { margin:0; } .sub { color:var(--muted); font-size:.85rem; margin-top:6px; }
+.num { font-family:var(--f-num); font-variant-numeric:tabular-nums; } .pos { color:var(--pos); } .neg { color:var(--neg); } .muted { color:var(--muted); }
+.cmp { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+.cmp div { background:var(--surface); padding:10px 12px; min-width:0; }
+.cmp .l { font-size:.7rem; color:var(--muted); letter-spacing:.04em; }
+.cmp .v { font-family:var(--f-num); font-size:1.2rem; font-weight:600; white-space:nowrap; }
+.cmp .was { font-family:var(--f-num); font-size:.72rem; color:var(--muted); }
+.card { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px; }
+.card p { font-size:.88rem; color:var(--muted); } .card p + p { margin-top:6px; } .card b { color:var(--fg); font-weight:500; }
+svg { width:100%; height:auto; display:block; }
+.gl { stroke:var(--line); stroke-width:1; } .ax { fill:var(--muted); font:11px var(--f-num); }
+.l-n { fill:none; stroke:var(--accent); stroke-width:2; } .l-g { fill:none; stroke:var(--gold); stroke-width:1.5; stroke-dasharray:4 3; }
+.legend { display:flex; gap:16px; flex-wrap:wrap; font-size:.78rem; color:var(--muted); margin-top:6px; }
+.legend i { display:inline-block; width:18px; height:0; border-top:2px solid var(--accent); vertical-align:middle; margin-right:6px; }
+.legend i.g { border-top:2px dashed var(--gold); }
+.scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; border:1px solid var(--line); border-radius:12px; background:var(--surface); }
+table { border-collapse:collapse; width:100%; font-size:.82rem; font-family:var(--f-num); }
+th,td { padding:7px 10px; text-align:right; white-space:nowrap; border-bottom:1px solid var(--line); }
+th { font-weight:500; color:var(--muted); font-size:.72rem; font-family:var(--f-head); }
+th:first-child,td:first-child { text-align:left; } tr:last-child td { border-bottom:0; } tr.tot td { background:var(--accent-soft); font-weight:600; }
+.link { display:block; text-decoration:none; color:var(--fg); background:var(--surface); border:1.5px solid var(--accent); border-radius:12px; padding:14px; }
+.link:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.link b { display:block; } .link span { font-size:.82rem; color:var(--muted); }
+ul { margin:0; padding-left:1.2em; display:grid; gap:6px; font-size:.88rem; color:var(--muted); } li b { color:var(--fg); font-weight:500; }
+code { font-family:var(--f-num); font-size:.78rem; background:var(--accent-soft); padding:1px 5px; border-radius:4px; }
+.hint { font-size:.8rem; margin-top:8px; } .card + .card { margin-top:10px; }
+</style>
+<main class="wrap">
+<header><h1>上位足押し目 × 下位足転換 EURUSD</h1>
+<p class="sub">2021-01-01 ~ 2025-12-31 / 上位足 1D × 下位足 1h / 買い・売り / TP 2.0R / 1分足執行 / スプレッド課金後のR</p></header>
+
+<section><h2>結果</h2>
+<div class="cmp">
+<div><div class="l">合計R</div><div class="v pos">+1.72</div><div class="was">平均 +0.091R / 取引</div></div>
+<div><div class="l">プロフィットファクター</div><div class="v">1.14</div><div class="was">勝ちR合計 ÷ 負けR合計</div></div>
+<div><div class="l">最大DD（R）</div><div class="v">4.1</div><div class="was">累積Rのピークからの下落</div></div>
+<div><div class="l">取引数 / 勝率</div><div class="v">19 / 36.8%</div><div class="was">損益分岐の勝率 約 33%（TP 2.0R）</div></div>
+<div><div class="l">損切り幅（中央値）</div><div class="v">38.2 pips</div><div class="was">範囲 20.9 ~ 80.0</div></div>
+<div><div class="l">保有時間（中央値）</div><div class="v">12.9 時間</div><div class="was">スプレッド負担 平均 0.015R / 取引</div></div>
+</div>
+</section>
+
+<section><h2>累積R</h2><div class="card"><svg viewBox="0 0 640 240" role="img" aria-label="累積R"><line x1="44" x2="628" y1="214.0" y2="214.0" class="gl"/><text x="38" y="218.0" class="ax" text-anchor="end">-5</text><line x1="44" x2="628" y1="113.0" y2="113.0" class="gl"/><text x="38" y="117.0" class="ax" text-anchor="end">0</text><line x1="44" x2="628" y1="12.0" y2="12.0" class="gl"/><text x="38" y="16.0" class="ax" text-anchor="end">5</text><text x="111.6" y="234" class="ax" text-anchor="middle">2022</text><text x="239.8" y="234" class="ax" text-anchor="middle">2023</text><text x="368.0" y="234" class="ax" text-anchor="middle">2024</text><text x="496.5" y="234" class="ax" text-anchor="middle">2025</text><text x="624.7" y="234" class="ax" text-anchor="middle">2026</text><path d="M54.5,113.0 L54.5,113.0 L54.5,133.6 L212.2,133.6 L212.2,154.0 L230.5,154.0 L230.5,174.3 L279.8,174.3 L279.8,134.1 L302.5,134.1 L302.5,94.2 L317.2,94.2 L317.2,114.9 L393.8,114.9 L393.8,135.5 L411.2,135.5 L411.2,156.0 L447.2,156.0 L447.2,116.0 L483.7,116.0 L483.7,136.4 L502.3,136.4 L502.3,157.0 L516.3,157.0 L516.3,177.5 L531.5,177.5 L531.5,137.2 L553.2,137.2 L553.2,97.1 L557.4,97.1 L557.4,117.5 L558.3,117.5 L558.3,77.3 L597.1,77.3 L597.1,97.8 L611.8,97.8 L611.8,118.3 L617.5,118.3 L617.5,78.2" class="l-n"/><circle cx="617.5" cy="78.2" r="3.5" fill="var(--accent)"/></svg></div>
+<p class="hint muted">決済順の累積R（スプレッド課金後）。</p></section>
+
+<section><h2>売買別</h2><div class="scroll"><table><thead><tr><th>売買</th><th>取引</th><th>勝率</th><th>合計R</th><th>PF</th><th>最大DD</th></tr></thead><tbody><tr><td>買い</td><td>10</td><td>60.0%</td><td class="pos">+7.87</td><td>2.94</td><td>1.0</td></tr><tr><td>売り</td><td>9</td><td>11.1%</td><td class="neg">-6.15</td><td>0.24</td><td>6.1</td></tr><tr class="tot"><td>合計</td><td>19</td><td>36.8%</td><td>+1.72</td><td>1.14</td><td>4.1</td></tr></tbody></table></div>
+<p class="hint muted">買いと売りは別々に検証して合算しています。同じ時期に買いと売りのポジションが重なることがあります。</p></section>
+
+<section><h2>年別</h2><div class="scroll"><table><thead><tr><th>決済年</th><th>取引</th><th>勝率</th><th>合計R</th></tr></thead><tbody><tr><td>2021</td><td>1</td><td>0%</td><td class="neg">-1.02</td></tr><tr><td>2022</td><td>2</td><td>0%</td><td class="neg">-2.02</td></tr><tr><td>2023</td><td>3</td><td>67%</td><td class="pos">+2.94</td></tr><tr><td>2024</td><td>4</td><td>25%</td><td class="neg">-1.06</td></tr><tr><td>2025</td><td>9</td><td>44%</td><td class="pos">+2.88</td></tr><tr class="tot"><td>合計</td><td>19</td><td>37%</td><td>+1.72</td></tr></tbody></table></div></section>
+
+<section><h2>セットアップの段階ごとの件数</h2><div class="scroll"><table><thead><tr><th>段階</th><th>買い</th><th>売り</th></tr></thead><tbody><tr><td>開始</td><td>150</td><td>123</td></tr><tr><td>転換(CHoCH)</td><td>48</td><td>46</td></tr><tr><td>RR接触</td><td>15</td><td>14</td></tr><tr><td>エントリー</td><td>10</td><td>9</td></tr><tr><td class="muted">取消:ゾーン割れ</td><td class="muted">79</td><td class="muted">62</td></tr><tr><td class="muted">取消:否定ライン割れ</td><td class="muted">26</td><td class="muted">24</td></tr><tr><td class="muted">取消:期限切れ</td><td class="muted">35</td><td class="muted">28</td></tr></tbody></table></div>
+<p class="hint muted">上位足ゾーンへの押しで「開始」し、下位足の CHoCH → RR水準への接触 → トリガーの順に進んだ数。取り消しは各段階の合計。</p></section>
+
+<section><h2>チャート</h2>
+<div style="display:grid;gap:10px">
+<a class="link" href="setups.html"><b>セットアップ一覧（19件）</b><span>下位足のローソク足に、上位足ゾーン・H_a / H_b・底・HL・接触・エントリー・SL / TP を描いた確認用の図。検出が目視の形と合っているかをここで確かめます。</span></a>
+<a class="link" href="dow_trade_chart_EURUSD_1Dx1h_long-short_away0.3.html"><b>トレード付きダウ理論チャート</b><span>エントリー ▲・決済 ●・SL/TP。背景は表示中の時間足のダウ理論判定（約2.7MB）。エントリーラインの表示は既存のスイングブレイク用で、この戦略とは無関係です。</span></a>
+</div></section>
+
+<section><h2>トレード一覧</h2><div class="scroll"><table><thead><tr><th>#</th><th>売買</th><th>エントリー（NY）</th><th>価格</th><th>SL</th><th>TP</th><th>H_b</th><th>決済</th><th>R</th></tr></thead><tbody><tr><td><a href="setups.html#t1">1</a></td><td>売り</td><td>2021-07-16 08:00</td><td>1.17943</td><td>1.18249</td><td>1.17331</td><td>1.18214</td><td>SL</td><td class="neg">-1.02</td></tr><tr><td><a href="setups.html#t2">2</a></td><td>売り</td><td>2022-10-14 08:00</td><td>0.97185</td><td>0.97642</td><td>0.96272</td><td>0.97618</td><td>SL</td><td class="neg">-1.01</td></tr><tr><td><a href="setups.html#t3">3</a></td><td>買い</td><td>2022-12-05 08:00</td><td>1.05900</td><td>1.05135</td><td>1.07430</td><td>1.05446</td><td>SL</td><td class="neg">-1.01</td></tr><tr><td><a href="setups.html#t4">4</a></td><td>買い</td><td>2023-04-20 02:00</td><td>1.09621</td><td>1.09156</td><td>1.10551</td><td>1.09312</td><td>TP</td><td class="pos">+1.99</td></tr><tr><td><a href="setups.html#t5">5</a></td><td>売り</td><td>2023-06-27 21:00</td><td>1.09546</td><td>1.09786</td><td>1.09065</td><td>1.09800</td><td>TP</td><td class="pos">+1.98</td></tr><tr><td><a href="setups.html#t6">6</a></td><td>売り</td><td>2023-08-09 08:00</td><td>1.09698</td><td>1.09907</td><td>1.09279</td><td>1.09770</td><td>SL</td><td class="neg">-1.02</td></tr><tr><td><a href="setups.html#t7">7</a></td><td>買い</td><td>2024-03-12 15:00</td><td>1.09241</td><td>1.09000</td><td>1.09723</td><td>1.09056</td><td>SL</td><td class="neg">-1.02</td></tr><tr><td><a href="setups.html#t8">8</a></td><td>売り</td><td>2024-04-29 05:00</td><td>1.07046</td><td>1.07368</td><td>1.06402</td><td>1.07186</td><td>SL</td><td class="neg">-1.02</td></tr><tr><td><a href="setups.html#t9">9</a></td><td>買い</td><td>2024-08-13 09:00</td><td>1.09410</td><td>1.09119</td><td>1.09992</td><td>1.09232</td><td>TP</td><td class="pos">+1.98</td></tr><tr><td><a href="setups.html#t10">10</a></td><td>売り</td><td>2024-11-25 03:00</td><td>1.04506</td><td>1.05053</td><td>1.03412</td><td>1.04664</td><td>SL</td><td class="neg">-1.01</td></tr><tr><td><a href="setups.html#t11">11</a></td><td>売り</td><td>2025-01-17 00:00</td><td>1.02936</td><td>1.03171</td><td>1.02466</td><td>1.02935</td><td>SL</td><td class="neg">-1.02</td></tr><tr><td><a href="setups.html#t12">12</a></td><td>買い</td><td>2025-02-25 19:00</td><td>1.05204</td><td>1.04819</td><td>1.05974</td><td>1.04802</td><td>SL</td><td class="neg">-1.01</td></tr><tr><td><a href="setups.html#t13">13</a></td><td>買い</td><td>2025-04-09 21:00</td><td>1.09866</td><td>1.09066</td><td>1.11465</td><td>1.09684</td><td>TP</td><td class="pos">+1.99</td></tr><tr><td><a href="setups.html#t14">14</a></td><td>買い</td><td>2025-06-08 19:00</td><td>1.14068</td><td>1.13686</td><td>1.14831</td><td>1.13934</td><td>TP</td><td class="pos">+1.99</td></tr><tr><td><a href="setups.html#t15">15</a></td><td>買い</td><td>2025-06-23 02:00</td><td>1.15131</td><td>1.14688</td><td>1.16018</td><td>1.14896</td><td>SL</td><td class="neg">-1.01</td></tr><tr><td><a href="setups.html#t16">16</a></td><td>買い</td><td>2025-06-23 14:00</td><td>1.15692</td><td>1.15124</td><td>1.16829</td><td>1.15210</td><td>TP</td><td class="pos">+1.99</td></tr><tr><td><a href="setups.html#t17">17</a></td><td>売り</td><td>2025-10-14 04:00</td><td>1.15495</td><td>1.15968</td><td>1.14549</td><td>1.15922</td><td>SL</td><td class="neg">-1.01</td></tr><tr><td><a href="setups.html#t18">18</a></td><td>売り</td><td>2025-11-24 23:00</td><td>1.15180</td><td>1.15520</td><td>1.14500</td><td>1.15228</td><td>SL</td><td class="neg">-1.02</td></tr><tr><td><a href="setups.html#t19">19</a></td><td>買い</td><td>2025-12-10 13:00</td><td>1.16588</td><td>1.16252</td><td>1.17260</td><td>1.16412</td><td>TP</td><td class="pos">+1.98</td></tr></tbody></table></div>
+<p class="hint muted"># をタップするとセットアップ図に移動します。時刻は NY 時間。</p></section>
+
+<section><h2>売買ルールと設定</h2>
+<ul>
+<li><b>売り:</b> 買いの条件の高値と安値を入れ替えた対称ルールです（上位足の下降トレンド、上抜けされた前回高値の代わりに下抜けされた前回安値、H_a / H_b は L_a / L_b、トリガーは直近 5 本の安値の下抜け）。</li>
+<li><b>足:</b> 1分足から NY 17:00 区切りで下位足（1時間足）を作り、上位足（1D）は下位足をまとめて作ります。</li>
+<li><b>スイング:</b> 左右 n 本のフラクタル（上位足 n=3、下位足 n=3）。同値は最初の1本だけ。ピボットの n 本後から使います。</li>
+<li><b>上位足:</b> 直近2つのスイング高値・安値がともに切り上がっていれば上昇。ゾーン = 上抜けされた前回スイング高値 ± 上位足ATR × 0.5。上位足が確定した後の下位足にだけ使います。</li>
+<li><b>開始:</b> 上昇中に、下位足の安値がゾーン上限以下・終値がゾーン下限以上。</li>
+<li><b>転換（CHoCH）:</b> 底より前の確定済みスイング高値の直近2つが切り下がり（H_a &gt; H_b）、終値が H_b を上抜け。底の後の高値（H_c）は使いません。否定ライン = 底の後の押し安値（無ければ底）。</li>
+<li><b>RR水準への押し:</b> 高値が H_b + max(下位足ATR × 1.0, 上位足ATR × 0.3) まで離れた後（上位足ATR側は仕様書にない追加）、安値が H_b + ATR × 0.3 以下で接触。割り込みの深さは制限しません。</li>
+<li><b>トリガー:</b> 終値が直近 5 本の高値を上抜け → 次の足の始値で買い。各段階の期限 72 本、終値がゾーン下限・否定ラインを割れば取り消し。</li>
+<li><b>決済:</b> SL = 接触安値 − ATR × 0.2、TP = エントリー + 損切り幅 × 2.0。SL / TP は1分足で判定し、同じ足で両方に触れたら SL 優先。ATR は EMA の 14 本。ポジションは1つだけ。</li>
+<li><b>コスト:</b> 平均相対スプレッド 0.00476% の半分をエントリーと決済のそれぞれに課金（R から差し引き）。</li>
+</ul></section>
+
+<section><h2>読むときの注意</h2>
+<ul>
+<li>取引数が 19 件と少なく、勝率や PF のぶれが大きい段階です。結論より、まずセットアップ一覧で検出の形が意図どおりかを確かめる用途です。</li>
+<li>パラメータは仕様書の既定値のままで、合わせ込みはしていません。期間の分割（ウォークフォワード）もまだ行っていません。</li>
+<li>買いと売りの合計は、2本の独立した検証の単純合算です。同時保有の制限や資金の共有は考えていません。</li>
+<li>検証開始より前の数ヶ月はスイングと ATR の助走期間で、セットアップは 2021-01-01 以降の足からだけ始めています。</li>
+</ul></section>
+</main>
