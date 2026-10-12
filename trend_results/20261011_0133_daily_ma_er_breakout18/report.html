@@ -27,6 +27,11 @@ svg { width:100%; height:auto; display:block; } .gl { stroke:var(--line); stroke
 .ln.s { stroke:var(--accent); } .ln.n { stroke:var(--gray); stroke-dasharray:4 3; } .lb { font:600 12px var(--f-head); } .lb.s { fill:var(--accent); } .lb.n { fill:var(--muted); }
 ul { margin:0; padding-left:1.2em; } li { margin-bottom:4px; }
 .verdict { border:1.5px solid var(--accent); background:var(--surface); border-radius:12px; padding:14px; }
+#vbar{display:flex;justify-content:flex-end;margin-top:6px}
+#vwrap button#vfull{cursor:pointer;font:inherit;font-size:.85rem;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:5px 12px}
+#vwrap.full{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;flex-direction:column;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+#vwrap.full #vbar{margin:0;padding:6px 12px}
+#vwrap.full #cframe{flex:1;height:auto;min-height:0;margin:0;border:0;border-radius:0}
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
 <div class="wrap">
@@ -58,7 +63,7 @@ ul { margin:0; padding-left:1.2em; } li { margin-bottom:4px; }
 <p class="sub" style="margin-top:8px">プラスは10/15ペア。円ペア・円クロスの合計は +115R（全体 +103R）。買い 859回 +112R、売り 551回 -8R。ペア名を押すとトレード付きチャートを表示します。</p></section>
 
 <section id="viewer"><h2>トレード付きチャート</h2><p class="muted">ペアを選ぶと、このページの中に表示します（約3MBを読み込みます）。エントリー▲▼・決済●・SL/TP、背景は「検証で使ったフィルター」（買いだけ/売りだけ/見送り）。日足MA20/75/200（黄・青・橙、前日確定）は価格が近いときに表示され、下のパネルに日足ER(20)としきい値0.3を表示します。</p><div><button type="button" class="chip" data-chart="AUDJPY">AUDJPY</button> <button type="button" class="chip" data-chart="AUDUSD">AUDUSD</button> <button type="button" class="chip" data-chart="EURAUD">EURAUD</button> <button type="button" class="chip" data-chart="EURCHF">EURCHF</button> <button type="button" class="chip" data-chart="EURGBP">EURGBP</button> <button type="button" class="chip" data-chart="EURJPY">EURJPY</button> <button type="button" class="chip" data-chart="EURUSD">EURUSD</button> <button type="button" class="chip" data-chart="GBPAUD">GBPAUD</button> <button type="button" class="chip" data-chart="GBPCHF">GBPCHF</button> <button type="button" class="chip" data-chart="GBPJPY">GBPJPY</button> <button type="button" class="chip" data-chart="GBPUSD">GBPUSD</button> <button type="button" class="chip" data-chart="NZDJPY">NZDJPY</button> <button type="button" class="chip" data-chart="NZDUSD">NZDUSD</button> <button type="button" class="chip" data-chart="USDCHF">USDCHF</button> <button type="button" class="chip" data-chart="USDJPY">USDJPY</button></div>
-<p id="cmsg" class="sub" role="status"></p><iframe id="cframe" title="トレード付きダウ理論チャート" sandbox="allow-scripts" hidden></iframe></section>
+<p id="cmsg" class="sub" role="status"></p><div id="vwrap"><div id="vbar"><button type="button" id="vfull">全画面</button></div><iframe id="cframe" title="トレード付きダウ理論チャート" sandbox="allow-scripts" hidden></iframe></div></section>
 
 <section><h2>パラメータ感度（一度に1つだけ変更）</h2>
 <div class="tw"><table><thead><tr><th>設定</th><th>取引数</th><th>合計R</th><th>PF</th><th>最大DD</th><th>〜2023</th><th>2024〜</th></tr></thead><tbody><tr class=hl><td>添付ルール（ER0.3 / 18本 / SL1.0 TP1.5）</td><td class="num">1410</td><td class="num pos">+103.4</td><td class="num">1.13</td><td class="num">40</td><td class="num pos">+103</td><td class="num pos">+0</td></tr><tr><td>フィルターなし</td><td class="num">9266</td><td class="num neg">-207.6</td><td class="num">0.96</td><td class="num">252</td><td class="num neg">-131</td><td class="num neg">-76</td></tr><tr><td>ER閾値 0.25</td><td class="num">1818</td><td class="num pos">+80.1</td><td class="num">1.07</td><td class="num">48</td><td class="num pos">+89</td><td class="num neg">-9</td></tr><tr><td>ER閾値 0.35</td><td class="num">1071</td><td class="num pos">+67.6</td><td class="num">1.11</td><td class="num">42</td><td class="num pos">+82</td><td class="num neg">-14</td></tr><tr><td>ER閾値 0.4</td><td class="num">780</td><td class="num pos">+54.4</td><td class="num">1.12</td><td class="num">40</td><td class="num pos">+72</td><td class="num neg">-17</td></tr><tr><td>ブレイク 12本</td><td class="num">1646</td><td class="num pos">+62.6</td><td class="num">1.06</td><td class="num">57</td><td class="num pos">+83</td><td class="num neg">-21</td></tr><tr><td>ブレイク 24本</td><td class="num">1278</td><td class="num pos">+122.5</td><td class="num">1.17</td><td class="num">34</td><td class="num pos">+104</td><td class="num pos">+19</td></tr><tr><td>ブレイク 30本</td><td class="num">1198</td><td class="num pos">+104.0</td><td class="num">1.15</td><td class="num">32</td><td class="num pos">+89</td><td class="num pos">+15</td></tr><tr><td>SL 0.8 / TP 1.5</td><td class="num">1515</td><td class="num pos">+89.5</td><td class="num">1.09</td><td class="num">62</td><td class="num pos">+109</td><td class="num neg">-20</td></tr><tr><td>SL 1.5 / TP 1.5</td><td class="num">1269</td><td class="num pos">+28.5</td><td class="num">1.05</td><td class="num">48</td><td class="num pos">+43</td><td class="num neg">-15</td></tr><tr><td>SL 1.0 / TP 1.0</td><td class="num">1704</td><td class="num pos">+5.9</td><td class="num">1.01</td><td class="num">45</td><td class="num pos">+28</td><td class="num neg">-22</td></tr><tr><td>SL 1.0 / TP 2.0</td><td class="num">1217</td><td class="num pos">+85.1</td><td class="num">1.11</td><td class="num">43</td><td class="num pos">+99</td><td class="num neg">-14</td></tr><tr><td>SL 1.0 / TP 3.0</td><td class="num">994</td><td class="num pos">+88.9</td><td class="num">1.12</td><td class="num">51</td><td class="num pos">+111</td><td class="num neg">-22</td></tr><tr><td>SL 1.5 / TP 3.0</td><td class="num">879</td><td class="num pos">+16.0</td><td class="num">1.03</td><td class="num">59</td><td class="num pos">+48</td><td class="num neg">-32</td></tr></tbody></table></div>
@@ -84,6 +89,15 @@ ul { margin:0; padding-left:1.2em; } li { margin-bottom:4px; }
 </div>
 <script>
 (function(){
+  var wrap=document.getElementById("vwrap"), fb=document.getElementById("vfull");
+  function setFull(on){
+    wrap.classList.toggle("full",on); fb.textContent=on?"全画面を閉じる":"全画面"; document.body.style.overflow=on?"hidden":"";
+    if(on&&wrap.requestFullscreen){try{var p=wrap.requestFullscreen();if(p&&p.catch)p.catch(function(){});}catch(e){}}
+    if(!on&&document.fullscreenElement){try{document.exitFullscreen();}catch(e){}}
+  }
+  fb.addEventListener("click",function(){setFull(!wrap.classList.contains("full"));});
+  document.addEventListener("keydown",function(e){if(e.key==="Escape"&&wrap.classList.contains("full"))setFull(false);});
+  document.addEventListener("fullscreenchange",function(){if(!document.fullscreenElement&&wrap.classList.contains("full"))setFull(false);});
   var frame=document.getElementById("cframe"), msg=document.getElementById("cmsg"), cache={};
   function show(p){
     document.querySelectorAll("button.chip").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.chart===p));});

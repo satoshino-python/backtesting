@@ -112,6 +112,11 @@ svg {{ width:100%; height:auto; display:block; }} .gl {{ stroke:var(--line); str
 .ax {{ fill:var(--muted); font:11px var(--f-num); }} .ln {{ fill:none; stroke-width:2; stroke-linejoin:round; }} .ln.b {{ stroke:var(--accent); }} .ln.a {{ stroke:var(--gray); stroke-dasharray:4 3; }}
 .lb {{ font:600 12px var(--f-head); }} .lb.b {{ fill:var(--accent); }} .lb.a {{ fill:var(--muted); }}
 ul {{ margin:0; padding-left:1.2em; }} li {{ margin-bottom:4px; }}
+#vbar{{display:flex;justify-content:flex-end;margin-top:6px}}
+#vwrap button#vfull{{cursor:pointer;font:inherit;font-size:.85rem;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:5px 12px}}
+#vwrap.full{{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;flex-direction:column;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}}
+#vwrap.full #vbar{{margin:0;padding:6px 12px}}
+#vwrap.full #cframe{{flex:1;height:auto;min-height:0;margin:0;border:0;border-radius:0}}
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
 <div class="wrap">
@@ -142,7 +147,7 @@ ER(20)≥0.3 の取引だけに絞ると、傾きが不一致の取引は {s_er[
 <p class="sub" style="margin-top:8px">買い {sdw['L']['n']}回 {fs(sdw['L']['R'])}R（傾きなし {fs(sdn['L']['R'])}R）、売り {sdw['S']['n']}回 {fs(sdw['S']['R'])}R（傾きなし {fs(sdn['S']['R'])}R）。ペア名からトレード付きチャートを開けます。</p></section>
 
 <section id="viewer"><h2>トレード付きチャート</h2><p class="muted">ペアを選ぶと、このページの中に表示します（約1MB）。背景は検証で使ったフィルター（MA並び + ER + 20MA傾き）で、買いだけ許可は緑、売りだけ許可は赤。日足MA20/75/200（黄・青・橙）と下に日足ER(20)も表示します。</p><div>{links}</div>
-<p id="cmsg" class="sub" role="status"></p><iframe id="cframe" title="トレード付きチャート" sandbox="allow-scripts" hidden></iframe></section>
+<p id="cmsg" class="sub" role="status"></p><div id="vwrap"><div id="vbar"><button type="button" id="vfull">全画面</button></div><iframe id="cframe" title="トレード付きチャート" sandbox="allow-scripts" hidden></iframe></div></section>
 
 <section class="card"><h2>売買ルール・設定</h2><ul>
 <li>日足（NY17:00区切り）: 20/75/200 単純MAの並び、ER(20)≥0.3、<b>追加: 20MAの傾き</b>（ロング: MA20 &gt; 1日前のMA20、ショート: MA20 &lt; 1日前のMA20）。すべて前日確定の日足の値。</li>
@@ -157,6 +162,15 @@ ER(20)≥0.3 の取引だけに絞ると、傾きが不一致の取引は {s_er[
 </div>
 <script>
 (function(){{
+  var wrap=document.getElementById("vwrap"), fb=document.getElementById("vfull");
+  function setFull(on){{
+    wrap.classList.toggle("full",on); fb.textContent=on?"全画面を閉じる":"全画面"; document.body.style.overflow=on?"hidden":"";
+    if(on&&wrap.requestFullscreen){{try{{var p=wrap.requestFullscreen();if(p&&p.catch)p.catch(function(){{}});}}catch(e){{}}}}
+    if(!on&&document.fullscreenElement){{try{{document.exitFullscreen();}}catch(e){{}}}}
+  }}
+  fb.addEventListener("click",function(){{setFull(!wrap.classList.contains("full"));}});
+  document.addEventListener("keydown",function(e){{if(e.key==="Escape"&&wrap.classList.contains("full"))setFull(false);}});
+  document.addEventListener("fullscreenchange",function(){{if(!document.fullscreenElement&&wrap.classList.contains("full"))setFull(false);}});
   var frame=document.getElementById("cframe"), msg=document.getElementById("cmsg"), cache={{}};
   function show(p){{
     document.querySelectorAll("button.chip").forEach(function(b){{b.setAttribute("aria-pressed",String(b.dataset.chart===p));}});

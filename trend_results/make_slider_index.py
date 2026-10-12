@@ -21,6 +21,11 @@ button.chip small { color:var(--muted); font-size:.68rem; }
 button.chip[aria-pressed=true] { background:var(--accent-soft); border-color:var(--accent); }
 #cframe { width:100%; height:86vh; min-height:480px; border:1px solid var(--line); border-radius:12px; background:#111418; margin-top:8px; }
 ul { margin:0; padding-left:1.2em; } li { margin-bottom:4px; }
+#vbar{display:flex;justify-content:flex-end;margin-top:6px}
+#vwrap button#vfull{cursor:pointer;font:inherit;font-size:.85rem;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:5px 12px}
+#vwrap.full{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;flex-direction:column;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+#vwrap.full #vbar{margin:0;padding:6px 12px}
+#vwrap.full #cframe{flex:1;height:auto;min-height:0;margin:0;border:0;border-radius:0}
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
 <div class="wrap">
@@ -35,7 +40,7 @@ ul { margin:0; padding-left:1.2em; } li { margin-bottom:4px; }
 <li>感覚と合っているかを見るには、「ここは強いトレンドだ」と思う区間で、背景の緑/赤が付いて、勝つ取引が通過しているかを確かめてください。</li></ul></section>
 
 <section><h2>ペアを選ぶ（括弧は MAの並びだけの取引数）</h2><div>__BTN__</div>
-<p id="cmsg" class="sub" role="status"></p><iframe id="cframe" title="ERスライダー付きチャート" sandbox="allow-scripts" hidden></iframe></section>
+<p id="cmsg" class="sub" role="status"></p><div id="vwrap"><div id="vbar"><button type="button" id="vfull">全画面</button></div><iframe id="cframe" title="ERスライダー付きチャート" sandbox="allow-scripts" hidden></iframe></div></section>
 
 <section class="card"><h2>注意</h2><ul>
 <li>ペアごとの取引は200〜300回と少なく、通過/除外の平均Rの差は、1ペアだけではぶれが大きいです（全ペアの検定結果は別のレポートを参照）。</li>
@@ -44,6 +49,15 @@ ul { margin:0; padding-left:1.2em; } li { margin-bottom:4px; }
 </div>
 <script>
 (function(){
+  var wrap=document.getElementById("vwrap"), fb=document.getElementById("vfull");
+  function setFull(on){
+    wrap.classList.toggle("full",on); fb.textContent=on?"全画面を閉じる":"全画面"; document.body.style.overflow=on?"hidden":"";
+    if(on&&wrap.requestFullscreen){try{var p=wrap.requestFullscreen();if(p&&p.catch)p.catch(function(){});}catch(e){}}
+    if(!on&&document.fullscreenElement){try{document.exitFullscreen();}catch(e){}}
+  }
+  fb.addEventListener("click",function(){setFull(!wrap.classList.contains("full"));});
+  document.addEventListener("keydown",function(e){if(e.key==="Escape"&&wrap.classList.contains("full"))setFull(false);});
+  document.addEventListener("fullscreenchange",function(){if(!document.fullscreenElement&&wrap.classList.contains("full"))setFull(false);});
   var frame=document.getElementById("cframe"), msg=document.getElementById("cmsg"), cache={};
   function show(p){
     document.querySelectorAll("button.chip").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.chart===p));});

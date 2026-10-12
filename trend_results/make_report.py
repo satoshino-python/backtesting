@@ -95,7 +95,8 @@ sens_txt = (f"ER閾値 0.25〜0.4 の合計Rは {min(er_r):+.0f}〜{max(er_r):+.
 cmp_rows = []
 for cj in sorted(d.parent.glob("*/config.json")):
     import json as _j
-    ep = _j.loads(cj.read_text(encoding="utf-8"))["er_period"]
+    ep = _j.loads(cj.read_text(encoding="utf-8")).get("er_period")
+    if ep is None: continue  # 他の種類の実行（傾き検証など）は比較に入れない
     tt = pd.read_csv(cj.parent / "trades_all.csv"); tt["ExitTime"] = pd.to_datetime(tt.ExitTime, utc=True)
     tt["EntryTime"] = pd.to_datetime(tt.EntryTime, utc=True)
     tt["Year"] = tt.EntryTime.dt.tz_convert("America/New_York").dt.year
@@ -108,6 +109,15 @@ links = " ".join(f'<button type="button" class="chip" data-chart="{p}">{p}</butt
 SCRIPT = r"""
 <script>
 (function(){
+  var wrap=document.getElementById("vwrap"), fb=document.getElementById("vfull");
+  function setFull(on){
+    wrap.classList.toggle("full",on); fb.textContent=on?"全画面を閉じる":"全画面"; document.body.style.overflow=on?"hidden":"";
+    if(on&&wrap.requestFullscreen){try{var p=wrap.requestFullscreen();if(p&&p.catch)p.catch(function(){});}catch(e){}}
+    if(!on&&document.fullscreenElement){try{document.exitFullscreen();}catch(e){}}
+  }
+  fb.addEventListener("click",function(){setFull(!wrap.classList.contains("full"));});
+  document.addEventListener("keydown",function(e){if(e.key==="Escape"&&wrap.classList.contains("full"))setFull(false);});
+  document.addEventListener("fullscreenchange",function(){if(!document.fullscreenElement&&wrap.classList.contains("full"))setFull(false);});
   var frame=document.getElementById("cframe"), msg=document.getElementById("cmsg"), cache={};
   function show(p){
     document.querySelectorAll("button.chip").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.chart===p));});
@@ -151,6 +161,11 @@ svg {{ width:100%; height:auto; display:block; }} .gl {{ stroke:var(--line); str
 .ln.s {{ stroke:var(--accent); }} .ln.n {{ stroke:var(--gray); stroke-dasharray:4 3; }} .lb {{ font:600 12px var(--f-head); }} .lb.s {{ fill:var(--accent); }} .lb.n {{ fill:var(--muted); }}
 ul {{ margin:0; padding-left:1.2em; }} li {{ margin-bottom:4px; }}
 .verdict {{ border:1.5px solid var(--accent); background:var(--surface); border-radius:12px; padding:14px; }}
+#vbar{{display:flex;justify-content:flex-end;margin-top:6px}}
+#vwrap button#vfull{{cursor:pointer;font:inherit;font-size:.85rem;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:5px 12px}}
+#vwrap.full{{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;flex-direction:column;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}}
+#vwrap.full #vbar{{margin:0;padding:6px 12px}}
+#vwrap.full #cframe{{flex:1;height:auto;min-height:0;margin:0;border:0;border-radius:0}}
 </style>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
 <div class="wrap">
@@ -186,7 +201,7 @@ f'<tr><td>フィルターなし 2024〜2025</td><td class="num">{NOOS["n"]}</td>
 <p class="sub" style="margin-top:8px">プラスは{npos}/15ペア。円ペア・円クロスの合計は {jpy_txt}。{side_txt}。ペア名を押すとトレード付きチャートを表示します。</p></section>
 
 <section id="viewer"><h2>トレード付きチャート</h2><p class="muted">ペアを選ぶと、このページの中に表示します（約3MBを読み込みます）。エントリー▲▼・決済●・SL/TP、背景は「検証で使ったフィルター」（買いだけ/売りだけ/見送り）。日足MA20/75/200（黄・青・橙、前日確定）は価格が近いときに表示され、下のパネルに日足ER({ERP})としきい値0.3を表示します。</p><div>{links}</div>
-<p id="cmsg" class="sub" role="status"></p><iframe id="cframe" title="トレード付きダウ理論チャート" sandbox="allow-scripts" hidden></iframe></section>
+<p id="cmsg" class="sub" role="status"></p><div id="vwrap"><div id="vbar"><button type="button" id="vfull">全画面</button></div><iframe id="cframe" title="トレード付きダウ理論チャート" sandbox="allow-scripts" hidden></iframe></div></section>
 
 <section><h2>パラメータ感度（一度に1つだけ変更）</h2>
 {tbl(["設定","取引数","合計R","PF","最大DD","〜2023","2024〜"], srow)}
