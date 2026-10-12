@@ -274,6 +274,8 @@ python dow_swing_chart.py --trades dow_results/trades_20210101-20251231_strict.c
 - 確認結果（2026-10-12、backtesting.py 0.6.6）: dow_swing を EURUSD・USDJPY（strict）、GBPUSD（フィルターなし）、
   AUDUSD（strict＋継続8週＋4H効率比0.2）、USDCHF（no_counter＋週足ADX25）、XAUUSD（strict、2024〜2025）で比べ、
   取引履歴・資産曲線・統計値が完全に一致（2年分で backtesting.py 約16秒 → 約0.3〜0.6秒）。fixed・swing_trail も1年分で再確認して一致。
+- 統計値の自前化（`fast_stats.py`）の確認（2026-10-12、0.6.6）: EURUSD 5年 fixed＋建値ストップ（153件）、GBPUSD 5年 swing_trail（143件）、
+  XAUUSD 5年 dow_swing（50件）、SP500 fixed、取引0件のケースで、取引履歴・資産曲線と統計値の全32項目（0件のときは31項目）が一致。
 - **backtesting.py は 0.6.6 で比べる。** 0.6.5 以前は、窓開けで SL を飛び越えて約定したトレードの取引履歴の `SL` 列が空（NaN）になり、
   fast_engine（常に SL を残す。0.6.6 と同じ）とその列だけ食い違う。0.6.4 以前は取引履歴に `Commission` 列が無い。
 - `main_4H_fixedSL_fast_multi.py`: `main_4H_fixedSL_multi.py` と同じ検証（`EXIT_MODE` = `"fixed"` / `"swing_trail"`、`H1_SWING_WINDOW`、
