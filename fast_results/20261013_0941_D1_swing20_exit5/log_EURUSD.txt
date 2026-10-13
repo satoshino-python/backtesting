@@ -1,0 +1,118 @@
+📂 データ読み込み中: /home/user/backtesting/histData/EURUSD
+ℹ️ 年月 202009 ～ 202601 の ZIP のみ読み込みます（64 / 72 個）。
+ℹ️ ZIP「EURUSD_202009.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202010.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202011.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202012.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202101.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202102.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202103.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202104.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202105.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202106.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202107.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202108.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202109.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202110.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202111.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202112.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202201.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202202.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202203.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202204.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202205.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202206.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202207.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202208.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202209.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202210.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202211.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202212.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202301.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202302.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202303.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202304.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202305.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202306.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202307.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202308.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202309.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202310.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202311.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202312.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202401.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202402.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202403.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202404.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202405.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202406.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202407.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202408.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202409.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202410.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202411.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202412.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202501.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202502.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202503.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202504.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202505.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202506.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202507.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202508.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202509.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202510.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202511.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「EURUSD_202512.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ 合計 64 個のZIP、1389 個のCSVファイルを結合しました。
+✅ データ読み込み完了（MID, America/New_York）: 2020-08-31 17:01:00-04:00 ～ 2025-12-31 16:59:00-05:00 (1,983,355 行)
+ℹ️ 平均相対スプレッド: 0.00476% (commission換算: 0.00238%)
+✅ 24時間足へのリサンプル完了（区切りの起点: NY時間 17:00）: 2020-08-31 17:00 ～ 2025-12-30 17:00 (1,389 本)
+✅ 24時間足へのリサンプル完了（区切りの起点: NY時間 17:00）: 2020-08-31 17:00 ～ 2025-12-30 17:00 (1,389 本)
+Start                                              2021-01-03 17:01:00-05:00
+End                                                2025-12-31 16:59:00-05:00
+Duration                                                  1822 days 23:58:00
+Exposure Time [%]                                                  45.109968
+Equity Final [$]                                                  9940.00906
+Equity Peak [$]                                                  10250.58475
+Commissions [$]                                                      5.59309
+Return [%]                                                         -0.599909
+Buy & Hold Return [%]                                               -2.41106
+Return (Ann.) [%]                                                  -0.097029
+Volatility (Ann.) [%]                                               3.136953
+CAGR [%]                                                           -0.120485
+Sharpe Ratio                                                       -0.030931
+Sortino Ratio                                                      -0.046258
+Calmar Ratio                                                       -0.010892
+Alpha [%]                                                          -0.578121
+Beta                                                                0.009037
+Max. Drawdown [%]                                                  -8.907987
+Avg. Drawdown [%]                                                  -0.201103
+Max. Drawdown Duration                                    1416 days 20:35:00
+Avg. Drawdown Duration                                      14 days 19:17:00
+# Trades                                                                  16
+Win Rate [%]                                                            37.5
+Best Trade [%]                                                      9.704429
+Worst Trade [%]                                                    -2.658116
+Avg. Trade [%]                                                      0.252175
+Max. Trade Duration                                        146 days 18:43:00
+Avg. Trade Duration                                         51 days 13:22:00
+Profit Factor                                                       1.361764
+Expectancy [%]                                                      0.291975
+SQN                                                                -0.073283
+Kelly Criterion                                                    -0.021493
+Avg. Win [$]                                                      174.445417
+Avg. Loss [$]                                                    -110.666344
+Payoff Ratio                                                        1.576319
+Max. Consecutive Losses                                                    5
+_strategy                         SwingBreakoutDowSwingExit1Min(fast_engine)
+_equity_curve                                              Equity  Drawdo...
+_trades                        Size  EntryBar  ExitBar  ...              ...
+dtype: object
+✅ 24時間足へのリサンプル完了（区切りの起点: NY時間 17:00）: 2020-08-31 17:00 ～ 2025-12-30 17:00 (1,389 本)
+1H: 30,994 本
+4H: 7,794 本
+D1: 1,301 本
+W1: 261 本
+ℹ️ トレード 16 件 / 合計 -0.30R
+✅ fast_results/20261013_0941_D1_swing20_exit5/dow_trade_chart_EURUSD_20210104-20251231.html (2.7 MB)

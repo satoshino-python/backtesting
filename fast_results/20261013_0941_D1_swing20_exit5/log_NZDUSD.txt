@@ -1,0 +1,118 @@
+📂 データ読み込み中: /home/user/backtesting/histData/NZDUSD
+ℹ️ 年月 202009 ～ 202601 の ZIP のみ読み込みます（64 / 72 個）。
+ℹ️ ZIP「NZDUSD_202009.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202010.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202011.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202012.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202101.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202102.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202103.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202104.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202105.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202106.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202107.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202108.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202109.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202110.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202111.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202112.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202201.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202202.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202203.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202204.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202205.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202206.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202207.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202208.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202209.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202210.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202211.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202212.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202301.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202302.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202303.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202304.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202305.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202306.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202307.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202308.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202309.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202310.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202311.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202312.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202401.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202402.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202403.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202404.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202405.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202406.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202407.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202408.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202409.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202410.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202411.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202412.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202501.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202502.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202503.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202504.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202505.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202506.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202507.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202508.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202509.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202510.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202511.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「NZDUSD_202512.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ 合計 64 個のZIP、1389 個のCSVファイルを結合しました。
+✅ データ読み込み完了（MID, America/New_York）: 2020-08-31 17:01:00-04:00 ～ 2025-12-31 16:59:00-05:00 (1,982,941 行)
+ℹ️ 平均相対スプレッド: 0.02966% (commission換算: 0.01483%)
+✅ 24時間足へのリサンプル完了（区切りの起点: NY時間 17:00）: 2020-08-31 17:00 ～ 2025-12-30 17:00 (1,389 本)
+✅ 24時間足へのリサンプル完了（区切りの起点: NY時間 17:00）: 2020-08-31 17:00 ～ 2025-12-30 17:00 (1,389 本)
+Start                                              2021-01-03 17:01:00-05:00
+End                                                2025-12-31 16:59:00-05:00
+Duration                                                  1822 days 23:58:00
+Exposure Time [%]                                                  57.182799
+Equity Final [$]                                                   7889.9016
+Equity Peak [$]                                                  10010.21031
+Commissions [$]                                                     36.31482
+Return [%]                                                        -21.100984
+Buy & Hold Return [%]                                             -19.658311
+Return (Ann.) [%]                                                  -3.751407
+Volatility (Ann.) [%]                                                3.56454
+CAGR [%]                                                           -4.637506
+Sharpe Ratio                                                       -1.052424
+Sortino Ratio                                                       -1.37015
+Calmar Ratio                                                       -0.165603
+Alpha [%]                                                         -22.484026
+Beta                                                               -0.070354
+Max. Drawdown [%]                                                 -22.652969
+Avg. Drawdown [%]                                                   -3.80175
+Max. Drawdown Duration                                    1657 days 07:32:00
+Avg. Drawdown Duration                                     276 days 05:24:00
+# Trades                                                                  27
+Win Rate [%]                                                       18.518519
+Best Trade [%]                                                      4.047899
+Worst Trade [%]                                                    -5.733498
+Avg. Trade [%]                                                     -1.712117
+Max. Trade Duration                                         83 days 08:09:00
+Avg. Trade Duration                                         38 days 18:26:00
+Profit Factor                                                       0.189109
+Expectancy [%]                                                     -1.684772
+SQN                                                                -4.293167
+Kelly Criterion                                                    -1.056384
+Avg. Win [$]                                                        73.98048
+Avg. Loss [$]                                                    -112.727309
+Payoff Ratio                                                        0.656278
+Max. Consecutive Losses                                                    8
+_strategy                         SwingBreakoutDowSwingExit1Min(fast_engine)
+_equity_curve                                             Equity  Drawdow...
+_trades                         Size  EntryBar  ExitBar  ...             ...
+dtype: object
+✅ 24時間足へのリサンプル完了（区切りの起点: NY時間 17:00）: 2020-08-31 17:00 ～ 2025-12-30 17:00 (1,389 本)
+1H: 30,993 本
+4H: 7,794 本
+D1: 1,301 本
+W1: 261 本
+ℹ️ トレード 27 件 / 合計 -10.55R
+✅ fast_results/20261013_0941_D1_swing20_exit5/dow_trade_chart_NZDUSD_20210104-20251231.html (2.7 MB)

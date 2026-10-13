@@ -28,7 +28,8 @@ from swap_costs import load_interest_table, usdjpy_close_series, apply_interest,
 from dow_swing_chart import make_chart
 
 ENTRY_WINDOW = 20
-EXIT_WINDOW = 10
+import os
+EXIT_WINDOW = int(os.environ.get("EXIT_WINDOW", 10))
 BASE_CFG = Config(start_date="2021-01-01", end_date="2025-12-31", signal_hours=24,
                   window=ENTRY_WINDOW, atr_period=14, risk_pct=0.02)
 DATA_ROOT = Path("histData")
