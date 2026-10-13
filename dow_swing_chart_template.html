@@ -55,6 +55,7 @@
   <span id="trctl" class="keep" style="display:none; gap:6px 18px; flex-wrap:wrap; align-items:center">
     <label>背景 <select id="bg"><option value="used" selected>検証で使った週足トレンド</option><option value="tf">表示中の時間足で計算</option><option value="filter">検証で使ったフィルター</option><option value="live">スライダーのフィルター</option></select></label>
     <label><input id="trd" type="checkbox" checked> トレード</label>
+    <label id="wvl" style="display:none"><input id="wv" type="checkbox" checked> 一波（L0→H→D）</label>
     <label id="eswl" style="display:none"><input id="esw" type="checkbox" checked> エントリー用スイング</label>
     <label><input id="eln" type="checkbox" checked> <span id="elnlab">エントリーライン</span></label>
     <button id="prev">◀ 前のトレード</button><button id="next">次のトレード ▶</button>
@@ -208,7 +209,7 @@ function draw() {
   if (TR && $("trd").checked)  // 表示中のトレードの SL/TP も縦軸の範囲に入れる
     for (const t of TR.trades) {
       const [ei, xi] = tradeIdx(t); if (ei < 0 || xi < i0 || ei > i1) continue;
-      for (const p of [t.sl, t.tp]) if (p != null) { lo = Math.min(lo, p); hi = Math.max(hi, p); }
+      for (const p of [t.sl, t.tp].concat(t.wave && $("wv").checked ? t.wave.p : [])) if (p != null) { lo = Math.min(lo, p); hi = Math.max(hi, p); }
     }
   const pad = (hi - lo) * 0.06 || 0.001; lo -= pad; hi += pad;
   const X = i => M.l + (i - view.from + 0.5) * bw, Y = p => M.t + (hi - p) / (hi - lo) * ph;
@@ -444,6 +445,7 @@ function tradeText(t) {
   return `── トレード（${t.d > 0 ? "買い" : "売り"}${DATA["4H"].ut ? " / 週足 " + nm(t.wk) : ""}）──\n` +
     `エントリー ${t.et}  @ ${fmtP(t.ep)}\n決済       ${t.xt}  @ ${fmtP(t.xp)}\n` +
     `SL ${fmtP(t.sl)}  TP ${fmtP(t.tp)}  枚数 ${Math.abs(t.size).toLocaleString()}\n` +
+    (t.wave ? `一波 L0 ${fmtP(t.wave.p[0])} → H ${fmtP(t.wave.p[1])} → D ${fmtP(t.wave.p[2])}  押し ${(t.wave.retr * 100).toFixed(0)}%\n` : "") +
     `損益 ${t.pnl.toFixed(2)}（${r >= 0 ? "+" : ""}${r.toFixed(2)}R） ${t.reason}` + lv;
 }
 function tradeAt(i, my, Y) {
@@ -503,6 +505,23 @@ function drawTrades(i0, i1, X, Y, bw) {
     ctx.globalAlpha = !DLIVE || t.ok ? 1 : .3;
     const win = t.pnl > 0, col = win ? "#2bd17e" : "#ff5a52";
     const xe = X(ei), xx = X(xi), ye = Y(t.ep), yx = Y(t.xp);
+    // 一波: L0 → H → D → エントリー（指定があるトレードだけ）
+    if (t.wave && $("wv").checked) {
+      const wi = t.wave.idx[$("tf").value], wp = t.wave.p, names = ["L0", "H", "D"];
+      if (wi && wi[0] >= 0) {
+        ctx.setLineDash([]); ctx.lineWidth = 1.5; ctx.strokeStyle = "rgba(240,180,41,.9)";
+        ctx.beginPath(); ctx.moveTo(X(wi[0]), Y(wp[0])); ctx.lineTo(X(wi[1]), Y(wp[1])); ctx.lineTo(X(wi[2]), Y(wp[2])); ctx.lineTo(xe, ye); ctx.stroke();
+        ctx.setLineDash([1, 4]); ctx.strokeStyle = "rgba(240,180,41,.6)";
+        ctx.beginPath(); ctx.moveTo(X(wi[1]), Y(wp[1])); ctx.lineTo(xe, Y(wp[1])); ctx.moveTo(X(wi[0]), Y(wp[0])); ctx.lineTo(xe, Y(wp[0])); ctx.stroke(); ctx.setLineDash([]);
+        ctx.font = "bold 11px system-ui,sans-serif"; ctx.textAlign = "center";
+        for (let k = 0; k < 3; k++) {
+          const px = X(wi[k]), py = Y(wp[k]), up = k === 1 === (t.d > 0);
+          ctx.fillStyle = "#f0b429"; ctx.beginPath(); ctx.arc(px, py, 4, 0, 6.3); ctx.fill();
+          ctx.fillStyle = "#f0b429"; ctx.fillText(names[k], px, up ? py - 8 : py + 16);
+        }
+        ctx.textAlign = "start";
+      }
+    }
     // SL / TP（エントリーから決済まで）
     ctx.setLineDash([2, 3]); ctx.lineWidth = 1;
     if (t.tp != null) { ctx.strokeStyle = "rgba(43,209,126,.7)"; ctx.beginPath(); ctx.moveTo(xe, Y(t.tp)); ctx.lineTo(xx, Y(t.tp)); ctx.stroke(); }
@@ -583,7 +602,8 @@ if (TR) {
   if (DLIVE) $("bg").value = "live"; else if (DATA["4H"].fs) $("bg").value = "filter"; else $("bg").value = $("bg").value;
   if (!DATA["4H"].fs) $("bg").options[2].disabled = true;
   if (!DLIVE) $("bg").options[3].disabled = true;  // 方向フィルターを使った検証
-  for (const id of ["trd", "eln", "bg", "esw"]) $(id).addEventListener("change", draw);
+  for (const id of ["trd", "eln", "bg", "esw", "wv"]) $(id).addEventListener("change", draw);
+  if (TR.trades.some(t => t.wave)) $("wvl").style.display = "flex";
   if (TR.entryTf) { $("eswl").style.display = "flex"; $("zig").checked = false; }   // ダウ理論のスイング線は、エントリー用スイングと混同しないよう既定で消す
   $("prev").onclick = () => gotoTrade(-1); $("next").onclick = () => gotoTrade(1);
   window.addEventListener("keydown", e => { if (e.key === "ArrowRight") gotoTrade(1); else if (e.key === "ArrowLeft") gotoTrade(-1); });

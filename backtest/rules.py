@@ -11,6 +11,7 @@ def retracement_long(p, atr, uptrend, rmin=0.30, rmax=0.50, swing_atr=2.0, min_l
     pos = np.zeros(n)
     trades = []
     L0 = H = D = p[0]
+    iL = iH = iD = 0
     state, stop, age, cur = 0, np.nan, 0, None
     for i in range(1, n):
         x, a = p[i], atr[i]
@@ -30,15 +31,19 @@ def retracement_long(p, atr, uptrend, rmin=0.30, rmax=0.50, swing_atr=2.0, min_l
             trig = np.nanmax(p[max(0, i - trigger_lb):i]) if i >= trigger_lb else np.inf
             if rmin <= retr <= rmax and x > trig:
                 state, stop, age = 1, D, 0
-                cur = dict(entry_i=i, entry_price=x, stop=D, L0=L0, H=H, D=D, retr=retr)
+                cur = dict(entry_i=i, entry_price=x, stop=D, L0=L0, H=H, D=D, retr=retr, iL=iL, iH=iH, iD=iD)
         if x > H:
             H = D = x
+            iH = iD = i
         elif x < D:
             D = x
+            iD = i
         if x < L0:
             L0 = H = D = x
+            iL = iH = iD = i
         elif D < H - swing_atr * a and x > D + swing_atr * a:
             L0, H, D = D, x, x
+            iL, iH, iD = iD, i, i
         pos[i] = state
     if cur is not None:  # データ末尾で保有中
         cur.update(exit_i=n - 1, exit_price=p[-1], reason="データ末尾", days=age)
@@ -64,7 +69,8 @@ def rule_e_trades(close, **kw):
                 dir=d, entry_date=px.index[t["entry_i"]], entry_price=sign * t["entry_price"],
                 exit_date=px.index[t["exit_i"]], exit_price=sign * t["exit_price"], stop=sign * t["stop"],
                 L0=sign * t["L0"], H=sign * t["H"], D=sign * t["D"], retr=t["retr"], days=t["days"],
-                reason=t["reason"]))
+                reason=t["reason"],
+                L0_date=px.index[t["iL"]], H_date=px.index[t["iH"]], D_date=px.index[t["iD"]]))
     df = pd.DataFrame(rows)
     if len(df):
         risk = (df.entry_price - df.stop).abs()  # 1R = 損切り幅

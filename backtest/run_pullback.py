@@ -49,10 +49,20 @@ def main(pairs, out_dir, chart_pairs):
         reasons = [f"{r.reason} / L0={r.L0:.{price_decimals_for(pair)}f} H={r.H:.{price_decimals_for(pair)}f} "
                    f"D={r.D:.{price_decimals_for(pair)}f} 押し{r.retr:.0%} 保有{r.days}日" for r in tr.itertuples()]
 
-        def patched(trades, labels, price_decimals=5, _r=reasons):
+        def wave_idx(labels, row):
+            """L0・H・D の日付 → 各時間足の足番号"""
+            res = {}
+            for tf, lab in labels.items():
+                ts = pd.DatetimeIndex([pd.Timestamp(f"{row[c]:%Y-%m-%d} 16:59").tz_localize("America/New_York")
+                                       for c in ("L0_date", "H_date", "D_date")])
+                res[tf] = [int(v) for v in lab.get_indexer(dsc.bar_label(ts, tf))]
+            return res
+
+        def patched(trades, labels, price_decimals=5, _r=reasons, _tr=tr):
             out = orig(trades, labels, price_decimals)
-            for t, r in zip(out, _r):
+            for t, r, row in zip(out, _r, _tr.to_dict("records")):
                 t["reason"] = r
+                t["wave"] = dict(idx=wave_idx(labels, row), p=[row["L0"], row["H"], row["D"]], retr=row["retr"])
             return out
         dsc.load_trades = patched
         try:
