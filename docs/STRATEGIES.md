@@ -297,6 +297,12 @@ python dow_swing_chart.py --trades dow_results/trades_20210101-20251231_strict.c
   `... exit_mode=dow_swing [dow_mode=None|no_counter] [min_trend_age=8] [min_weekly_adx=25] [min_h4_er=0.2] [exit_window=6]` で両方を実行して比べる。
   食い違ったら両方の取引履歴を `fast_compare_results/<日時>_<ペア>/` に保存する。
 
+### 4.13 `main_D1_swing_breakout_fast.py`（日足 前後20本ブレイクで入り、前後10本ブレイクで出る）
+- 日足（NY 17:00 区切り）の前後 `ENTRY_WINDOW`=20 本のスイングで共通のエントリー、前後 `EXIT_WINDOW`=10 本のスイングを抜けたら決済（逆指値を有利な方向にだけ動かす）。フィルター・TP・建値ストップなし。
+- 実体は `fast_engine` の `exit_mode="dow_swing"`（`DowTrend` 列は 0 固定、`AllowLong/Short` 列なし）。全ペアを並列に検証し、結果は `fast_results/<日時>_D1_swing20_exit10/`。
+- 枚数が整数のため、`SP500`・`XAUUSD` は `CASH_SCALE` で資金を100倍にして実行する（1R=200ドルだと SP500 は枚数0で注文が出ない）。
+- 2021〜2025の結果: 242件・合計 -45.4R・PF 0.58（USDJPY・金・US500・EURUSD のみプラス）。
+
 ## 5. `Config` の設定項目（4時間足系の共通項目）
 
 設定は各ファイルの `CFG = Config(...)`（multi は `BASE_CFG`）で上書きする。書かなかった項目は下の既定値になる。
