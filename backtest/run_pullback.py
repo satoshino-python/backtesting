@@ -28,7 +28,7 @@ def chart_trades(tr):
         Size=tr.dir, EntryPrice=tr.entry_price, ExitPrice=tr.exit_price, SL=tr.stop, TP=np.nan, PnL=tr.R))
 
 
-def main(pairs, out_dir, chart_pairs):
+def main(pairs, out_dir, chart_pairs, rule_kw=None):
     out_dir.mkdir(parents=True, exist_ok=True)
     orig = dsc.load_trades
     all_tr = []
@@ -36,7 +36,7 @@ def main(pairs, out_dir, chart_pairs):
         with contextlib.redirect_stdout(io.StringIO()):
             df, _ = load_1min(pair)
         daily = to_daily(df)
-        tr, trend = rule_e_trades(daily.Close)
+        tr, trend = rule_e_trades(daily.Close, **(rule_kw or {}))
         tr.insert(0, "pair", pair)
         all_tr.append(tr)
         print(f"{pair}: 日足 {len(daily)} 本 / 取引 {len(tr)} 件 / 合計 {tr.R.sum():+.1f}R")
@@ -80,5 +80,10 @@ def main(pairs, out_dir, chart_pairs):
 
 if __name__ == "__main__":
     args = sys.argv[1:]
+    kw, label = {}, "ruleE_daily"
+    if "--swing-n" in args:  # 例: --swing-n 10（L0 をスイングローで確定する版）
+        k = args.index("--swing-n")
+        kw["swing_n"] = int(args[k + 1]); label = f"ruleE_swingN{args[k + 1]}"
+        del args[k:k + 2]
     stamp = dt.datetime.now().strftime("%Y%m%d_%H%M")
-    main(args or ALL_PAIRS, ROOT / "pullback_results" / f"{stamp}_ruleE_daily", args or CHART_PAIRS)
+    main(args or ALL_PAIRS, ROOT / "pullback_results" / f"{stamp}_{label}", args or CHART_PAIRS, kw)
