@@ -30,6 +30,7 @@
 </head>
 <body>
 <div id="ctl">
+  <button id="back" class="keep" title="元の画面に戻る" onclick="if(history.length>1){history.back()}else{location.href='./'}">← 戻る</button>
   <button id="ctltog" class="keep" title="設定の表示/非表示">設定 ▴</button>
   <label class="keep"><input id="leg" type="checkbox" checked> 凡例</label>
   <label class="keep" title="カーソル位置・トレードの詳細"><input id="det" type="checkbox" checked> 詳細</label>
