@@ -71,8 +71,15 @@ WORKERS = 4
 # 金利調整額（CFD の保有コスト）。ペア名 → 金利調整額CSV。ここに載せたペアは、取引履歴の損益（PnL）と
 # 資産曲線に金利調整額を反映する（ルールは swap_costs.py の冒頭を参照）。None / {} なら反映しない（従来どおり）。
 # 円建ての金額を決済時点の USDJPY で USD に直すため、DATA_ROOT / "USDJPY" のデータも読み込む（検証期間の分だけ）。
-INTEREST_CSV = {"XAUUSD": Path("swap_data/gold_spot_interest.csv")}
+# FX は swap_data/fx_swap.csv（Googleスプレッドシート「GMO FXスワップ」、1万通貨あたりの円）。ペア名を足せば反映される。
+FX_SWAP_CSV = Path("swap_data/fx_swap.csv")
+FX_SWAP_PAIRS = ("AUDJPY", "AUDUSD", "EURAUD", "EURCHF", "EURGBP", "EURJPY", "EURUSD", "GBPAUD", "GBPCHF",
+                 "GBPJPY", "GBPUSD", "NZDJPY", "NZDUSD", "USDCHF", "USDJPY")
+FX_LOT_UNITS = 10_000
+INTEREST_CSV = {"XAUUSD": Path("swap_data/gold_spot_interest.csv"), **{p: FX_SWAP_CSV for p in FX_SWAP_PAIRS}}
 INTEREST_FX_PAIR = "USDJPY"
+# クォート通貨 → その通貨1単位のUSD価値を出す為替（"inv": 逆数）。USD建て・XAUUSD は換算不要
+QUOTE_USD_PAIR = {"JPY": ("USDJPY", "inv"), "CHF": ("USDCHF", "inv"), "GBP": ("GBPUSD", "mul"), "AUD": ("AUDUSD", "mul")}
 MAKE_CHARTS = True                # True: ペアごとにトレード付きのダウ理論チャートを出力（1ペア数十秒）
 OPEN_CHARTS = False               # True: 出力したチャートをブラウザで開く（ペアの数だけタブが開く）
 
@@ -155,13 +162,25 @@ def run_pair(pair, cfg, out_dir, make_charts, exit_mode, h1_window, initial_sl_r
         interest_total = None
         if INTEREST_CSV and pair in INTEREST_CSV:
             # 金利調整額を反映（損益は金利調整後に置き換え、金利調整前は PnL_Gross に残る）
-            table = load_interest_table(INTEREST_CSV[pair])
-            fx_1min, _ = load_gmo_click_1min_data(
-                DATA_ROOT / INTEREST_FX_PAIR, price_side="mid", price_decimals=price_decimals_for(INTEREST_FX_PAIR),
-                month_range=zip_month_range(cfg), spread_period=(start_ts, end_ts),
-                session_start_hour=cfg.session_start_hour,
-            )
-            trades = apply_interest(trades, table, usdjpy_close_series(fx_1min), cfg.session_start_hour)
+            is_fx = INTEREST_CSV[pair] == FX_SWAP_CSV
+            table = load_interest_table(INTEREST_CSV[pair], pair if is_fx else None)
+
+            def load_close(fx_pair):
+                fx_1min, _ = load_gmo_click_1min_data(
+                    DATA_ROOT / fx_pair, price_side="mid", price_decimals=price_decimals_for(fx_pair),
+                    month_range=zip_month_range(cfg), spread_period=(start_ts, end_ts),
+                    session_start_hour=cfg.session_start_hour,
+                )
+                return usdjpy_close_series(fx_1min)
+
+            usdjpy_close = load_close(INTEREST_FX_PAIR)
+            quote_usd = None
+            if is_fx and pair[3:] != "USD":   # クォート通貨1単位のUSD価値（エントリー時）で実際の保有量を出す
+                fx_pair, how = QUOTE_USD_PAIR[pair[3:]]
+                rate = usdjpy_close if fx_pair == INTEREST_FX_PAIR else load_close(fx_pair)
+                quote_usd = 1.0 / rate if how == "inv" else rate
+            trades = apply_interest(trades, table, usdjpy_close, cfg.session_start_hour,
+                                    lot_units=FX_LOT_UNITS if is_fx else 1.0, quote_usd_close=quote_usd)
             equity = equity + cumulative_interest_curve(trades, equity.index)
             interest_total = float(trades["Interest"].sum())
             stats["Interest [USD]"] = interest_total
