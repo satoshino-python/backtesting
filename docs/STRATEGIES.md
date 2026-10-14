@@ -45,6 +45,8 @@ backtesting.py が必要なのは、`main_4H_fixedSL.py` / `main_4H_fixedSL_mult
 - 資産曲線・収益率・最大DD は決済時に計上して補正する。売買の判断には影響しない
 - `INTEREST_CSV = {}` にすると従来どおり（反映なし）。USDJPY のデータ（`histData/USDJPY`）が必要
 - 金スポットの価格桁数は 2桁（`price_decimals_for`）
+- FX は `swap_data/fx_swap.csv`（GMO FXスワップのシート。列: pair, date, sell, buy, days。単位は1万通貨あたりの円）。`FX_SWAP_PAIRS` のペアに反映する（USDCHF はシートに無いため対象外）。
+  fast_engine の枚数は損失額をクォート通貨のまま扱うので、スワップは USD 建て 1R = 200 USD になる実際の通貨数（`swap_costs.real_units`）で計算する
 
 ## 2. 全スクリプト共通の仕組み
 

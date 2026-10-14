@@ -74,7 +74,7 @@ WORKERS = 4
 # FX は swap_data/fx_swap.csv（Googleスプレッドシート「GMO FXスワップ」、1万通貨あたりの円）。ペア名を足せば反映される。
 FX_SWAP_CSV = Path("swap_data/fx_swap.csv")
 FX_SWAP_PAIRS = ("AUDJPY", "AUDUSD", "EURAUD", "EURCHF", "EURGBP", "EURJPY", "EURUSD", "GBPAUD", "GBPCHF",
-                 "GBPJPY", "GBPUSD", "NZDJPY", "NZDUSD", "USDCHF", "USDJPY")
+                 "GBPJPY", "GBPUSD", "NZDJPY", "NZDUSD", "USDJPY")  # シートに USDCHF は無い
 FX_LOT_UNITS = 10_000
 INTEREST_CSV = {"XAUUSD": Path("swap_data/gold_spot_interest.csv"), **{p: FX_SWAP_CSV for p in FX_SWAP_PAIRS}}
 INTEREST_FX_PAIR = "USDJPY"
