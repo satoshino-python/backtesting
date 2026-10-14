@@ -20,6 +20,7 @@ from main_4H_fixedSL import (load_gmo_click_1min_data, resample_to_signal_bars, 
                              get_trading_day_label, get_signal_bar_label, compute_signals)
 from main_4H_fixedSL_multi import zip_month_range, price_decimals_for
 from fast_engine import run_fast
+from swap_costs import build_swap_model
 from dow_swing_chart import make_chart
 
 # エントリー方式（環境変数 ENTRY_MODE で切り替え）
@@ -107,7 +108,7 @@ def run_pair(pair, cfg, out_dir):
                 if name == CHART_VARIANT:
                     state_chart = pd.Series(np.where(full_l & full_s, 2, np.where(full_l, 1, np.where(full_s, -1, 0))), index=df.index)
             d = base.copy(); d["AllowLong"], d["AllowShort"] = al, as_
-            st = run_fast(d, cash=cfg.cash, commission=comm, margin=cfg.margin, sl_atr_multiplier=cfg.sl_atr_multiplier,
+            st = run_fast(d, swap=build_swap_model(cfg.data_path, cfg.start_date, cfg.end_date, cfg.session_start_hour), cash=cfg.cash, commission=comm, margin=cfg.margin, sl_atr_multiplier=cfg.sl_atr_multiplier,
                           tp_atr_multiplier=cfg.tp_atr_multiplier, breakeven_trigger_r=None, price_decimals=cfg.price_decimals,
                           risk_pct=cfg.risk_pct, exit_mode="fixed")
             tr = st["_trades"].copy()

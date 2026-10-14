@@ -27,6 +27,7 @@ from main_4H_fixedSL import (load_gmo_click_1min_data, resample_to_signal_bars, 
 from main_4H_fixedSL_multi import zip_month_range, price_decimals_for, compute_h1_swings, max_drawdown
 from main_4H_fixedSL_fast_multi import BASE_CFG
 from fast_engine import run_fast
+from swap_costs import build_swap_model
 from trend_filter_study import build_features
 
 PAIRS = ("AUDUSD", "EURUSD", "GBPUSD", "SP500", "USDCHF", "USDJPY")
@@ -107,7 +108,7 @@ def run_pair(pair):
                               risk_pct=cfg.risk_pct, **mp)
                 if mode == "fixed":
                     params.update(tp_atr_multiplier=cfg.tp_atr_multiplier, breakeven_trigger_r=None)
-                st = run_fast(d, cash=cfg.cash, commission=comm, margin=cfg.margin, **params)
+                st = run_fast(d, swap=build_swap_model(cfg.data_path, cfg.start_date, cfg.end_date, cfg.session_start_hour), cash=cfg.cash, commission=comm, margin=cfg.margin, **params)
                 tr = st["_trades"]
                 for _, x in tr.iterrows():
                     rows.append(dict(Pair=pair, filter=fname, mode=mode,

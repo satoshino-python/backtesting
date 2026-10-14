@@ -14,6 +14,7 @@ from main_4H_fixedSL import (load_gmo_click_1min_data, resample_to_signal_bars, 
                              get_trading_day_label, get_signal_bar_label)
 from main_4H_fixedSL_multi import zip_month_range, price_decimals_for
 from fast_engine import run_fast
+from swap_costs import build_swap_model
 
 CONFIGS = [(1, w) for w in (6, 12, 18, 24, 36, 48)] + [(4, w) for w in (3, 6, 9, 12, 18)]   # (足の時間, 前後の本数)
 # 環境変数 CONFIGS="2:3,2:6,3:2" のように指定すると、その組み合わせだけを検証する（例: 2時間足3本、2時間足6本、3時間足2本）
@@ -52,7 +53,7 @@ def one(pair):
             base = map_signals_to_1min(df, sig, 17, hours).loc[inp]
             for v in VARIANTS:
                 d = base.copy(); d["AllowLong"], d["AllowShort"] = allow[v][0][inp], allow[v][1][inp]
-                st = run_fast(d, cash=cfg.cash, commission=comm, margin=cfg.margin, sl_atr_multiplier=cfg.sl_atr_multiplier,
+                st = run_fast(d, swap=build_swap_model(cfg.data_path, cfg.start_date, cfg.end_date, cfg.session_start_hour), cash=cfg.cash, commission=comm, margin=cfg.margin, sl_atr_multiplier=cfg.sl_atr_multiplier,
                               tp_atr_multiplier=cfg.tp_atr_multiplier, breakeven_trigger_r=None, price_decimals=cfg.price_decimals,
                               risk_pct=cfg.risk_pct, exit_mode="fixed")
                 tr = st["_trades"].copy(); tr["R"] = tr["PnL"] / risk; tr["Side"] = np.where(tr["Size"] > 0, "L", "S")

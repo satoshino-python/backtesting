@@ -36,6 +36,7 @@ from bt_compat import Backtest, Strategy, warn_bokeh_version
 
 from dow_swing_chart import make_chart
 from fast_engine import run_fast
+from swap_costs import build_swap_model
 from dow_trend import DowConfig, compute_dow_trend
 from main_4H_fixedSL import (
     Config,
@@ -281,7 +282,7 @@ def run_backtest(df, cfg, commission_func, engine=None):
     """検証を実行して (bt, stats) を返す。engine="fast" のとき bt は None（backtesting.py のチャートは作れない）"""
     engine = engine or ENGINE
     if engine == "fast":
-        stats = run_fast(dow_allow_columns(df, cfg), cash=cfg.cash, commission=commission_func,
+        stats = run_fast(dow_allow_columns(df, cfg), swap=build_swap_model(cfg.data_path, cfg.start_date, cfg.end_date, cfg.session_start_hour), cash=cfg.cash, commission=commission_func,
                          margin=cfg.margin, price_decimals=cfg.price_decimals, risk_pct=cfg.risk_pct,
                          exit_mode="dow_swing")
         return None, add_extra_stats(stats)

@@ -21,9 +21,11 @@ backtesting.py（0.6.6）は答え合わせ用に残している。
 - 統計値（stats）は `fast_stats.py`（backtesting.py の compute_stats の移植）で計算する。fast 系のスクリプトは backtesting.py と Bokeh が
   入っていなくても動く（`bt_compat.py` で import を任意にしている）。答え合わせと backtesting.py 標準のチャートには `pip install backtesting==0.6.6` が必要。
   0.6.5 以前は窓開けで SL を飛び越えたトレードの取引履歴の `SL` 列が空になり、fast_engine と食い違う。
-- CFD の金利調整額: `main_4H_fixedSL_fast_multi.py` の `INTEREST_CSV` に載せたペア（既定は XAUUSD）は、取引の損益に金利調整額を反映する
-  （発生日の NY 17:00 をまたいだ保有に、オンス数 × 円の金額。決済時点の USDJPY で USD に直す）。計算は `swap_costs.py`、
-  データは `swap_data/gold_spot_interest.csv`（GMO の「金利調整額」シートから作成。更新方法は `swap_data/README.md`）。
+- **スワップ（FX）・金利調整額（金スポット）は必ず損益に反映する。** `fast_engine.run_fast(..., swap=build_swap_model(cfg.data_path, cfg.start_date, cfg.end_date, cfg.session_start_hour))`
+  と渡すだけでよい（`swap_costs.py`。登録のないペアは `None` が返り、何も起きない）。取引の `PnL` はスワップ後になり、`PnL_Gross`（反映前）・`Interest`（USD）が列に残る。
+  **新しい検証スクリプト・新しい売買ルールでも `run_fast` に `swap=` を渡すこと**（`tests/test_swap_policy.py` が全スクリプトを確認する。反映しないときも `swap=None` と明示する）。
+  スワップを足す銘柄は CSV を `swap_data/` に置き、`swap_costs.SWAP_SOURCES` に1行足す（更新方法は `swap_data/README.md`）。全体を止めるときは `swap_costs.ENABLED = False`。
+  結果を報告するときは、スワップ反映前（`PnL_Gross`）と反映後を並べる。
 
 ## 検証結果のチャート（毎回作る）
 トレードを伴う検証では、**トレード付きのダウ理論チャート**を必ず出力する（backtesting.py で実行したときは標準のチャートも出る）。

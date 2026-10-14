@@ -24,6 +24,7 @@ from main_4H_fixedSL import (load_gmo_click_1min_data, resample_to_signal_bars, 
 from main_4H_fixedSL_multi import zip_month_range, price_decimals_for, compute_h1_swings
 from main_4H_fixedSL_fast_multi import BASE_CFG
 from fast_engine import run_fast
+from swap_costs import build_swap_model
 from dow_swing_chart import make_chart
 from filter_rerun import FILTERS, MODES, H1_WINDOW, PAIRS, features_on_1min
 
@@ -69,7 +70,7 @@ def run_pair(pair):
                               risk_pct=cfg.risk_pct, **mp)
                 if mode == "fixed":
                     params.update(tp_atr_multiplier=cfg.tp_atr_multiplier, breakeven_trigger_r=None)
-                st = run_fast(d, cash=cfg.cash, commission=comm, margin=cfg.margin, **params)
+                st = run_fast(d, swap=build_swap_model(cfg.data_path, cfg.start_date, cfg.end_date, cfg.session_start_hour), cash=cfg.cash, commission=comm, margin=cfg.margin, **params)
                 tr = st["_trades"]
                 for _, x in tr.iterrows():
                     rows.append(dict(filter=fname, mode=mode, Pair=pair, Side="L" if x.Size > 0 else "S",

@@ -11,3 +11,7 @@
 ## fx_swap.csv（FX）
 Googleスプレッドシート「GMO FXスワップ」から作成。列: `pair`, `date`（取引日）, `sell`, `buy`, `days`。単位は1万通貨あたりの円（想定）。
 2020-01-02 ~ 2026-10-14、14ペア（USDCHF なし）。シートの空欄（付与日数0）は省き、「64$0.41」のような表記は円の部分だけを使った。
+
+## 新しい銘柄を足す
+1. CSV を `swap_data/` に置く（FX は `fx_swap.csv` に `pair` 列つきで追記、CFD は `gold_spot_interest.csv` と同じ形式の別ファイル）
+2. `swap_costs.SWAP_SOURCES` にペア名 → (CSV, シートの単位, pair 列の有無) を足す。クォート通貨が USD 以外なら `QUOTE_USD_PAIR` の換算も確認する

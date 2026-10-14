@@ -623,7 +623,7 @@ class _Sim:
 
 
 def run_fast(df, *, cash, commission, margin, price_decimals, risk_pct, sl_atr_multiplier=None,
-             tp_atr_multiplier=None, breakeven_trigger_r=None, exit_mode="fixed", initial_sl_rule="atr"):
+             tp_atr_multiplier=None, breakeven_trigger_r=None, exit_mode="fixed", initial_sl_rule="atr", swap=None):
     """
     exit_mode="fixed":
         Backtest(df, SwingBreakoutStrategy1Min, cash=, commission=, margin=, exclusive_orders=False)
@@ -636,6 +636,10 @@ def run_fast(df, *, cash, commission, margin, price_decimals, risk_pct, sl_atr_m
     と同じ結果（stats の pd.Series）を返す。
 
     commission は backtesting.py と同じく関数 commission(order_size, price)、または比率（float）。
+
+    swap: swap_costs.build_swap_model(data_path, start, end) の戻り値。渡すと取引の PnL・資産曲線・収益率・最大DD に
+          スワップ（金利調整額）を反映する（None なら反映しない。売買の判断は変わらない）。
+          **検証スクリプトでは必ず渡すこと**（tests/test_swap_policy.py が確認する）。
     """
     if exit_mode == "fixed" and tp_atr_multiplier is None:
         raise ValueError('exit_mode="fixed" には tp_atr_multiplier が必要です')
@@ -663,4 +667,7 @@ def run_fast(df, *, cash, commission, margin, price_decimals, risk_pct, sl_atr_m
     with np.errstate(invalid="ignore", divide="ignore"):
         stats = compute_stats(sim.closed, equity, ohlc, first_trading_bar=first,
                               strategy=f"{name}(fast_engine)")
+    if swap is not None:
+        from swap_costs import apply_swap_to_stats
+        stats = apply_swap_to_stats(stats, swap, cash, risk_pct)
     return stats

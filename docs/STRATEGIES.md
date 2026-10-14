@@ -36,17 +36,20 @@ backtesting.py が必要なのは、`main_4H_fixedSL.py` / `main_4H_fixedSL_mult
 `SwingBreakoutTrail1Min`（`main_4H_fixedSL_multi.py`）・`SwingBreakoutDowSwingExit1Min`（`main_4H_dow_swingExit.py`）の売買ルールを自前で再現しているため、
 **これらのルールを変えたら `fast_engine.py` も合わせて直し、`compare_fast_engine.py` で一致を確かめる。**
 
-## 金利調整額（CFD の保有コスト）
-`main_4H_fixedSL_fast_multi.py` の `INTEREST_CSV`（ペア名 → CSV）に載せたペアは、取引履歴の損益に金利調整額を反映する
-（既定は `XAUUSD` → `swap_data/gold_spot_interest.csv`）。計算は `swap_costs.py`、データの更新方法は `swap_data/README.md`。
+## スワップ・金利調整額
+FX のスワップと金スポットの金利調整額は、`fast_engine.run_fast(..., swap=...)` に `swap_costs.build_swap_model(...)` の戻り値を渡すと取引の損益に反映される。
+`fast_engine` を使う検証スクリプトはすべて渡している（`main_4H_fixedSL_fast_multi.py`・`main_4H_dow_swingExit.py`・`trend_quality_study.py`（経由）・`filter_rerun.py`・
+`filter_report_charts.py`・`make_er_slider_charts.py`・`main_4H_trend_*_fast.py`・`trend_*_split/sweep.py`）。`tests/test_swap_policy.py` が、渡し忘れを検出する。
+backtesting.py で動く版（`main_4H_fixedSL.py` の `main()` など）と、`compare_fast_engine.py`（一致確認）は反映しない。
 
-- 発生日の NY 17:00 をまたいだポジションに、オンス数 × シートの金額（買い=「買」列 / 売り=「売」列、円）が付く
-- 取引ごとの合計を、決済時点の USDJPY（1分足の仲値）で USD に直して `PnL` に足す。`PnL_Gross`（調整前）・`InterestJPY`・`UsdJpy`・`Interest`（USD）も取引履歴に残る
-- 資産曲線・収益率・最大DD は決済時に計上して補正する。売買の判断には影響しない
-- `INTEREST_CSV = {}` にすると従来どおり（反映なし）。USDJPY のデータ（`histData/USDJPY`）が必要
+- 対象は `swap_costs.SWAP_SOURCES` に登録したペア: FX 14ペア（`swap_data/fx_swap.csv`、1万通貨あたりの円。USDCHF はシートに無い）と XAUUSD（`swap_data/gold_spot_interest.csv`、1オンスあたりの円）。登録のないペア（SP500 など）は反映なし
+- 発生日の NY 17:00 をまたいだポジションに、保有量 ÷ シートの単位 × シートの金額（買い=「買」列 / 売り=「売」列、円）が付く。付与日数ぶん（水曜の3日分など）はシートの金額をそのまま使う
+- FX の保有量は、USD 建てで 1R = `cash × risk_pct` になる実際の通貨数に直す（`swap_costs.real_units`）。fast_engine の枚数は損失額をクォート通貨のまま扱うため、クォートが USD でないペアは エントリー時の為替（USDJPY・USDCHF・GBPUSD・AUDUSD）で換算する
+- 取引ごとの合計を、決済時点の USDJPY（1分足の仲値）で USD に直して `PnL` に足す。`PnL_Gross`（反映前）・`InterestJPY`・`UsdJpy`・`Interest`（USD）も取引履歴に残る
+- 資産曲線・収益率・最大DD・Equity Final は決済時に計上して補正する（Sharpe など他の統計値は反映前のまま）。売買の判断には影響しない
+- `build_swap_model` は換算用の為替データ（USDJPY など）を読み込む。同じ引数ならプロセス内でキャッシュされる
 - 金スポットの価格桁数は 2桁（`price_decimals_for`）
-- FX は `swap_data/fx_swap.csv`（GMO FXスワップのシート。列: pair, date, sell, buy, days。単位は1万通貨あたりの円）。`FX_SWAP_PAIRS` のペアに反映する（USDCHF はシートに無いため対象外）。
-  fast_engine の枚数は損失額をクォート通貨のまま扱うので、スワップは USD 建て 1R = 200 USD になる実際の通貨数（`swap_costs.real_units`）で計算する
+- 反映を止める: `main_4H_fixedSL_fast_multi.py` は `USE_SWAP = False`、全体は `swap_costs.ENABLED = False`（結果は従来どおり）
 
 ## 2. 全スクリプト共通の仕組み
 

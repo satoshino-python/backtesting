@@ -18,6 +18,7 @@ from main_4H_fixedSL import (load_gmo_click_1min_data, resample_to_signal_bars, 
                              get_trading_day_label, get_signal_bar_label)
 from main_4H_fixedSL_multi import zip_month_range, price_decimals_for
 from fast_engine import run_fast
+from swap_costs import build_swap_model
 
 PERIODS = (10, 20, 30)
 THRESHOLDS = (0.0, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.6)
@@ -55,7 +56,7 @@ def run_pair(pair):
             for th in THRESHOLDS:
                 strong = ok & (er >= th)
                 d = base.copy(); d["AllowLong"], d["AllowShort"] = up & strong, dn & strong
-                st = run_fast(d, cash=cfg.cash, commission=comm, margin=cfg.margin, sl_atr_multiplier=cfg.sl_atr_multiplier,
+                st = run_fast(d, swap=build_swap_model(cfg.data_path, cfg.start_date, cfg.end_date, cfg.session_start_hour), cash=cfg.cash, commission=comm, margin=cfg.margin, sl_atr_multiplier=cfg.sl_atr_multiplier,
                               tp_atr_multiplier=cfg.tp_atr_multiplier, breakeven_trigger_r=None,
                               price_decimals=cfg.price_decimals, risk_pct=cfg.risk_pct, exit_mode="fixed")
                 tr = st["_trades"].copy()

@@ -20,6 +20,7 @@ from main_4H_fixedSL import (load_gmo_click_1min_data, resample_to_signal_bars, 
                              get_trading_day_label, get_signal_bar_label)
 from main_4H_fixedSL_multi import zip_month_range, price_decimals_for
 from fast_engine import run_fast
+from swap_costs import build_swap_model
 from dow_swing_chart import make_chart
 
 
@@ -48,7 +49,7 @@ def one(pair, out):
         d = d.loc[inp]
         rate = spread / 2; risk = cfg.cash * cfg.risk_pct
         comm = lambda size, price: round(abs(size) * price * rate, cfg.price_decimals)  # noqa: E731
-        st = run_fast(d, cash=cfg.cash, commission=comm, margin=cfg.margin, sl_atr_multiplier=cfg.sl_atr_multiplier,
+        st = run_fast(d, swap=build_swap_model(cfg.data_path, cfg.start_date, cfg.end_date, cfg.session_start_hour), cash=cfg.cash, commission=comm, margin=cfg.margin, sl_atr_multiplier=cfg.sl_atr_multiplier,
                       tp_atr_multiplier=cfg.tp_atr_multiplier, breakeven_trigger_r=None, price_decimals=cfg.price_decimals,
                       risk_pct=cfg.risk_pct, exit_mode="fixed")
         fd, ld = day[inp][[0, -1]]

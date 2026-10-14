@@ -30,6 +30,7 @@ from main_4H_fixedSL import (Config, load_gmo_click_1min_data, resample_to_signa
                              map_signals_to_1min, get_trading_day_label, get_signal_bar_label)
 from main_4H_fixedSL_multi import zip_month_range, price_decimals_for
 from fast_engine import run_fast
+from swap_costs import build_swap_model
 from dow_swing_chart import make_chart
 
 BASE_CFG = Config(start_date="2021-01-01", end_date="2025-12-31",
@@ -128,7 +129,7 @@ def run_pair(pair, cfg, out_dir, make_charts):
             al, as_ = (up_1m & strong, down_1m & strong) if use_filter else (np.ones(len(d), bool),) * 2
             d["AllowLong"], d["AllowShort"] = al, as_
             d = d.loc[in_period]
-            st = run_fast(d, cash=cfg.cash, commission=comm, margin=cfg.margin, sl_atr_multiplier=sl,
+            st = run_fast(d, swap=build_swap_model(cfg.data_path, cfg.start_date, cfg.end_date, cfg.session_start_hour), cash=cfg.cash, commission=comm, margin=cfg.margin, sl_atr_multiplier=sl,
                           tp_atr_multiplier=tp, breakeven_trigger_r=None, price_decimals=cfg.price_decimals,
                           risk_pct=cfg.risk_pct, exit_mode="fixed")
             tr = st["_trades"].copy()

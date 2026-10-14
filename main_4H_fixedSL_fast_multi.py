@@ -40,7 +40,7 @@ from main_4H_fixedSL_multi import (
     zip_month_range, price_decimals_for, r_stats, max_drawdown, print_table, compute_h1_swings,
 )
 from fast_engine import run_fast
-from swap_costs import load_interest_table, usdjpy_close_series, apply_interest, cumulative_interest_curve
+from swap_costs import build_swap_model, SWAP_SOURCES
 from dow_swing_chart import make_chart
 
 
@@ -68,18 +68,10 @@ RESULTS_ROOT = Path("fast_results")
 RUN_LABEL = None
 # 同時に実行するペア数。1ペアあたり最大 1〜2GB 程度のメモリを使うので、メモリに合わせて決める
 WORKERS = 4
-# 金利調整額（CFD の保有コスト）。ペア名 → 金利調整額CSV。ここに載せたペアは、取引履歴の損益（PnL）と
-# 資産曲線に金利調整額を反映する（ルールは swap_costs.py の冒頭を参照）。None / {} なら反映しない（従来どおり）。
+# スワップ（FX）・金利調整額（金スポット）を損益に反映する。対象ペアとデータは swap_costs.py の SWAP_SOURCES に登録してある
+# （登録のないペアは反映なし）。False にすると全ペアで反映しない。ルールは swap_costs.py の冒頭を参照。
 # 円建ての金額を決済時点の USDJPY で USD に直すため、DATA_ROOT / "USDJPY" のデータも読み込む（検証期間の分だけ）。
-# FX は swap_data/fx_swap.csv（Googleスプレッドシート「GMO FXスワップ」、1万通貨あたりの円）。ペア名を足せば反映される。
-FX_SWAP_CSV = Path("swap_data/fx_swap.csv")
-FX_SWAP_PAIRS = ("AUDJPY", "AUDUSD", "EURAUD", "EURCHF", "EURGBP", "EURJPY", "EURUSD", "GBPAUD", "GBPCHF",
-                 "GBPJPY", "GBPUSD", "NZDJPY", "NZDUSD", "USDJPY")  # シートに USDCHF は無い
-FX_LOT_UNITS = 10_000
-INTEREST_CSV = {"XAUUSD": Path("swap_data/gold_spot_interest.csv"), **{p: FX_SWAP_CSV for p in FX_SWAP_PAIRS}}
-INTEREST_FX_PAIR = "USDJPY"
-# クォート通貨 → その通貨1単位のUSD価値を出す為替（"inv": 逆数）。USD建て・XAUUSD は換算不要
-QUOTE_USD_PAIR = {"JPY": ("USDJPY", "inv"), "CHF": ("USDCHF", "inv"), "GBP": ("GBPUSD", "mul"), "AUD": ("AUDUSD", "mul")}
+USE_SWAP = True
 MAKE_CHARTS = True                # True: ペアごとにトレード付きのダウ理論チャートを出力（1ペア数十秒）
 OPEN_CHARTS = False               # True: 出力したチャートをブラウザで開く（ペアの数だけタブが開く）
 
@@ -151,44 +143,19 @@ def run_pair(pair, cfg, out_dir, make_charts, exit_mode, h1_window, initial_sl_r
             params.update(tp_atr_multiplier=cfg.tp_atr_multiplier, breakeven_trigger_r=cfg.breakeven_trigger_r)
             mode_text = (f"fixed (SL {cfg.sl_atr_multiplier} / TP {cfg.tp_atr_multiplier} ATR"
                          f"{'' if cfg.breakeven_trigger_r is None else f' / 建値 {cfg.breakeven_trigger_r}R'})")
+        swap = build_swap_model(cfg.data_path, cfg.start_date, cfg.end_date, cfg.session_start_hour, enabled=USE_SWAP)
         stats = add_extra_stats(run_fast(df, cash=cfg.cash, commission=commission_func,
-                                         margin=cfg.margin, **params))
+                                         margin=cfg.margin, swap=swap, **params))
         t_bt = time.perf_counter() - t0 - t_load
         print(stats)
 
         risk_amount = cfg.cash * cfg.risk_pct  # 1R（決済通貨建て）
         trades = stats["_trades"].copy()
         equity = stats["_equity_curve"]["Equity"]
-        interest_total = None
-        if INTEREST_CSV and pair in INTEREST_CSV:
-            # 金利調整額を反映（損益は金利調整後に置き換え、金利調整前は PnL_Gross に残る）
-            is_fx = INTEREST_CSV[pair] == FX_SWAP_CSV
-            table = load_interest_table(INTEREST_CSV[pair], pair if is_fx else None)
-
-            def load_close(fx_pair):
-                fx_1min, _ = load_gmo_click_1min_data(
-                    DATA_ROOT / fx_pair, price_side="mid", price_decimals=price_decimals_for(fx_pair),
-                    month_range=zip_month_range(cfg), spread_period=(start_ts, end_ts),
-                    session_start_hour=cfg.session_start_hour,
-                )
-                return usdjpy_close_series(fx_1min)
-
-            usdjpy_close = load_close(INTEREST_FX_PAIR)
-            quote_usd = None
-            if is_fx and pair[3:] != "USD":   # クォート通貨1単位のUSD価値（エントリー時）で実際の保有量を出す
-                fx_pair, how = QUOTE_USD_PAIR[pair[3:]]
-                rate = usdjpy_close if fx_pair == INTEREST_FX_PAIR else load_close(fx_pair)
-                quote_usd = 1.0 / rate if how == "inv" else rate
-            trades = apply_interest(trades, table, usdjpy_close, cfg.session_start_hour,
-                                    lot_units=FX_LOT_UNITS if is_fx else 1.0, quote_usd_close=quote_usd)
-            equity = equity + cumulative_interest_curve(trades, equity.index)
+        if swap is not None:
             interest_total = float(trades["Interest"].sum())
-            stats["Interest [USD]"] = interest_total
-            stats["Equity Final [$]"] = float(equity.iloc[-1])
-            stats["Return [%]"] = (equity.iloc[-1] / cfg.cash - 1) * 100
-            stats["Max. Drawdown [%]"] = float(((equity - equity.cummax()) / equity.cummax()).min() * 100)
-            print(f"ℹ️ 金利調整額を反映: 合計 {interest_total:+,.2f} USD"
-                  f"（{interest_total / risk_amount:+.2f}R / 金利調整前の損益 {trades['PnL_Gross'].sum():+,.2f} USD）")
+            print(f"ℹ️ スワップ・金利調整額を反映: 合計 {interest_total:+,.2f} USD"
+                  f"（{interest_total / risk_amount:+.2f}R / 反映前の損益 {trades['PnL_Gross'].sum():+,.2f} USD）")
         trades.insert(0, "Pair", pair)
         trades["R"] = trades["PnL"] / risk_amount
         r_curve = (equity - cfg.cash) / risk_amount
@@ -232,7 +199,8 @@ def save_run_info(out_dir, pairs):
         "h1_swing_window": H1_SWING_WINDOW if EXIT_MODE == "swing_trail" else None,
         "initial_sl_rule": INITIAL_SL_RULE if EXIT_MODE == "swing_trail" else None,
         "pairs": pairs,
-        "interest_csv": {k: str(v) for k, v in (INTEREST_CSV or {}).items()},
+        "use_swap": USE_SWAP,
+        "swap_pairs": sorted(p for p in pairs if p in SWAP_SOURCES) if USE_SWAP else [],
         "base_cfg": {k: (str(v) if isinstance(v, Path) else v)
                      for k, v in dataclasses.asdict(BASE_CFG).items()},
     }
@@ -242,8 +210,9 @@ def save_run_info(out_dir, pairs):
     here = Path(__file__).resolve().parent
     for name in (Path(__file__).name, "fast_engine.py", "main_4H_fixedSL.py", "swap_costs.py"):
         shutil.copy2(here / name, code_dir / name)
-    for pair, csv_path in (INTEREST_CSV or {}).items():
-        shutil.copy2(here / csv_path, code_dir / Path(csv_path).name)
+    if USE_SWAP:
+        for csv_path in {src[0] for p, src in SWAP_SOURCES.items() if p in pairs}:
+            shutil.copy2(csv_path, code_dir / csv_path.name)
 
 
 def main():
