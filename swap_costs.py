@@ -136,7 +136,7 @@ def cumulative_interest_curve(trades, index, risk_amount=None):
 SWAP_DIR = Path(__file__).resolve().parent / "swap_data"
 FX_SWAP_CSV = SWAP_DIR / "fx_swap.csv"
 FX_SWAP_PAIRS = ("AUDJPY", "AUDUSD", "EURAUD", "EURCHF", "EURGBP", "EURJPY", "EURUSD", "GBPAUD", "GBPCHF",
-                 "GBPJPY", "GBPUSD", "NZDJPY", "NZDUSD", "USDJPY")  # シートに USDCHF は無い
+                 "GBPJPY", "GBPUSD", "NZDJPY", "NZDUSD", "USDCHF", "USDJPY")
 FX_LOT_UNITS = 10_000          # FX のシートは1万通貨あたり
 SWAP_SOURCES = {               # ペア名 → (CSV, シートの単位, CSV に pair 列があるか)
     "XAUUSD": (SWAP_DIR / "gold_spot_interest.csv", 1.0, False),

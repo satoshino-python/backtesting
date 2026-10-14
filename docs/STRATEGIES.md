@@ -42,7 +42,7 @@ FX のスワップと金スポットの金利調整額は、`fast_engine.run_fas
 `filter_report_charts.py`・`make_er_slider_charts.py`・`main_4H_trend_*_fast.py`・`trend_*_split/sweep.py`）。`tests/test_swap_policy.py` が、渡し忘れを検出する。
 backtesting.py で動く版（`main_4H_fixedSL.py` の `main()` など）と、`compare_fast_engine.py`（一致確認）は反映しない。
 
-- 対象は `swap_costs.SWAP_SOURCES` に登録したペア: FX 14ペア（`swap_data/fx_swap.csv`、1万通貨あたりの円。USDCHF はシートに無い）と XAUUSD（`swap_data/gold_spot_interest.csv`、1オンスあたりの円）。登録のないペア（SP500 など）は反映なし
+- 対象は `swap_costs.SWAP_SOURCES` に登録したペア: FX 15ペア（`swap_data/fx_swap.csv`、1万通貨あたりの円）と XAUUSD（`swap_data/gold_spot_interest.csv`、1オンスあたりの円）。登録のないペア（SP500 など）は反映なし
 - 発生日の NY 17:00 をまたいだポジションに、保有量 ÷ シートの単位 × シートの金額（買い=「買」列 / 売り=「売」列、円）が付く。付与日数ぶん（水曜の3日分など）はシートの金額をそのまま使う
 - FX の保有量は、USD 建てで 1R = `cash × risk_pct` になる実際の通貨数に直す（`swap_costs.real_units`）。fast_engine の枚数は損失額をクォート通貨のまま扱うため、クォートが USD でないペアは エントリー時の為替（USDJPY・USDCHF・GBPUSD・AUDUSD）で換算する
 - 取引ごとの合計を、決済時点の USDJPY（1分足の仲値）で USD に直して `PnL` に足す。`PnL_Gross`（反映前）・`InterestJPY`・`UsdJpy`・`Interest`（USD）も取引履歴に残る
