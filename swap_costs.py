@@ -54,13 +54,13 @@ def interest_jpy(trades, table, session_start_hour=17, tz="America/New_York", lo
     rollover = (table["date"] + pd.Timedelta(hours=session_start_hour)).dt.tz_localize(
         tz, ambiguous="NaT", nonexistent="shift_forward")
     ok = rollover.notna().to_numpy()
-    roll_ns = rollover[ok].astype("int64").to_numpy()
+    roll_ns = pd.DatetimeIndex(rollover[ok]).as_unit("ns").asi8     # pandas 3 は読み込み時の時間単位が秒・µs になるので ns に揃える
     # 累積金額（先頭に 0 を置き、区間の和を差で求める）
     cum_buy = np.concatenate([[0.0], np.cumsum(table.loc[ok, "buy"].to_numpy(dtype=float))])
     cum_sell = np.concatenate([[0.0], np.cumsum(table.loc[ok, "sell"].to_numpy(dtype=float))])
 
-    entry = pd.DatetimeIndex(trades["EntryTime"]).tz_convert(tz).asi8
-    exit_ = pd.DatetimeIndex(trades["ExitTime"]).tz_convert(tz).asi8
+    entry = pd.DatetimeIndex(trades["EntryTime"]).tz_convert(tz).as_unit("ns").asi8
+    exit_ = pd.DatetimeIndex(trades["ExitTime"]).tz_convert(tz).as_unit("ns").asi8
     lo = np.searchsorted(roll_ns, entry, side="right")   # entry < T
     hi = np.searchsorted(roll_ns, exit_, side="right")   # T <= exit
     size = trades["Size"].to_numpy(dtype=float)

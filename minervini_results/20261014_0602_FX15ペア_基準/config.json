@@ -1,0 +1,29 @@
+{
+ "start": "2021-01-01",
+ "end": "2025-12-31",
+ "ret_days": 63,
+ "top_n": 3,
+ "min_gap": 0.0,
+ "ma_short": 50,
+ "ma_mid": 150,
+ "ma_long": 200,
+ "ma_slope_days": 21,
+ "range_days": 252,
+ "long_pos": 0.7,
+ "swing_window": 3,
+ "min_contractions": 2,
+ "max_chain_days": 120,
+ "max_pivot_age": 60,
+ "atr_period": 14,
+ "sl_atr": 2.0,
+ "exit_days": 10,
+ "cash": 10000.0,
+ "risk_pct": 0.02,
+ "max_ccy_positions": null,
+ "sides": [
+  "long",
+  "short"
+ ],
+ "spread": true,
+ "swap": true
+}

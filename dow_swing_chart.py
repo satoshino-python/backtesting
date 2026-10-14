@@ -78,8 +78,10 @@ def load_trades(trades, labels, price_decimals=5):
     out = []
     for k, row in t.iterrows():
         long = row["Size"] > 0
-        xp, ep, sl, tp = row["ExitPrice"], row["EntryPrice"], row["SL"], row["TP"]
-        if not pd.isna(tp) and abs(xp - tp) <= tol:
+        xp, ep, sl, tp = row["ExitPrice"], row["EntryPrice"], row["SL"], row.get("TP", float("nan"))
+        if "ExitReason" in t.columns:      # 決済理由の列があればそのまま表示（日足戦略の「10日安値」など）
+            reason = row["ExitReason"]
+        elif not pd.isna(tp) and abs(xp - tp) <= tol:
             reason = "利確(TP)"
         elif not pd.isna(sl) and abs(xp - sl) <= tol:
             reason = "建値ストップ" if abs(sl - ep) <= tol else "損切り(SL)"

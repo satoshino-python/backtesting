@@ -1,0 +1,74 @@
+<title>ミネルヴィニFX検証</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* 1カラム。数字→曲線→表→チャート→ルール。コスト前/後を並べる */
+:root{--bg:#f7f8fa;--card:#fff;--fg:#1b2430;--mut:#5d6877;--line:#dfe3e9;--net:#1f5fbf;--gross:#8a94a3;--long:#18805a;--short:#c2532b;--bad:#b42318;--good:#18805a;--sans:"Noto Sans JP",system-ui,-apple-system,"Hiragino Sans",sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10151c;--card:#171e28;--fg:#e6eaf0;--mut:#9aa5b4;--line:#2a3340;--net:#6ea2ff;--gross:#7d8896;--long:#4cc38f;--short:#f08a5d;--bad:#ff8a80;--good:#4cc38f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#10151c;--card:#171e28;--fg:#e6eaf0;--mut:#9aa5b4;--line:#2a3340;--net:#6ea2ff;--gross:#7d8896;--long:#4cc38f;--short:#f08a5d;--bad:#ff8a80;--good:#4cc38f;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);line-height:1.65;padding-block:20px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+h1{font-size:1.45rem;margin:0;text-wrap:balance}h2{font-size:1.1rem;margin:0 0 8px}p{margin:0 0 8px}
+.mut{color:var(--mut);font-size:.88rem}
+section{min-width:0}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.tile b{display:block;font-size:1.5rem;font-variant-numeric:tabular-nums}.tile span{font-size:.8rem;color:var(--mut)}
+.scroll{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:8px}
+table{border-collapse:collapse;width:100%;font-size:.85rem;font-variant-numeric:tabular-nums;white-space:nowrap}
+th,td{padding:6px 10px;text-align:right;border-bottom:1px solid var(--line)}thead th{color:var(--mut);font-weight:500}
+tbody th{text-align:left;font-weight:500;position:sticky;left:0;background:var(--card)}
+tr:last-child>*{border-bottom:0}
+svg{width:100%;height:auto;background:var(--card);border:1px solid var(--line);border-radius:8px}
+.grid{stroke:var(--line);stroke-width:1}.ax{fill:var(--mut);font-size:11px}.lb{font-size:11px}
+.ln{fill:none;stroke-width:2;stroke-linejoin:round}.net{stroke:var(--net)}.gross{stroke:var(--gross);stroke-dasharray:5 3}.long{stroke:var(--long)}.short{stroke:var(--short)}
+text.net{fill:var(--net);stroke:none}text.gross{fill:var(--gross);stroke:none}text.long{fill:var(--long);stroke:none}text.short{fill:var(--short);stroke:none}
+.warn{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--bad);border-radius:6px;padding:10px 12px}
+ul{margin:0;padding-left:1.2em}a{color:var(--net)}
+.links{columns:2;list-style:none;padding:0}
+</style>
+<main>
+<header><h1>ミネルヴィニFX検証</h1>
+<p class="mut">FX 15ペア / 2021-01 ~ 2025-12 / 日足判定・1分足約定 / ペア別口座1万ドル・1回のリスク200ドル固定</p></header>
+
+<section><div class="tiles">
+<div class="tile"><b>__net__R</b><span>合計R(スワップ後) / __n__件</span></div>
+<div class="tile"><b>__gross__R</b><span>合計R(スワップ前)</span></div>
+<div class="tile"><b>__nocost__R</b><span>合計R(スプレッド・スワップ前)</span></div>
+<div class="tile"><b>__pf__</b><span>PF(スワップ後) / 前 __pfg__</span></div>
+<div class="tile"><b>__dd__R</b><span>最大DD(後) / 前 __ddg__R</span></div>
+<div class="tile"><b>__win__%</b><span>勝率 / 平均 __avg__R</span></div>
+</div></section>
+
+<section class="warn"><p><b>読むときの注意</b></p><ul>
+<li>トレードは __n__件。平均Rの標準誤差は約__se__Rで、合計Rの90%区間は __lo__ ~ __hi__R（トレードを復元抽出した目安）。優位性があるともないとも言い切れない件数です。</li>
+<li>スワップが合計Rに __swap__R、スプレッドが -__spread__R 効いています。スワップ前では損益はほぼゼロです。スワップの単位（シートは1万通貨あたりと想定）は未確認です。</li>
+<li>ロングが利益、ショートが損失という偏りがあり、期間（2021〜2025年）の通貨の方向性が影響している可能性があります。</li>
+</ul></section>
+
+<section><h2>累積R（決済順）</h2>__eq__
+<p class="mut">全ペアの合計。実線がスワップ後、破線がスワップ前。</p></section>
+
+<section><h2>ロング / ショート</h2>__t_side__</section>
+<section><h2>年別</h2>__t_year__</section>
+<section><h2>期間の前半と後半</h2>__t_per__</section>
+<section><h2>ペア別</h2>__t_pair__</section>
+<section><h2>決済理由</h2>__t_reason__
+<p class="mut">10日安値/高値までの距離が2ATRより近かったトレードは __near__%（その場合は実質の損切りが2ATR未満になり、サイズは2ATR基準のままなので損失は1Rより小さくなります）。最大同時保有は __conc1__本、同じ通貨を同じ向きに持った本数の最大は __conc2__本。期間終了で持ち越したトレードは __openn__件（最終価格で計上）。</p></section>
+
+<section><h2>感度分析</h2>__t_var__
+<p class="mut">基準の周辺で成績が安定するかを見る表です。スイングの前後日数を2→3→5日に変えるだけで合計Rが +6.5 / +3.1 / +12.9 と動き、収縮3回では負になります。件数が10〜50件のため、最良の行を選ぶと合わせ込みになります。</p></section>
+
+<section><h2>トレード付きダウ理論チャート（ペア別）</h2>
+<p class="mut">▲買い・▼売り、●決済。4時間足のエントリーラインはその日有効だったピボットの逆指値。</p>
+<ul class="links">__links__</ul></section>
+
+<section><h2>ルールと実装上の決め事</h2><ul>
+<li>通貨強弱: 21ペア（15ペア実データ＋USD経由の合成6ペア。取引は15ペアのみ）の63日対数リターンをσ√63で割り、通貨ごとに平均。上位3買い・下位3売り。</li>
+<li>テンプレート: 終値・50/150/200日線の並び、200日線が21営業日前より上（ショートは下）、52週レンジ内の位置70%以上（30%以下）。</li>
+<li>VCP: 前後3日のフラクタルでスイングを取り、ジグザグ末尾の調整幅（ATR単位）が2回連続で縮小していればピボット確定。ピボットを既に超えていたら無効。判定は日足終値で行い、注文は翌取引日のみ有効。</li>
+<li>約定: 1分足でピボットにタッチ（窓開けは始値）。損切りは約定価格から日足ATR14(Wilder)×2で固定。10日安値/高値（前日まで）と先に触れた方で手仕舞い。エントリーと同じ1分足で損切りにも触れたら損切り。</li>
+<li>サイズ: 200ドル ÷ (2ATR×クォート通貨のUSD換算)。通貨順位は決済に使わない。ピラミッディング・一部利確なし。</li>
+<li>コスト: スプレッドは平均相対スプレッドを往復1回分、スワップは swap_data/fx_swap.csv を保有中の NY17:00 ごとに反映。</li>
+<li>未検証: 2020年は助走期間のため対象外。CADと株価指数・商品CFDは対象外。</li>
+</ul></section>
+</main>
