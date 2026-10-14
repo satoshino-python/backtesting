@@ -24,8 +24,12 @@ backtesting.py（0.6.6）は答え合わせ用に残している。
 - **スワップ（FX）・金利調整額（金スポット）は必ず損益に反映する。** `fast_engine.run_fast(..., swap=build_swap_model(cfg.data_path, cfg.start_date, cfg.end_date, cfg.session_start_hour))`
   と渡すだけでよい（`swap_costs.py`。登録のないペアは `None` が返り、何も起きない）。取引の `PnL` はスワップ後になり、`PnL_Gross`（反映前）・`Interest`（USD）が列に残る。
   **新しい検証スクリプト・新しい売買ルールでも `run_fast` に `swap=` を渡すこと**（`tests/test_swap_policy.py` が全スクリプトを確認する。反映しないときも `swap=None` と明示する）。
-  スワップを足す銘柄は CSV を `swap_data/` に置き、`swap_costs.SWAP_SOURCES` に1行足す（更新方法は `swap_data/README.md`）。全体を止めるときは `swap_costs.ENABLED = False`。
-  結果を報告するときは、スワップ反映前（`PnL_Gross`）と反映後を並べる。
+  - 反映するのは FX 15ペア（`swap_data/fx_swap.csv`、1万通貨あたりの円）と XAUUSD（`swap_data/gold_spot_interest.csv`）。SP500・JP225・WTI・AUDNZD などデータのない銘柄は反映なし。
+  - FX のデータはGoogleスプレッドシート「GMO FXスワップ」（ID `18utZlCJdDPyH6fvo1cSZCy5y86KbVZiNGeJFmQgesRg`）から作る。シートを更新したら、CSVでダウンロードして
+    `python swap_data/import_fx_swap.py <CSV>` で `fx_swap.csv` を作り直す（表記ゆれの補正込み）。シートの単位は1万通貨あたりと想定している（未確認）。
+  - 銘柄を足すときは CSV を `swap_data/` に置き、`swap_costs.SWAP_SOURCES` に1行足す（`swap_data/README.md`）。止めるときは `swap_costs.ENABLED = False`（`fast_multi` は `USE_SWAP = False`）。
+  - 検証の前後で `python -m pytest tests -q` を実行する（swap= の渡し忘れと、スワップ計算の単体テスト）。
+  - 結果を報告するときは、スワップ反映前（`PnL_Gross`）と反映後を並べる。
 
 ## 検証結果のチャート（毎回作る）
 トレードを伴う検証では、**トレード付きのダウ理論チャート**を必ず出力する（backtesting.py で実行したときは標準のチャートも出る）。
@@ -59,7 +63,7 @@ make_chart(
 CSV や HTML をリポジトリに保存するだけ、またはチャットに表を貼るだけで終わらせない。
 
 - 1回の実行につき1つのアーティファクト。中身は次の順に並べる。
-  1. 主な数字（合計R・PF・最大DD・取引数。比較する実行があれば、その値と並べる）
+  1. 主な数字（合計R・PF・最大DD・取引数。スワップ反映前と並べる。比較する実行があれば、その値も並べる）
   2. 損益曲線、年別・ペア別の合計R、成績一覧
   3. トレード付きのダウ理論チャート（ペアごと）。`make_chart()` で作った HTML を `files` で同じアーティファクトに載せ、一覧ページからリンクする
   4. 売買ルール・設定と、結果を読むときの注意点（期間分割の有無、合わせ込みの可能性など）
