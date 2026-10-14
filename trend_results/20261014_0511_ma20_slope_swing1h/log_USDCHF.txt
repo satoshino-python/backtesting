@@ -1,0 +1,221 @@
+📂 データ読み込み中: /home/user/backtesting/histData/USDCHF
+ℹ️ 年月 202001 ～ 202601 の ZIP のみ読み込みます（73 / 81 個）。
+ℹ️ ZIP「USDCHF_202001.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202002.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202003.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202004.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202005.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202006.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202007.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202008.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202009.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202010.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202011.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202012.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202101.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202102.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202103.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202104.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202105.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202106.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202107.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202108.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202109.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202110.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202111.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202112.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202201.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202202.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202203.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202204.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202205.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202206.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202207.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202208.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202209.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202210.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202211.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202212.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202301.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202302.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202303.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202304.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202305.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202306.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202307.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202308.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202309.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202310.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202311.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202312.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202401.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202402.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202403.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202404.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202405.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202406.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202407.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202408.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202409.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202410.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202411.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202412.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202501.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202502.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202503.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202504.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202505.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202506.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202507.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202508.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202509.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202510.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202511.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202512.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202601.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ 合計 73 個のZIP、1583 個のCSVファイルを結合しました。
+✅ データ読み込み完了（MID, America/New_York）: 2020-01-01 17:01:00-05:00 ～ 2026-01-30 16:59:00-05:00 (2,260,710 行)
+ℹ️ 平均相対スプレッド: 0.02151% (commission換算: 0.01075%)
+✅ 4時間足へのリサンプル完了（区切りの起点: NY時間 17:00）: 2020-01-01 17:00 ～ 2026-01-30 13:00 (9,483 本)
+✅ 24時間足へのリサンプル完了（区切りの起点: NY時間 17:00）: 2020-01-01 17:00 ～ 2026-01-29 17:00 (1,583 本)
+✅ 1時間足へのリサンプル完了（区切りの起点: NY時間 17:00）: 2020-01-01 17:00 ～ 2026-01-30 16:00 (37,712 本)
+📂 データ読み込み中: /home/user/backtesting/histData/USDJPY
+ℹ️ 年月 202012 ～ 202601 の ZIP のみ読み込みます（61 / 72 個）。
+ℹ️ ZIP「USDJPY_202012.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202101.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202102.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202103.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202104.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202105.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202106.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202107.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202108.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202109.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202110.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202111.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202112.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202201.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202202.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202203.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202204.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202205.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202206.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202207.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202208.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202209.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202210.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202211.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202212.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202301.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202302.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202303.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202304.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202305.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202306.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202307.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202308.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202309.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202310.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202311.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202312.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202401.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202402.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202403.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202404.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202405.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202406.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202407.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202408.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202409.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202410.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202411.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202412.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202501.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202502.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202503.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202504.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202505.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202506.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202507.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202508.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202509.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202510.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202511.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202512.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ 合計 61 個のZIP、1324 個のCSVファイルを結合しました。
+✅ データ読み込み完了（MID, America/New_York）: 2020-11-30 17:01:00-05:00 ～ 2025-12-31 16:59:00-05:00 (1,890,084 行)
+ℹ️ 平均相対スプレッド: 0.00263% (commission換算: 0.00132%)
+📂 データ読み込み中: /home/user/backtesting/histData/USDCHF
+ℹ️ 年月 202012 ～ 202601 の ZIP のみ読み込みます（62 / 81 個）。
+ℹ️ ZIP「USDCHF_202012.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202101.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202102.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202103.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202104.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202105.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202106.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202107.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202108.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202109.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202110.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202111.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202112.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202201.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202202.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202203.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202204.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202205.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202206.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202207.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202208.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202209.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202210.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202211.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202212.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202301.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202302.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202303.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202304.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202305.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202306.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202307.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202308.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202309.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202310.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202311.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202312.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202401.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202402.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202403.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202404.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202405.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202406.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202407.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202408.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202409.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202410.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202411.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202412.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202501.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202502.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202503.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202504.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202505.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202506.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202507.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202508.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202509.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202510.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202511.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202512.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDCHF_202601.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ 合計 62 個のZIP、1345 個のCSVファイルを結合しました。
+✅ データ読み込み完了（MID, America/New_York）: 2020-11-30 17:01:00-05:00 ～ 2026-01-30 16:59:00-05:00 (1,920,272 行)
+ℹ️ 平均相対スプレッド: 0.02156% (commission換算: 0.01078%)
+✅ 24時間足へのリサンプル完了（区切りの起点: NY時間 17:00）: 2020-01-01 17:00 ～ 2026-01-29 17:00 (1,583 本)
+1H: 30,993 本
+4H: 7,794 本
+D1: 1,301 本
+W1: 261 本
+ℹ️ トレード 18 件 / 合計 -1.86R
+✅ trend_results/20261014_0511_ma20_slope_swing1h/dow_trade_chart_USDCHF.html (4.1 MB)
