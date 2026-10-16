@@ -7,6 +7,8 @@
   - "dow_swing"  : SwingBreakoutDowSwingExit1Min（main_4H_dow_swingExit.py）。4時間足スイングのトレーリングストップ
                    （当初SLも直近の4時間足スイング。TP なし）。週足ダウ・トレンドの質のフィルターは
                    呼び出し側で AllowLong / AllowShort 列にして渡す（main_4H_dow_swingExit.dow_allow_columns()）
+  - "ma_cross"   : 移動平均クロスのドテン（main_4H_ma_cross_fast.py）。df の TargetPos 列（1=買い / -1=売り / 0=様子見）が
+                   変わった1分足の始値で、今のポジションを決済して反対側を持つ。SL/TP なし。backtesting.py 版は無い
 
 backtesting.py は1分足1本ごとに Strategy.next() とブローカー処理を Python で回すため、
 5年分（約180万本）だと1ペアあたり数分かかる。この戦略は
@@ -56,7 +58,7 @@ from fast_stats import compute_stats
 _SIGNAL_COLS = ("SignalSH", "SignalSL", "SignalSHValid", "SignalSLValid", "SignalATR")
 _H1_COLS = ("H1SH", "H1SL", "H1SHSeq", "H1SLSeq")
 _EXIT_COLS = ("ExitSH", "ExitSL", "DowTrend")
-EXIT_MODES = ("fixed", "swing_trail", "dow_swing")
+EXIT_MODES = ("fixed", "swing_trail", "dow_swing")  # _Sim が扱う決済ルール（"ma_cross" は _CrossSim）
 TRAIL_MODES = ("swing_trail", "dow_swing")
 
 
@@ -622,8 +624,62 @@ class _Sim:
         return pd.Series(eq).bfill().fillna(self.cash).to_numpy()
 
 
+class _CrossSim:
+    """
+    exit_mode="ma_cross": TargetPos 列（判定足の終値で決まった「持つべき向き」。1本シフト済み）が変わった1分足の
+    始値で、今のポジションを決済して新しい向きで持つ（ドテン）。0 / NaN のバーでは何もしない（ポジションはそのまま）。
+    枚数 = risk_amount ÷ (SignalATR × sl_atr_multiplier)。ATR の sl_atr_multiplier 倍の逆行で 1R の損失になる枚数
+    （SL は置かない。他の戦略と R をそろえるための枚数計算）。
+    約定・手数料・資金の計算は _Sim と同じ。証拠金のチェックはしない。
+    close_at_end=True なら、最後の1分足の終値で残ったポジションを決済して取引履歴に入れる。
+    """
+    equity_curve = _Sim.equity_curve
+    _open_trade = _Sim._open_trade
+    _close_trade = _Sim._close_trade
+
+    def __init__(self, df, cash, commission, price_decimals, risk_pct, sl_atr_multiplier):
+        for c in ("TargetPos", "SignalATR"):
+            if c not in df.columns:
+                raise ValueError(f'exit_mode="ma_cross" には {c} 列が必要です')
+        self.O = df["Open"].to_numpy(float)
+        self.C = df["Close"].to_numpy(float)
+        self.n = len(df)
+        self.cash = self.initial_cash = float(cash)
+        self.comm = commission
+        self.d = price_decimals
+        self.risk_amount = float(cash) * risk_pct
+        self.k = sl_atr_multiplier
+        self.target = df["TargetPos"].to_numpy(float)
+        self.atr = df["SignalATR"].to_numpy(float)
+        self.orders, self.trades, self.closed, self.cash_events = [], [], [], []
+        self.start = int(np.isnan(self.target).argmin()) if self.n else 0
+
+    def run(self, close_at_end):
+        t = np.nan_to_num(self.target)
+        events = np.flatnonzero(np.r_[t[0] != 0, t[1:] != t[:-1]])
+        pos = 0
+        for i in events:
+            want = int(np.sign(t[i]))
+            if want == 0 or want == pos:
+                continue
+            price = self.O[i]
+            for trade in tuple(self.trades):
+                self._close_trade(trade, price, i)
+            pos = 0
+            dist = np.round(self.atr[i] * self.k, self.d)
+            size = int(np.trunc(self.risk_amount / dist)) if dist > 0 else 0
+            if size <= 0:
+                continue
+            self._open_trade(price, want * size, None, None, i)
+            pos = want
+        if close_at_end and self.trades:
+            for trade in tuple(self.trades):
+                self._close_trade(trade, self.C[self.n - 1], self.n - 1)
+
+
 def run_fast(df, *, cash, commission, margin, price_decimals, risk_pct, sl_atr_multiplier=None,
-             tp_atr_multiplier=None, breakeven_trigger_r=None, exit_mode="fixed", initial_sl_rule="atr", swap=None):
+             tp_atr_multiplier=None, breakeven_trigger_r=None, exit_mode="fixed", initial_sl_rule="atr", swap=None,
+             close_at_end=False):
     """
     exit_mode="fixed":
         Backtest(df, SwingBreakoutStrategy1Min, cash=, commission=, margin=, exclusive_orders=False)
@@ -640,17 +696,23 @@ def run_fast(df, *, cash, commission, margin, price_decimals, risk_pct, sl_atr_m
     swap: swap_costs.build_swap_model(data_path, start, end) の戻り値。渡すと取引の PnL・資産曲線・収益率・最大DD に
           スワップ（金利調整額）を反映する（None なら反映しない。売買の判断は変わらない）。
           **検証スクリプトでは必ず渡すこと**（tests/test_swap_policy.py が確認する）。
+    exit_mode="ma_cross": 移動平均クロスのドテン（_CrossSim）。df に TargetPos・SignalATR 列が必要。
+          close_at_end=True で期末に残ったポジションを最後の終値で決済して取引履歴に入れる（他の exit_mode では無視）。
     """
     if exit_mode == "fixed" and tp_atr_multiplier is None:
         raise ValueError('exit_mode="fixed" には tp_atr_multiplier が必要です')
-    if exit_mode in ("fixed", "swing_trail") and sl_atr_multiplier is None:
+    if exit_mode in ("fixed", "swing_trail", "ma_cross") and sl_atr_multiplier is None:
         raise ValueError(f'exit_mode="{exit_mode}" には sl_atr_multiplier が必要です')
     if not callable(commission):
         rate = float(commission)
         commission = lambda size, price: abs(size) * price * rate  # noqa: E731
-    sim = _Sim(df, cash, commission, margin, sl_atr_multiplier, tp_atr_multiplier,
-               breakeven_trigger_r, price_decimals, risk_pct, exit_mode, initial_sl_rule)
-    sim.run()
+    if exit_mode == "ma_cross":
+        sim = _CrossSim(df, cash, commission, price_decimals, risk_pct, sl_atr_multiplier)
+        sim.run(close_at_end)
+    else:
+        sim = _Sim(df, cash, commission, margin, sl_atr_multiplier, tp_atr_multiplier,
+                   breakeven_trigger_r, price_decimals, risk_pct, exit_mode, initial_sl_rule)
+        sim.run()
     if sim.trades:
         warnings.warn("Some trades remain open at the end of backtest.", UserWarning)
 
@@ -661,7 +723,7 @@ def run_fast(df, *, cash, commission, margin, price_decimals, risk_pct, sl_atr_m
     equity = sim.equity_curve()
     ohlc = df[["Open", "High", "Low", "Close"]]
     name = {"fixed": "SwingBreakoutStrategy1Min", "swing_trail": "SwingBreakoutTrail1Min",
-            "dow_swing": "SwingBreakoutDowSwingExit1Min"}[exit_mode]
+            "dow_swing": "SwingBreakoutDowSwingExit1Min", "ma_cross": "MACrossDoten1Min"}[exit_mode]
     # Buy & Hold の起点は backtesting.py と同じく指標の warmup 本数（最初に next() が呼ばれるバー - 1）
     first = min(max(sim.start - 1, 0), len(df) - 1)
     with np.errstate(invalid="ignore", divide="ignore"):
