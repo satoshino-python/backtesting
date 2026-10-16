@@ -1,7 +1,7 @@
 """
 移動平均クロスのドテン売買を、高速エンジン（fast_engine.run_fast(exit_mode="ma_cross")）で全ペア検証する。
 
-ルール（判定足は既定で4時間足、NY 17:00 区切り）:
+ルール（判定足は SIGNAL_HOURS で選ぶ。既定は4時間足、環境変数 SIGNAL_HOURS=24 で日足。NY 17:00 区切り）:
   - 短期SMA（MA_FAST=75）が長期SMA（MA_SLOW=200）を終値ベースで上抜いた足が確定したら、次の足の始値で買う
   - 下抜いた足が確定したら、次の足の始値で買いを決済して売りにドテン（その後に上抜いたら買いにドテン）
   - SL / TP なし。常にどちらかのポジションを持つ（検証期間の最初のクロスまでは様子見）
@@ -13,6 +13,7 @@
 結果は RESULTS_ROOT/<日時>_<RUN_LABEL>/ に保存する（summary.csv・yearly.csv・trades_*.csv・チャート・report.html）。
 """
 import contextlib
+import os
 import dataclasses
 import html
 import io
@@ -36,19 +37,28 @@ from swap_costs import build_swap_model, SWAP_SOURCES
 from dow_swing_chart import make_chart
 
 # ===== 変更するパラメータはここだけ =====
-BASE_CFG = Config(start_date="2021-01-01", end_date="2025-12-31", sl_atr_multiplier=1.5)
+SIGNAL_HOURS = int(os.environ.get("SIGNAL_HOURS", "4"))   # 判定足（4: 4時間足 / 24: 日足）
+BASE_CFG = Config(start_date="2021-01-01", end_date="2025-12-31", sl_atr_multiplier=1.5, signal_hours=SIGNAL_HOURS)
+TF = {24: "日足"}.get(SIGNAL_HOURS, f"{SIGNAL_HOURS}時間足")
+TF_SHORT = {24: "D1"}.get(SIGNAL_HOURS, f"{SIGNAL_HOURS}H")
 MA_FAST = 75
 MA_SLOW = 200
 DATA_ROOT = Path("histData")
 PAIRS = ("AUDJPY", "AUDUSD", "EURAUD", "EURCHF", "EURGBP", "EURJPY", "EURUSD", "GBPAUD", "GBPCHF",
          "GBPJPY", "GBPUSD", "NZDJPY", "NZDUSD", "USDCHF", "USDJPY")
-WARMUP_MONTHS = 3                 # 4時間足 200本（約1.6ヶ月）の助走が要るので、既定の1ヶ月から延ばす
+# MA_SLOW 本の助走が要るので、既定の1ヶ月から延ばす（4時間足 200本 ≒ 1.6ヶ月、日足 200本 ≒ 10ヶ月）
+WARMUP_MONTHS = 11 if SIGNAL_HOURS >= 24 else 3
 CLOSE_AT_END = True
 RESULTS_ROOT = Path("fast_results")
-RUN_LABEL = f"FX15ペア_MAクロスドテン_{MA_FAST}x{MA_SLOW}_4H"
+RUN_LABEL = f"FX15ペア_MAクロスドテン_{MA_FAST}x{MA_SLOW}_{TF_SHORT}"
 WORKERS = 4
-# 比較に並べる実行（同じ15ペア・期間のスイングブレイク基準版）。無ければ比較なし
-BASELINE_DIR = Path("fast_results/20261014_0500_FX15ペア_スワップあり_fixed_sl1.5_tp2.5")
+# 比較に並べる実行（同じ15ペア・期間）。無ければ比較なし
+if SIGNAL_HOURS == 4:
+    BASELINE_DIR = Path("fast_results/20261014_0500_FX15ペア_スワップあり_fixed_sl1.5_tp2.5")
+    BASELINE_NAME = "スイングブレイク基準版（SL1.5/TP2.5）"
+else:
+    BASELINE_DIR = Path("fast_results/20261016_1207_FX15ペア_MAクロスドテン_75x200_4H")
+    BASELINE_NAME = "4時間足版（同じMAクロス）"
 
 multi.WARMUP_MONTHS = WARMUP_MONTHS  # zip_month_range() が参照する（子プロセスでも import 時に設定される）
 
@@ -124,12 +134,12 @@ def run_pair(pair, cfg, out_dir):
         chart_name = f"dow_trade_chart_{pair}_{fd:%Y%m%d}-{ld:%Y%m%d}_ma_cross.html"
         make_chart(
             df_1min, out_dir / chart_name,
-            f"{pair} {fd:%Y-%m-%d} ~ {ld:%Y-%m-%d} / トレード: 4H SMA{MA_FAST}×SMA{MA_SLOW} クロスでドテン",
+            f"{pair} {fd:%Y-%m-%d} ~ {ld:%Y-%m-%d} / トレード: {TF_SHORT} SMA{MA_FAST}×SMA{MA_SLOW} クロスでドテン",
             fd, ld, trades=stats["_trades"], weekly_trend=None, mode="ma_cross", risk=risk,
             entry_window=cfg.window, entry_atr=cfg.atr_period, price_decimals=cfg.price_decimals,
             session_start_hour=cfg.session_start_hour, signal_hours=cfg.signal_hours,
             filter_state=pd.Series(tp, index=df.index),
-            filter_label=f"4H SMA{MA_FAST} と SMA{MA_SLOW} の位置で決まる保有方向（1=買い / -1=売り / 0=最初のクロス前）",
+            filter_label=f"{TF_SHORT} SMA{MA_FAST} と SMA{MA_SLOW} の位置で決まる保有方向（1=買い / -1=売り / 0=最初のクロス前）",
             ma_periods=(MA_FAST, MA_SLOW))
     (out_dir / f"log_{pair}.txt").write_text(log.getvalue(), encoding="utf-8")
     public = stats[[k for k in stats.index if not str(k).startswith("_")]]
@@ -305,15 +315,15 @@ def build_report(out_dir, results, summary, yearly, all_trades, combined, run_st
          '<link rel="preconnect" href="https://fonts.googleapis.com">',
          '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">',
          f"<style>{_CSS}</style>", '<main class="wrap">',
-         f'<header><h1>MAクロス ドテン（4H SMA{MA_FAST} × SMA{MA_SLOW}）FX {n_pairs}ペア</h1>'
-         f'<p class="sub">{BASE_CFG.start_date} ~ {BASE_CFG.end_date} / 4時間足の終値で SMA{MA_FAST} が SMA{MA_SLOW} を上抜けたら次の足の始値で買い、'
+         f'<header><h1>MAクロス ドテン（{TF_SHORT} SMA{MA_FAST} × SMA{MA_SLOW}）FX {n_pairs}ペア</h1>'
+         f'<p class="sub">{BASE_CFG.start_date} ~ {BASE_CFG.end_date} / {TF}の終値で SMA{MA_FAST} が SMA{MA_SLOW} を上抜けたら次の足の始値で買い、'
          f'下抜けたら決済して売りにドテン / SL・TP なし / 1分足の始値で約定 / 1R = {risk:,.0f}（ATR×{BASE_CFG.sl_atr_multiplier} の逆行で 1R になる枚数）/ スプレッド・スワップ反映</p></header>']
 
     # 1. 主な数字
-    cmp = [("合計R", _sgn(tot["合計R"]), f'反映前 {tot["合計R（反映前）"]:+.1f}' + (f' / 基準版 {base["total"]:+.1f}' if base else "")),
-           ("プロフィットファクター", f'{tot["プロフィットファクター"]:.3f}', f'反映前 {tot["PF（反映前）"]:.3f}' + (f' / 基準版 {base["pf"]:.3f}' if base else "")),
-           ("最大DD（R・含み損益込み）", f'{tot["最大DD [R]"]:.1f}', f'決済ベース {dd_closed_net:.1f}（反映前 {dd_closed_gross:.1f}）' + (f' / 基準版 {base["dd"]:.1f}' if base else "")),
-           ("取引数 / 勝率", f'{int(tot["トレード数"])} / {tot["勝率 [%]"]:.1f}%', (f'基準版 {base["n"]} / {base["wr"]:.1f}%' if base else "")),
+    cmp = [("合計R", _sgn(tot["合計R"]), f'反映前 {tot["合計R（反映前）"]:+.1f}' + (f' / 比較 {base["total"]:+.1f}' if base else "")),
+           ("プロフィットファクター", f'{tot["プロフィットファクター"]:.3f}', f'反映前 {tot["PF（反映前）"]:.3f}' + (f' / 比較 {base["pf"]:.3f}' if base else "")),
+           ("最大DD（R・含み損益込み）", f'{tot["最大DD [R]"]:.1f}', f'決済ベース {dd_closed_net:.1f}（反映前 {dd_closed_gross:.1f}）' + (f' / 比較 {base["dd"]:.1f}' if base else "")),
+           ("取引数 / 勝率", f'{int(tot["トレード数"])} / {tot["勝率 [%]"]:.1f}%', (f'比較 {base["n"]} / {base["wr"]:.1f}%' if base else "")),
            ("スワップ 合計", _sgn(tot["スワップR"], "{:+.1f}R"), f'{tot["スワップR"] * risk:+,.0f} USD'),
            ("平均保有 / 平均勝ち・負け", f'{tot["平均保有日数"]:.1f}日', f'勝ち {tot["平均勝ちR"]:+.2f}R / 負け {tot["平均負けR"]:+.2f}R'),
            ]
@@ -323,7 +333,7 @@ def build_report(out_dir, results, summary, yearly, all_trades, combined, run_st
                f'1ペアあたり平均 {tot["合計R"] / n_pairs:+.1f}R / 5年（1R = 初期資金の {BASE_CFG.risk_pct:.0%} なので、1ペア1口座で平均 {tot["合計R"] / n_pairs * BASE_CFG.risk_pct:+.0%}）。'
                f'勝率 {tot["勝率 [%]"]:.0f}% と低く、少数の大きなトレンドで稼ぐ形（平均勝ち {tot["平均勝ちR"]:+.2f}R・平均負け {tot["平均負けR"]:+.2f}R）。')
     if base:
-        verdict += f' 同じ15ペア・期間のスイングブレイク基準版（SL1.5/TP2.5）は {base["total"]:+.1f}R。'
+        verdict += f' 同じ15ペア・期間の{BASELINE_NAME}は {base["total"]:+.1f}R。'
     h.append(f'<p class="sub">{verdict}</p></section>')
 
     # 2. 累積R
@@ -331,7 +341,7 @@ def build_report(out_dir, results, summary, yearly, all_trades, combined, run_st
     legend = '<span><i></i>反映後（決済ベース）</span><span><i class="g"></i>反映前</span>'
     if base:
         series.insert(0, (base["curve"], "l-b"))
-        legend += '<span><i class="b"></i>基準版（スイングブレイク SL1.5/TP2.5・反映後）</span>'
+        legend += f'<span><i class="b"></i>{BASELINE_NAME}・反映後</span>'
     h.append(f'<section><h2>累積R（全{n_pairs}ペア合算）</h2><div class="card">'
              + _svg_curves(series, f"全{n_pairs}ペア合算の累積R") + f'<div class="legend">{legend}</div></div></section>')
 
@@ -369,19 +379,19 @@ def build_report(out_dir, results, summary, yearly, all_trades, combined, run_st
     links = "".join(f'<a class="link" href="{html.escape(r["chart"])}"><b>{p}</b><span>{_sgn(float(r["trades"]["R"].sum()), "{:+.1f}R")} / {len(r["trades"])}回</span></a>'
                     for p, r in results.items())
     h.append('<section><h2>トレード付きダウ理論チャート</h2>'
-             '<p class="sub" style="margin:0 0 10px">▲買い / ▼売り / ●決済。4時間足に切り替えると SMA75・SMA200 が表示されます（チャートの設定で期間を変更可）。'
+             f'<p class="sub" style="margin:0 0 10px">▲買い / ▼売り / ●決済。{TF_SHORT} に切り替えると SMA{MA_FAST}・SMA{MA_SLOW} が表示されます（チャートの設定で期間を変更可）。'
              '背景は「検証で使った保有方向」（青=買い / 赤=売り）。←→キーで前後のトレードへ移動できます。</p>'
              f'<div class="links">{links}</div></section>')
 
     # 4. ルール・注意
     h.append('<section><h2>売買ルール・設定</h2><div class="card"><ul>'
-             f'<li><b>シグナル</b>: 4時間足（NY 17:00 区切り）の終値で SMA{MA_FAST} と SMA{MA_SLOW} を計算。SMA{MA_FAST} &gt; SMA{MA_SLOW} に変わった足（ゴールデンクロス）が確定したら買い、'
+             f'<li><b>シグナル</b>: {TF}（NY 17:00 区切り）の終値で SMA{MA_FAST} と SMA{MA_SLOW} を計算。SMA{MA_FAST} &gt; SMA{MA_SLOW} に変わった足（ゴールデンクロス）が確定したら買い、'
              f'SMA{MA_FAST} &lt; SMA{MA_SLOW} に変わった足（デッドクロス）で売り。</li>'
-             '<li><b>約定</b>: クロスした足の次の4時間足の、最初の1分足の始値（週末をまたぐ場合は週明けの始値）。保有中のポジションを同じ価格で決済して反対側を持つ（ドテン）。</li>'
+             f'<li><b>約定</b>: クロスした足の次の{TF}の、最初の1分足の始値（週末をまたぐ場合は週明けの始値）。保有中のポジションを同じ価格で決済して反対側を持つ（ドテン）。</li>'
              '<li><b>決済</b>: 反対のクロスだけ。SL・TP・建値ストップなし。検証期間の最初のクロスまではノーポジション（期間前のクロスで建てたポジションは持たない）。'
              f'期末（{last_day:%Y-%m-%d}）に残ったポジションは最後の終値で決済して集計に含める。</li>'
-             f'<li><b>枚数</b>: 1R（{BASE_CFG.cash:,.0f} × {BASE_CFG.risk_pct:.0%} = {risk:,.0f}）÷（4時間足 ATR(EMA {BASE_CFG.atr_period}) × {BASE_CFG.sl_atr_multiplier}）。'
-             'エントリー時点の ATR の 1.5倍逆行したら 1R の損失になる量で、スイングブレイク基準版と同じ大きさ。複利なし。損失は SL が無いため 1R を超えることがある。</li>'
+             f'<li><b>枚数</b>: 1R（{BASE_CFG.cash:,.0f} × {BASE_CFG.risk_pct:.0%} = {risk:,.0f}）÷（{TF} ATR(EMA {BASE_CFG.atr_period}) × {BASE_CFG.sl_atr_multiplier}）。'
+             f'エントリー時点の{TF} ATR の {BASE_CFG.sl_atr_multiplier}倍逆行したら 1R の損失になる量（スイングブレイク基準版と同じ考え方。日足では4時間足よりポジションが小さい）。複利なし。損失は SL が無いため 1R を超えることがある。</li>'
              '<li><b>コスト</b>: 平均スプレッドの半分をエントリー・決済それぞれに課金。スワップ（GMO FXスワップシート、1万通貨あたり）を NY 17:00 をまたいだ日数分反映。</li>'
              f'<li><b>データ</b>: GMOクリック証券の1分足（仲値）。MA の助走に検証開始の {WARMUP_MONTHS} ヶ月前から読み込む。</li>'
              '<li><b>エンジン</b>: <code>fast_engine.run_fast(exit_mode="ma_cross")</code>（今回追加。backtesting.py 版は無いので答え合わせはしていない）。スクリプトは <code>main_4H_ma_cross_fast.py</code>。</li>'
@@ -389,11 +399,14 @@ def build_report(out_dir, results, summary, yearly, all_trades, combined, run_st
     worst = ", ".join(f"{p} {v:+.1f}R" for p, v in best.head(3).items())
     top = ", ".join(f"{p} {v:+.1f}R" for p, v in best.tail(3)[::-1].items())
     h.append('<section><h2>読むときの注意</h2><div class="card"><ul>'
-             '<li><b>期間分割なし</b>: 5年を1回通しただけ。パラメータ（75/200・4時間足）は一般的な値をそのまま使い、合わせ込みはしていない。</li>'
+             f'<li><b>期間分割なし</b>: 5年を1回通しただけ。パラメータ（{MA_FAST}/{MA_SLOW}・{TF}）は一般的な値をそのまま使い、合わせ込みはしていない。</li>'
              f'<li><b>取引数が少ない</b>: 1ペアあたり平均 {tot["トレード数"] / n_pairs:.0f} 回 / 5年。少数の大きなトレンドで結果が決まるため、ペア間・年ごとのばらつきが大きい（上位: {top} / 下位: {worst}）。</li>'
-             '<li><b>保有が長い</b>: 平均で数週間持ち続けるため、スワップの影響が大きい。高金利通貨の売り（例: クロス円の売り）はスワップの支払いが重い。シートの単位（1万通貨あたり）は未確認。</li>'
+             f'<li><b>保有が長い</b>: 平均 {tot["平均保有日数"]:.0f} 日持ち続けるため、スワップの影響が大きい。高金利通貨の売り（例: クロス円の売り）はスワップの支払いが重い。シートの単位（1万通貨あたり）は未確認。</li>'
              '<li><b>損切りが無い</b>: 1回の損失は ATR の何倍にもなり得る（R は「ATR×1.5 の逆行 = 1R」の換算）。窓開け・急変時のリスクは R の最大DD で見る。</li>'
-             '<li><b>ペアごとに別口座</b>: 15ペアを同時に持つ証拠金の取り合いは再現していない（証拠金のチェックもしない）。</li>'
+             + (f'<li><b>4時間足版との比較</b>: 枚数は{TF}の ATR で決めるため、1R あたりのポジションは4時間足版より小さい（ATR が大きい分）。'
+                '比較の R は「それぞれの ATR×1.5 = 1R」の単位で、同じ金額の比較ではない。どちらも 1R = 初期資金の2% の損失額としては同じ。</li>'
+                if SIGNAL_HOURS != 4 else '')
+             + '<li><b>ペアごとに別口座</b>: 15ペアを同時に持つ証拠金の取り合いは再現していない（証拠金のチェックもしない）。</li>'
              '</ul></div></section>')
     h.append(f'<p class="sub">結果フォルダ: <code>{html.escape(str(out_dir))}</code> / 実行 {run_started:%Y-%m-%d %H:%M}</p></main>')
     (out_dir / "report.html").write_text("\n".join(h), encoding="utf-8")
@@ -414,7 +427,7 @@ def main():
         swap_pairs=sorted(p for p in pairs if p in SWAP_SOURCES),
         base_cfg={k: (str(v) if isinstance(v, Path) else v) for k, v in dataclasses.asdict(BASE_CFG).items()}),
         ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"ℹ️ {len(pairs)}ペア / {BASE_CFG.start_date} ~ {BASE_CFG.end_date} / 4H SMA{MA_FAST}×SMA{MA_SLOW} ドテン")
+    print(f"ℹ️ {len(pairs)}ペア / {BASE_CFG.start_date} ~ {BASE_CFG.end_date} / {TF_SHORT} SMA{MA_FAST}×SMA{MA_SLOW} ドテン")
     results = {}
     with ProcessPoolExecutor(max_workers=min(WORKERS, len(pairs))) as ex:
         futs = {ex.submit(run_pair, p, dataclasses.replace(BASE_CFG, data_path=DATA_ROOT / p,

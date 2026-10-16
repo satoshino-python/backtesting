@@ -1,0 +1,253 @@
+📂 データ読み込み中: /home/user/backtesting/histData/GBPAUD
+ℹ️ 年月 202002 ～ 202601 の ZIP のみ読み込みます（71 / 72 個）。
+ℹ️ ZIP「GBPAUD_202002.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202003.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202004.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202005.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202006.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202007.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202008.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202009.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202010.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202011.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202012.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202101.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202102.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202103.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202104.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202105.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202106.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202107.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202108.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202109.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202110.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202111.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202112.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202201.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202202.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202203.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202204.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202205.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202206.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202207.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202208.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202209.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202210.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202211.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202212.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202301.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202302.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202303.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202304.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202305.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202306.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202307.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202308.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202309.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202310.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202311.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202312.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202401.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202402.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202403.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202404.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202405.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202406.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202407.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202408.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202409.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202410.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202411.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202412.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202501.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202502.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202503.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202504.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202505.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202506.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202507.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202508.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202509.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202510.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202511.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「GBPAUD_202512.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ 合計 71 個のZIP、1540 個のCSVファイルを結合しました。
+✅ データ読み込み完了（MID, America/New_York）: 2020-02-02 17:01:00-05:00 ～ 2025-12-31 16:59:00-05:00 (2,198,673 行)
+ℹ️ 平均相対スプレッド: 0.01237% (commission換算: 0.00619%)
+✅ 24時間足へのリサンプル完了（区切りの起点: NY時間 17:00）: 2020-02-02 17:00 ～ 2025-12-30 17:00 (1,540 本)
+📂 データ読み込み中: /home/user/backtesting/histData/USDJPY
+ℹ️ 年月 202012 ～ 202601 の ZIP のみ読み込みます（61 / 72 個）。
+ℹ️ ZIP「USDJPY_202012.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202101.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202102.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202103.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202104.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202105.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202106.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202107.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202108.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202109.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202110.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202111.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202112.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202201.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202202.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202203.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202204.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202205.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202206.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202207.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202208.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202209.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202210.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202211.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202212.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202301.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202302.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202303.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202304.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202305.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202306.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202307.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202308.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202309.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202310.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202311.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202312.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202401.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202402.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202403.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202404.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202405.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202406.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202407.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202408.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202409.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202410.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202411.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202412.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202501.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202502.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202503.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202504.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202505.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202506.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202507.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202508.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202509.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202510.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202511.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「USDJPY_202512.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ 合計 61 個のZIP、1324 個のCSVファイルを結合しました。
+✅ データ読み込み完了（MID, America/New_York）: 2020-11-30 17:01:00-05:00 ～ 2025-12-31 16:59:00-05:00 (1,890,084 行)
+ℹ️ 平均相対スプレッド: 0.00263% (commission換算: 0.00132%)
+📂 データ読み込み中: /home/user/backtesting/histData/AUDUSD
+ℹ️ 年月 202012 ～ 202601 の ZIP のみ読み込みます（61 / 73 個）。
+ℹ️ ZIP「AUDUSD_202012.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202101.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202102.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202103.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202104.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202105.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202106.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202107.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202108.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202109.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202110.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202111.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202112.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202201.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202202.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202203.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202204.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202205.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202206.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202207.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202208.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202209.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202210.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202211.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202212.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202301.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202302.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202303.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202304.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202305.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202306.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202307.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202308.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202309.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202310.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202311.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202312.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202401.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202402.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202403.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202404.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202405.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202406.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202407.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202408.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202409.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202410.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202411.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202412.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202501.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202502.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202503.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202504.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202505.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202506.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202507.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202508.zip」内の 21 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202509.zip」内の 22 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202510.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202511.zip」内の 20 個のCSVファイルを読み込みました。
+ℹ️ ZIP「AUDUSD_202512.zip」内の 23 個のCSVファイルを読み込みました。
+ℹ️ 合計 61 個のZIP、1324 個のCSVファイルを結合しました。
+✅ データ読み込み完了（MID, America/New_York）: 2020-11-30 17:01:00-05:00 ～ 2025-12-31 16:59:00-05:00 (1,890,220 行)
+ℹ️ 平均相対スプレッド: 0.01295% (commission換算: 0.00647%)
+Start                                             2021-01-03 17:01:00-05:00
+End                                               2025-12-31 16:59:00-05:00
+Duration                                                 1822 days 23:58:00
+Exposure Time [%]                                                 92.134628
+Equity Final [$]                                                9109.897787
+Equity Peak [$]                                                 11203.53087
+Commissions [$]                                                    19.52703
+Return [%]                                                        -8.901022
+Buy & Hold Return [%]                                             13.913353
+Return (Ann.) [%]                                                 -1.800713
+Volatility (Ann.) [%]                                             12.250771
+CAGR [%]                                                          -2.231401
+Sharpe Ratio                                                      -0.146988
+Sortino Ratio                                                     -0.201422
+Calmar Ratio                                                      -0.059506
+Alpha [%]                                                        -17.774205
+Beta                                                               0.511888
+Max. Drawdown [%]                                                -29.186137
+Avg. Drawdown [%]                                                 -0.339795
+Max. Drawdown Duration                                   1433 days 07:20:00
+Avg. Drawdown Duration                                      6 days 05:25:00
+# Trades                                                                  8
+Win Rate [%]                                                           25.0
+Best Trade [%]                                                     4.488169
+Worst Trade [%]                                                   -2.741049
+Avg. Trade [%]                                                    -0.355443
+Max. Trade Duration                                       448 days 00:00:00
+Avg. Trade Duration                                       210 days 03:08:00
+Profit Factor                                                      0.746516
+Expectancy [%]                                                    -0.324096
+SQN                                                               -0.806792
+Kelly Criterion                                                    -0.23691
+_strategy                                     MACrossDoten1Min(fast_engine)
+_equity_curve                                              Equity  Drawd...
+_trades                       Size  EntryBar  ExitBar  ...   InterestJPY...
+Interest [USD]                                                   175.110797
+dtype: object
+✅ 24時間足へのリサンプル完了（区切りの起点: NY時間 17:00）: 2020-02-02 17:00 ～ 2025-12-30 17:00 (1,540 本)
+1H: 30,992 本
+4H: 7,794 本
+D1: 1,301 本
+W1: 261 本
+ℹ️ トレード 8 件 / 合計 -4.45R
+✅ fast_results/20261016_1221_FX15ペア_MAクロスドテン_75x200_D1/dow_trade_chart_GBPAUD_20210104-20251231_ma_cross.html (2.8 MB)
