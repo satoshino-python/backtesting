@@ -57,8 +57,8 @@ if SIGNAL_HOURS == 4:
     BASELINE_DIR = Path("fast_results/20261014_0500_FX15ペア_スワップあり_fixed_sl1.5_tp2.5")
     BASELINE_NAME = "スイングブレイク基準版（SL1.5/TP2.5）"
 else:
-    BASELINE_DIR = Path("fast_results/20261016_1207_FX15ペア_MAクロスドテン_75x200_4H")
-    BASELINE_NAME = "4時間足版（同じMAクロス）"
+    BASELINE_DIR = None   # 他の判定足の実行とは比べない（R の大きさが判定足の ATR で変わるため）
+    BASELINE_NAME = ""
 
 multi.WARMUP_MONTHS = WARMUP_MONTHS  # zip_month_range() が参照する（子プロセスでも import 時に設定される）
 
@@ -277,6 +277,8 @@ def _svg_curves(series, labels):
 
 
 def _baseline():
+    if BASELINE_DIR is None:
+        return None
     p = BASELINE_DIR / "summary.csv"
     if not p.exists():
         return None
@@ -310,7 +312,7 @@ def build_report(out_dir, results, summary, yearly, all_trades, combined, run_st
     n_pairs = len(results)
     best = summary.drop(index="合計")["合計R"].sort_values()
 
-    h = [f'<title>MAクロス ドテン 15ペア</title>',
+    h = [f'<title>MAクロス ドテン {TF} {n_pairs}ペア</title>',
          '<meta name="claude:viewport-fit-sides" content="cover">',
          '<link rel="preconnect" href="https://fonts.googleapis.com">',
          '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">',
@@ -391,7 +393,7 @@ def build_report(out_dir, results, summary, yearly, all_trades, combined, run_st
              '<li><b>決済</b>: 反対のクロスだけ。SL・TP・建値ストップなし。検証期間の最初のクロスまではノーポジション（期間前のクロスで建てたポジションは持たない）。'
              f'期末（{last_day:%Y-%m-%d}）に残ったポジションは最後の終値で決済して集計に含める。</li>'
              f'<li><b>枚数</b>: 1R（{BASE_CFG.cash:,.0f} × {BASE_CFG.risk_pct:.0%} = {risk:,.0f}）÷（{TF} ATR(EMA {BASE_CFG.atr_period}) × {BASE_CFG.sl_atr_multiplier}）。'
-             f'エントリー時点の{TF} ATR の {BASE_CFG.sl_atr_multiplier}倍逆行したら 1R の損失になる量（スイングブレイク基準版と同じ考え方。日足では4時間足よりポジションが小さい）。複利なし。損失は SL が無いため 1R を超えることがある。</li>'
+             f'エントリー時点の{TF} ATR の {BASE_CFG.sl_atr_multiplier}倍逆行したら 1R の損失になる量（スイングブレイク基準版と同じ考え方）。複利なし。損失は SL が無いため 1R を超えることがある。</li>'
              '<li><b>コスト</b>: 平均スプレッドの半分をエントリー・決済それぞれに課金。スワップ（GMO FXスワップシート、1万通貨あたり）を NY 17:00 をまたいだ日数分反映。</li>'
              f'<li><b>データ</b>: GMOクリック証券の1分足（仲値）。MA の助走に検証開始の {WARMUP_MONTHS} ヶ月前から読み込む。</li>'
              '<li><b>エンジン</b>: <code>fast_engine.run_fast(exit_mode="ma_cross")</code>（今回追加。backtesting.py 版は無いので答え合わせはしていない）。スクリプトは <code>main_4H_ma_cross_fast.py</code>。</li>'
@@ -403,9 +405,6 @@ def build_report(out_dir, results, summary, yearly, all_trades, combined, run_st
              f'<li><b>取引数が少ない</b>: 1ペアあたり平均 {tot["トレード数"] / n_pairs:.0f} 回 / 5年。少数の大きなトレンドで結果が決まるため、ペア間・年ごとのばらつきが大きい（上位: {top} / 下位: {worst}）。</li>'
              f'<li><b>保有が長い</b>: 平均 {tot["平均保有日数"]:.0f} 日持ち続けるため、スワップの影響が大きい。高金利通貨の売り（例: クロス円の売り）はスワップの支払いが重い。シートの単位（1万通貨あたり）は未確認。</li>'
              '<li><b>損切りが無い</b>: 1回の損失は ATR の何倍にもなり得る（R は「ATR×1.5 の逆行 = 1R」の換算）。窓開け・急変時のリスクは R の最大DD で見る。</li>'
-             + (f'<li><b>4時間足版との比較</b>: 枚数は{TF}の ATR で決めるため、1R あたりのポジションは4時間足版より小さい（ATR が大きい分）。'
-                '比較の R は「それぞれの ATR×1.5 = 1R」の単位で、同じ金額の比較ではない。どちらも 1R = 初期資金の2% の損失額としては同じ。</li>'
-                if SIGNAL_HOURS != 4 else '')
              + '<li><b>ペアごとに別口座</b>: 15ペアを同時に持つ証拠金の取り合いは再現していない（証拠金のチェックもしない）。</li>'
              '</ul></div></section>')
     h.append(f'<p class="sub">結果フォルダ: <code>{html.escape(str(out_dir))}</code> / 実行 {run_started:%Y-%m-%d %H:%M}</p></main>')
