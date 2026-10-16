@@ -154,8 +154,9 @@ function maLines() {
   const per = ($("maper").value || "").split(/[,\s]+/).map(Number).filter(p => p >= 2 && p <= 1000).slice(0, MA_COLORS.length);
   const key = $("tf").value + "|" + per.join(",");
   if (maCache.key === key) return maCache.lines;
-  const c = d.c, n = c.length;
-  const lines = per.map(p => { const a = new Array(n).fill(null); let s = 0; for (let i = 0; i < n; i++) { s += c[i]; if (i >= p) s -= c[i - p]; if (i >= p - 1) a[i] = s / p; } return { p, a }; });
+  // pc: 表示開始より前の終値（助走期間）。これも使って計算し、表示中の足の分だけ残す
+  const pre = d.pc || [], c = pre.concat(d.c), n = c.length, k0 = pre.length;
+  const lines = per.map(p => { const a = new Array(n).fill(null); let s = 0; for (let i = 0; i < n; i++) { s += c[i]; if (i >= p) s -= c[i - p]; if (i >= p - 1) a[i] = s / p; } return { p, a: a.slice(k0) }; });
   maCache = { key, lines }; return lines;
 }
 function recompute() {

@@ -119,6 +119,7 @@ def make_chart(df_1min, path, title, start=None, end=None, trades=None, weekly_t
                    各足の値は足の最初の1分足の値（1H/4H では足の中で一定）
     filter_label : フィルターの説明（凡例と詳細に表示）
     ma_periods   : 移動平均（表示中の時間足の終値の単純移動平均）の期間。チャートの設定で変えられる。() で既定オフ
+                   df_1min に start より前のデータ（助走期間）があれば、その終値も使って表示の最初の足から線を引く
     daily_ma     : 日足の単純移動平均の期間のタプル（例 (20, 75, 200)）。どの時間足でも、前日に確定した日足の値を階段状に重ねる
     live_daily   : True なら、日足の終値をページに埋め込み、ER の期間・しきい値をスライダーで動かせる（日足MA・ERもページ側で計算）。
                    daily_ma / daily_er を既定値（スライダーの初期値）として渡す。トレードには「MAの並びだけで入った全取引」などを渡すと、
@@ -184,6 +185,11 @@ def make_chart(df_1min, path, title, start=None, end=None, trades=None, weekly_t
         cols = {k: v for k, v in extra.items()
                 if tf in ("1H", "4H") or k in ("UsedTrend", "FilterState") or k.startswith("DMA") or k == "DER"}
         data[tf], labels[tf] = to_bars(df, tf, cols, session_start_hour)
+        # 移動平均の助走: 表示開始より前の終値（最大の期間の本数まで）を pc に入れ、表示の最初の足から MA を引けるようにする
+        if ma_periods and start is not None and (~mask).any():
+            pre, pre_lab = to_bars(df_1min[day < pd.Timestamp(start)], tf, (), session_start_hour)
+            keep = ~pre_lab.isin(labels[tf])
+            data[tf]["pc"] = [c for c, k in zip(pre["c"], keep) if k][-max(int(p) for p in ma_periods):]
         print(f"{tf}: {len(data[tf]['t']):,} 本")
 
     tr = None
